@@ -1,0 +1,7 @@
+bin_PROGRAMS = polycap
+polycap_SOURCES = polycap.c
+polycap_LDADD = @gsl_LIBS@ @xraylib_LIBS@
+polycap_CPPFLAGS = @gsl_CFLAGS@ @xraylib_CFLAGS@
+polycap_CFLAGS = @OPENMP_CFLAGS@
+polycap_LDFLAGS = @OPENMP_CFLAGS@
+

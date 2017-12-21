@@ -2,3 +2,11 @@
 polycap
 *.swp
 polycap_lv
+Makefile.in
+configure
+aclocal.m4
+m4
+build-aux
+autom4te.cache
+build
+config.h.in
