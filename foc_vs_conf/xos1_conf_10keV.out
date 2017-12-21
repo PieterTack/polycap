@@ -1,0 +1,22 @@
+Surface roughness [Angstrom]:	 0.000000
+Amplitude of Waviness [cm]:	 0.000000
+Waviness corr. length [cm]:	 0.000000
+Source distance [cm]:		 0.500000
+Screen distance [cm]:		 10.500000
+Source diameter [cm]:		 0.000010
+Capillary foc. distances [cm]:	 0.000000	0.000000
+Number of channels:		 200000
+Calculated capillary open area:	 0.575
+Misalignment rotation [rad]/translation [cm]: 0.000000	0.000000
+Capillary profile: xos1_conf.prf
+Capillary axis   : xos1_conf.axs
+External profile : xos1_conf.ext
+Input file       : xos1_conf_10keV.inp
+  E [keV]      I/I0
+$DATA:
+1	5
+   10.00	0.081678929	0.142026186	1.000000000	0.000005339
+
+The started photons: 14011
+
+Average number of reflections: 32.903999
