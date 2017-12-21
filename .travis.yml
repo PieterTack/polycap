@@ -1,0 +1,62 @@
+language: generic
+
+env:
+  global:
+    - CXXFLAGS="-Wno-deprecated -Wno-deprecated-declarations -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int"
+    - CFLAGS="-Wno-deprecated -Wno-deprecated-declarations -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int"
+    - LD_LIBRARY_PATH='/usr/local/lib'
+    - PKG_CONFIG_PATH='/usr/local/lib/pkgconfig'
+
+matrix:
+  include:
+    - os: linux
+      sudo: required
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable'
+              key_url: 'http://xmi-apt.tomschoonjans.eu/xmi.packages.key'
+          packages:
+            - libgsl0-dev
+            - libxrl7-dev
+    - os: osx
+      sudo: required
+      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm'
+    - os: osx
+      sudo: required
+      env: CC='/usr/local/bin/gcc-7' HOMEBREW_ARGS='gcc@7'
+
+before_install:
+  - |
+    if [ "$TRAVIS_OS_NAME" == "osx" ] ; then
+      brew cask uninstall --force oclint
+      brew uninstall --force --ignore-dependencies $(brew list) || exit 1
+      brew update || exit 1
+      brew cleanup -s || exit 1
+      rm -rf $(brew --cache) || exit 1
+      brew install git gsl autoconf automake libtool curl wget || exit 1
+      brew install $HOMEBREW_ARGS homebrew/science/xraylib || exit 1
+      brew cleanup -s || exit 1
+      rm -rf $(brew --cache) || exit 1
+    fi
+
+script:
+  - autoreconf -fi || exit 1
+  - ./configure || exit 1
+  - make || exit 1
+  - make check || exit 1
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] ; then make distcheck || exit 1 ; fi
+
+notifications:
+  email:
+    recipients:
+      - Tom.Schoonjans@me.com
+      - Pieter.Tack@UGent.be
+    on_success: never
+    on_failure: always
+
+branches:
+  only:
+    - master
+
