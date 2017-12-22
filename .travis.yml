@@ -22,7 +22,7 @@ matrix:
             - libxrl7-dev
     - os: osx
       sudo: required
-      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm'
+      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm' LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
     - os: osx
       sudo: required
       env: CC='/usr/local/bin/gcc-7' HOMEBREW_ARGS='gcc@7'
@@ -35,7 +35,7 @@ before_install:
       brew update || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
-      brew install git gsl autoconf automake libtool curl wget || exit 1
+      brew install git gsl autoconf automake libtool curl wget pkg-config || exit 1
       brew install $HOMEBREW_ARGS homebrew/science/xraylib || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
