@@ -5,6 +5,9 @@
 // ---------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
 #include <stdio.h>
+#ifdef _WIN32
+  #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
+#endif
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
@@ -77,11 +80,6 @@ struct cap_profile
   double cl;	/*capillary length*/
   double binsize; /*20.e-4 cm*/
   struct cap_prof_arrays *arr; /* will get proper size allocated to it later */
-  };
-
-struct libraries
-  {
-  double rseed;
   };
 
 struct amu_cnt
@@ -251,26 +249,6 @@ struct cap_profile *read_cap_profile(struct inp_file *cap)
 	profile->binsize = 20.e-4; 
 
 	return profile;
-	}
-// ---------------------------------------------------------------------------------------------------
-struct libraries read_library_files(struct inp_file *cap)
-	{
-	FILE *fptr;
-	struct libraries lib;
-
-	/* This routine reads in all the necessary library data to perform the
-	  calculations of reflectivity, capillary shape, etc. */
-
-	// read random;
-	fptr = fopen("random.dat", "r");
-	if(fptr == NULL){
-		printf("Can't find random.dat file.\n");
-		exit(0);
-		}
-	fscanf(fptr,"%lf",&lib.rseed);
-	fclose(fptr);
-
-	return lib;
 	}
 // ---------------------------------------------------------------------------------------------------
 // Calculate total cross sections and scatter factor
@@ -862,7 +840,6 @@ int main(int argc, char *argv[])
 	{
 	struct inp_file cap;
 	struct cap_profile *profile;
-        struct libraries lib;
         int thread_max, thread_cnt;
 	struct mumc *absmu;
 	struct leakstruct *leaks;
@@ -876,7 +853,6 @@ int main(int argc, char *argv[])
 	double *absorb_sum;
 	float*sum_cnt;
 	const gsl_rng_type *T = gsl_rng_mt19937; //Mersenne twister rng
-	double *seed; //holds unique seeds for each thread
 	int icount=0, thread_id=0;
 	long sum_refl=0, sum_istart=0, sum_ienter=0; //amount of reflected, started and entered photons
 	float ave_refl; //average amount of reflections
@@ -885,7 +861,6 @@ int main(int argc, char *argv[])
 	float dist=0;
 	char f_abs[100];
 	int arrsize=0;
-	double new_seed;
 
 	// Check whether input file argument was supplied
 	if(argc <= 1){
@@ -911,11 +886,6 @@ int main(int argc, char *argv[])
 	printf("Reading capillary profile files...\n");
 	profile = read_cap_profile(&cap);
 	printf("Capillary profiles read.\n");
-
-	// Read library files;
-	printf("Reading library files...\n");
-	lib = read_library_files(&cap);
-	printf("Library files read.\n");
 
 	//Initialize
 	absmu = ini_mumc(&cap);
@@ -971,11 +941,6 @@ int main(int argc, char *argv[])
 		printf("Could not allocate sum_irefl memory.\n");
 		exit(0);
 		}
-	seed = malloc(sizeof(*seed)*thread_cnt);
-	if(seed == NULL){
-		printf("Could not allocate seed memory.\n");
-		exit(0);
-		}
 	absorb_sum = malloc(sizeof(*absorb_sum)*(profile->nmax+1));
 	if(absorb_sum == NULL){
 		printf("Could not allocate absorb_sum memory.\n");
@@ -986,6 +951,15 @@ int main(int argc, char *argv[])
 		printf("Could not allocate sum_cnt memory.\n");
 		exit(0);
 		}
+
+#ifndef _WIN32
+	FILE *random_device;
+	if ((random_device = fopen("/dev/urandom", "r")) == NULL) {
+		printf("Could not open /dev/urandom");
+		exit(0);
+	}
+#endif
+	
 	for(i=0;i<thread_cnt;i++){
 		/*give arrays inside calc struct appropriate dimensions*/
 		calc[i].sx = malloc(sizeof(*calc[i].sx)*(profile->nmax+1));
@@ -1040,14 +1014,18 @@ int main(int argc, char *argv[])
 			}
 		//Give each thread unique rng range.
 		calc[i].rn = gsl_rng_alloc(T);
-		if(i == 0){
-			gsl_rng_set(calc[i].rn,lib.rseed);
-			} else {
-			gsl_rng_set(calc[i].rn,seed[i-1]);
-			}
-		seed[i] = gsl_rng_uniform(calc[i].rn)*lib.rseed;//create rn and multiply with original seed
-		gsl_rng_set(calc[i].rn,seed[i]);
+#ifdef _WIN32
+		unsigned int seed;
+		rand_s(&seed);
+#else
+		unsigned long int seed;
+		fread(&seed, sizeof(unsigned long int), 1, random_device);
+#endif
+		gsl_rng_set(calc[i].rn, seed);
 		}
+#ifndef _WIN32
+	fclose(random_device);
+#endif
 
 	//Actual multi-core loop where the calculations happen.
 	#pragma omp parallel for private(icount,thread_id,i) firstprivate(cap,profile,absmu,leaks,pcap_ini,thread_cnt) shared(calc,sum_irefl,imstr) num_threads(thread_cnt)
@@ -1161,12 +1139,6 @@ int main(int argc, char *argv[])
 	fprintf(fptr,"\nAverage number of reflections: %f\n",ave_refl);
 	fclose(fptr);
 
-	new_seed = gsl_rng_uniform(calc[0].rn)*2147483647.;
-	fptr = fopen("random.dat","w");
-	fprintf(fptr,"%lf\n",new_seed);
-	printf("New seed: %lf\n",new_seed);
-	fclose(fptr);
-
 	sprintf(f_abs,"%s.abs",cap.out);
 	fptr = fopen(f_abs,"w");
 	fprintf(fptr,"$DATA:\n");
@@ -1191,7 +1163,6 @@ int main(int argc, char *argv[])
 	free(ctvar->w);
 	free(ctvar);
 	free(sum_irefl);
-	free(seed);
 	free(absorb_sum);
 	free(sum_cnt);
 	free(absmu->arr);
