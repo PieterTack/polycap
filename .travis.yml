@@ -20,12 +20,29 @@ matrix:
           packages:
             - libgsl0-dev
             - libxrl7-dev
+    - os: linux
+      sudo: required
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable'
+              key_url: 'http://xmi-apt.tomschoonjans.eu/xmi.packages.key'
+          packages:
+            - libeasyrng-dev
+            - libxrl7-dev
     - os: osx
       sudo: required
-      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm' LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
+      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm gsl' LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
     - os: osx
       sudo: required
-      env: CC='/usr/local/bin/gcc-7' HOMEBREW_ARGS='gcc@7'
+      env: CC='/usr/local/bin/gcc-7' HOMEBREW_ARGS='gcc@7 gsl'
+    - os: osx
+      sudo: required
+      env: CC='/usr/local/opt/llvm/bin/clang' CXX='/usr/local/opt/llvm/bin/clang++' HOMEBREW_ARGS='llvm tschoonj/tap/easyrng' LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
+    - os: osx
+      sudo: required
+      env: CC='/usr/local/bin/gcc-7' CXX='/usr/local/bin/g++-7' HOMEBREW_ARGS='gcc@7 tschoonj/tap/easyrng'
 
 before_install:
   - |
@@ -35,7 +52,7 @@ before_install:
       brew update || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
-      brew install git gsl autoconf automake libtool curl wget pkg-config || exit 1
+      brew install git autoconf automake libtool curl wget pkg-config || exit 1
       brew install $HOMEBREW_ARGS homebrew/science/xraylib || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
