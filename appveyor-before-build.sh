@@ -15,3 +15,17 @@ make -j2
 make install
 cd ..
 
+if test $RNG = "gsl" ; then
+	#install gsl
+	pacman --noconfirm -Su mingw-w64-$MSYS2_ARCH-gsl
+elif test $RNG = "easyRNG" ; then
+	wget -q https://github.com/tschoonj/easyRNG/releases/download/easyRNG-1.1/easyRNG-1.1.tar.gz
+	tar xfz easyRNG-1.1.tar.gz
+	cd easyRNG-1.1
+	./configure --prefix=$HOME/install --disable-static
+	make -j2
+	make install
+	cd ..
+else
+	exit 1
+fi
