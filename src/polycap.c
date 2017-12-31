@@ -4,6 +4,7 @@
 
 // ---------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
+#include "config.h"
 #include <stdio.h>
 #ifdef _WIN32
   #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
@@ -15,8 +16,27 @@
 #include <limits.h>
 #include <float.h>
 #include <xraylib.h>
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
+#ifdef HAVE_EASYRNG
+  #include <easy_rng.h>
+  #include <easy_randist.h>
+  typedef easy_rng_type polycap_rng_type;
+  typedef easy_rng polycap_rng;
+  #define polycap_rng_alloc(T) easy_rng_alloc(T)
+  #define polycap_rng_free(rng) easy_rng_free(rng)
+  #define polycap_rng_set(rng, seed) easy_rng_set(rng, seed)
+  #define polycap_rng_uniform(rng) easy_rng_uniform(rng)
+  #define polycap_rng_mt19937 easy_rng_mt19937
+#else
+  #include <gsl/gsl_rng.h>
+  #include <gsl/gsl_randist.h>
+  typedef gsl_rng_type polycap_rng_type;
+  typedef gsl_rng polycap_rng;
+  #define polycap_rng_alloc(T) gsl_rng_alloc(T)
+  #define polycap_rng_free(rng) gsl_rng_free(rng)
+  #define polycap_rng_set(rng, seed) gsl_rng_set(rng, seed)
+  #define polycap_rng_uniform(rng) gsl_rng_uniform(rng)
+  #define polycap_rng_mt19937 gsl_rng_mt19937
+#endif
 #include <complex.h> //complex numbers required for Fresnel equation (reflect)
 
 #define NELEM 92  /* The maximum number of elements possible  */
@@ -125,7 +145,7 @@ struct calcstruct
   {
   double *sx;
   double *sy;
-  gsl_rng *rn;
+  polycap_rng *rn;
   float *cnt;
   double *absorb;
   long i_refl;
@@ -554,9 +574,9 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 		//select capil
 		flag_restart = 0;
 		do{
-			r = gsl_rng_uniform(calc[*thread_id].rn);
+			r = polycap_rng_uniform(calc[*thread_id].rn);
 			ix_cap = floor( pcap_ini->n_chan_max * (2.*fabs(r)-1.) + 0.5);
-			r = gsl_rng_uniform(calc[*thread_id].rn);
+			r = polycap_rng_uniform(calc[*thread_id].rn);
 			iy_cap = floor( pcap_ini->n_chan_max * (2.*fabs(r)-1.) + 0.5);
 			} while( (double)abs(iy_cap+ix_cap) > pcap_ini->n_chan_max );
 		//calc_tube/calc_axs
@@ -577,13 +597,13 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 			}
 
 		//sourcp
-		r = gsl_rng_uniform(calc[*thread_id].rn);
+		r = polycap_rng_uniform(calc[*thread_id].rn);
 		rad = cap->src_x * sqrt(fabs(r)); //sqrt to simulate source intensity distribution (originally probably src_x * r/sqrt(r) )
 		if(rad != rad){
 			printf("rad: %lf, sigx: %lf, r:%lf, sqrt(r):%lf\n", rad, cap->src_x, r, sqrt(fabs(r)));
 			exit(0);
 			}
-		r = gsl_rng_uniform(calc[*thread_id].rn);
+		r = polycap_rng_uniform(calc[*thread_id].rn);
 		fi = (double)2.*PI*fabs(r);
 		x = rad * cos(fi) + cap->src_shiftx;
 		y = rad * sin(fi) + cap->src_shifty;
@@ -596,9 +616,9 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 		calc[*thread_id].rh[1] = y;
 		calc[*thread_id].rh[2] = (double)0.0;
 		if(cap->src_sigx*cap->src_sigy < 1.e-20){ //uniform distribution over PC entrance
-			r = gsl_rng_uniform(calc[*thread_id].rn);
+			r = polycap_rng_uniform(calc[*thread_id].rn);
 			rad = profile->arr[0].profil * sqrt(fabs(r));
-			r = gsl_rng_uniform(calc[*thread_id].rn);
+			r = polycap_rng_uniform(calc[*thread_id].rn);
 			fi = (double)2.*PI*fabs(r);
 			xpc = rad * cos(fi) + ra;
 			ypc = rad * sin(fi) + rb;
@@ -606,9 +626,9 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 			calc[*thread_id].v[1] = ypc - y;
 			calc[*thread_id].v[2] = cap->d_source;
 			} else { //non-uniform distribution
-			r = gsl_rng_uniform(calc[*thread_id].rn);
+			r = polycap_rng_uniform(calc[*thread_id].rn);
 			calc[*thread_id].v[0] = cap->src_sigx * (1.-2.*fabs(r));
-			r = gsl_rng_uniform(calc[*thread_id].rn);
+			r = polycap_rng_uniform(calc[*thread_id].rn);
 			calc[*thread_id].v[1] = cap->src_sigy * (1.-2.*fabs(r));
 			calc[*thread_id].v[2] = 1.;
 			}
@@ -852,7 +872,7 @@ int main(int argc, char *argv[])
 	long *sum_irefl;
 	double *absorb_sum;
 	float*sum_cnt;
-	const gsl_rng_type *T = gsl_rng_mt19937; //Mersenne twister rng
+	const polycap_rng_type *T = polycap_rng_mt19937; //Mersenne twister rng
 	int icount=0, thread_id=0;
 	long sum_refl=0, sum_istart=0, sum_ienter=0; //amount of reflected, started and entered photons
 	float ave_refl; //average amount of reflections
@@ -1013,7 +1033,7 @@ int main(int argc, char *argv[])
 			calc[i].w[j] = ctvar->w[j];
 			}
 		//Give each thread unique rng range.
-		calc[i].rn = gsl_rng_alloc(T);
+		calc[i].rn = polycap_rng_alloc(T);
 #ifdef _WIN32
 		unsigned int seed;
 		rand_s(&seed);
@@ -1021,7 +1041,7 @@ int main(int argc, char *argv[])
 		unsigned long int seed;
 		fread(&seed, sizeof(unsigned long int), 1, random_device);
 #endif
-		gsl_rng_set(calc[i].rn, seed);
+		polycap_rng_set(calc[i].rn, seed);
 		}
 #ifndef _WIN32
 	fclose(random_device);
@@ -1149,7 +1169,7 @@ int main(int argc, char *argv[])
 
 	// free allocated memory
 	for(i=0;i<thread_cnt;i++){
-		gsl_rng_free(calc[i].rn);
+		polycap_rng_free(calc[i].rn);
 		free(calc[i].sx);
 		free(calc[i].sy);
 		free(calc[i].absorb);
