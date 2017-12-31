@@ -351,8 +351,8 @@ struct ini_polycap ini_polycap(struct inp_file *cap, struct cap_profile *profile
 	s_unit = profile->rtot1/(pcap_ini.n_chan_max); //width of a single shell
 	pcap_ini.cap_unita[0] = s_unit;
 	pcap_ini.cap_unita[1] = 0.;
-	pcap_ini.cap_unitb[0] = s_unit * cos(PI/3.);
-	pcap_ini.cap_unitb[1] = s_unit * sin(PI/3.);
+	pcap_ini.cap_unitb[0] = s_unit * cos(M_PI/3.);
+	pcap_ini.cap_unitb[1] = s_unit * sin(M_PI/3.);
 
 	return pcap_ini;
 	}
@@ -515,8 +515,8 @@ int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_pro
 		cons1 = (double)(1.01358e0*e)*alf*cap->sig_rough;
 		r_rough = exp(-1*cons1*cons1);
 
-		alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*cap->density)/(2*PI)) * absmu->arr[i].scatf;
-		beta = (double) (HC)/(4.*PI) * (absmu->arr[i].amu/e);
+		alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*cap->density)/(2*M_PI)) * absmu->arr[i].scatf;
+		beta = (double) (HC)/(4.*M_PI) * (absmu->arr[i].amu/e);
 
 		//reflectivity according to Fresnel expression
 		rtot = ((complex double)alf - csqrt(cpow((complex double)alf,2) - 2.*(alfa - beta*I))) / ((complex double)alf + csqrt(cpow((complex double)alf,2) - 2.*(alfa - beta*I)));
@@ -560,7 +560,7 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 	double cosphi, sinphi; //angle between horizontal and selected channel (along rr)
 	double cx; //relative distance from PC centre (compared to PC external radius)
 	double rad; //random radius from centre of source size (between 0 and sigx)
-	double fi; //random angle in which photon was emitted from source (between 0 and 2PI) 
+	double fi; //random angle in which photon was emitted from source (between 0 and 2M_PI) 
 	double x, y; //coordinates from which photon was emitted
 	double xpc, ypc; //coordinates from which photon was emitted given src_sigx and src_sigy are (nearly) 0
 	double gamma, w_gamma; //photon origin to selected capillary angle and weight (cos(gamma))
@@ -604,7 +604,7 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 			exit(0);
 			}
 		r = polycap_rng_uniform(calc[*thread_id].rn);
-		fi = (double)2.*PI*fabs(r);
+		fi = (double)2.*M_PI*fabs(r);
 		x = rad * cos(fi) + cap->src_shiftx;
 		y = rad * sin(fi) + cap->src_shifty;
 		calc[*thread_id].rh[0] = x;
@@ -619,7 +619,7 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 			r = polycap_rng_uniform(calc[*thread_id].rn);
 			rad = profile->arr[0].profil * sqrt(fabs(r));
 			r = polycap_rng_uniform(calc[*thread_id].rn);
-			fi = (double)2.*PI*fabs(r);
+			fi = (double)2.*M_PI*fabs(r);
 			xpc = rad * cos(fi) + ra;
 			ypc = rad * sin(fi) + rb;
 			calc[*thread_id].v[0] = xpc - x;
@@ -758,7 +758,7 @@ void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap
 			else
 			{
 			alf = acos(calf);
-			alf = PI/(double)2 - alf;
+			alf = M_PI/(double)2 - alf;
 			w0 = calc[*thread_id].w[0];
 
 			calc[*thread_id].iesc = reflect(alf,cap,absmu,profile,leaks,calc,thread_id);
@@ -801,10 +801,10 @@ void count(struct mumc *absmu, struct inp_file *cap, int *icount, struct cap_pro
 	ypend  = calc[*thread_id].rh[1] + cc*calc[*thread_id].v[1];
 	v_hex1[0] = 0; //vert hex edges x vector
 	v_hex1[1] = 1; //vert hex edges y vector
-	v_hex2[0] = cos(PI/6); //upper right and lower left edges x vector
-	v_hex2[1] = sin(PI/6); //upper right and lower left edges y vector
-	v_hex3[0] = cos(-1.*PI/6); //upper left and lower right edges x vector
-	v_hex3[1] = sin(-1.*PI/6); //upper left and lower right edges y vector
+	v_hex2[0] = cos(M_PI/6); //upper right and lower left edges x vector
+	v_hex2[1] = sin(M_PI/6); //upper right and lower left edges y vector
+	v_hex3[0] = cos(-1.*M_PI/6); //upper left and lower right edges x vector
+	v_hex3[1] = sin(-1.*M_PI/6); //upper left and lower right edges y vector
 	hex_edge_dist = sqrt(profile->rtot2 * profile->rtot2 - (profile->rtot2/2)*(profile->rtot2/2));
 	//calculate dot products and see if magnitude is > distance from centre to hex side
 	dp1 = fabs(v_hex1[0]*xpend + v_hex1[1]*ypend);
