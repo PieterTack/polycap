@@ -495,7 +495,7 @@ int segment(double s0[3], double s1[3], double rad0, double rad1, double rh1[3],
 	return iesc_local;
 	}
 // ---------------------------------------------------------------------------------------------------
-int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_profile *profile, struct leakstruct *leaks, struct calcstruct *calc, int *thread_id)
+int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_profile *profile, struct leakstruct *leaks, struct calcstruct *calc, int thread_id)
 	{
 	int i;
 	double desc; //distance in capillary at which photon escaped divided by propagation vector in z direction
@@ -509,7 +509,7 @@ int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_pro
 	int ind_x, ind_y; //indices of array lspot where photon will hit screen
 
 	//escape
-	desc = (profile->cl + cap->d_source - calc[*thread_id].rh[2]) / calc[*thread_id].v[2];
+	desc = (profile->cl + cap->d_source - calc[thread_id].rh[2]) / calc[thread_id].v[2];
 	if(desc < 0) desc = profile->cl;
 	for(i=0; i <= absmu->n_energy; i++){
 		e = cap->e_start + i * cap->delta_e;
@@ -523,12 +523,12 @@ int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_pro
 		rtot = ((complex double)alf - csqrt(cpow((complex double)alf,2) - 2.*(alfa - beta*I))) / ((complex double)alf + csqrt(cpow((complex double)alf,2) - 2.*(alfa - beta*I)));
 		rtot = creal(cpow(cabs(rtot),2.));
 		//printf("Energy: %f, creal(rtot): %lf, cimag(rtot): %lf\n",e, creal(rtot), cimag(rtot));
-		wleak = (1.-rtot) * calc[*thread_id].w[i] * exp(-1.*desc * absmu->arr[i].amu);
+		wleak = (1.-rtot) * calc[thread_id].w[i] * exp(-1.*desc * absmu->arr[i].amu);
 		leaks->leak[i] = leaks->leak[i] + wleak;
 		if(i==0){
-			c = (cap->d_screen - calc[*thread_id].rh[2]) / calc[*thread_id].v[2];
-			xp = calc[*thread_id].rh[0] + c*calc[*thread_id].v[0];
-			yp = calc[*thread_id].rh[1] + c*calc[*thread_id].v[1];
+			c = (cap->d_screen - calc[thread_id].rh[2]) / calc[thread_id].v[2];
+			xp = calc[thread_id].rh[0] + c*calc[thread_id].v[0];
+			yp = calc[thread_id].rh[1] + c*calc[thread_id].v[1];
 			ind_x = (int)floor(xp/profile->binsize)+NSPOT/2;
 			ind_y = (int)floor(yp/profile->binsize)+NSPOT/2;
 			if(ind_x < NSPOT && ind_x >= 0){
@@ -537,20 +537,20 @@ int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_pro
 					}
 				}
 			}
-		calc[*thread_id].w[i] = calc[*thread_id].w[i] * (float)(rtot * r_rough);
-		if(calc[*thread_id].w[i] != calc[*thread_id].w[i]){
+		calc[thread_id].w[i] = calc[thread_id].w[i] * (float)(rtot * r_rough);
+		if(calc[thread_id].w[i] != calc[thread_id].w[i]){
 			printf("thread:%d, w[%d]:%f,rtot:%lf, r_rough:%lf, (float)(rtot*r_rough):%f\n",
-				*thread_id,i,calc[*thread_id].w[i],creal(rtot),r_rough,(float)(rtot * r_rough));
+				thread_id,i,calc[thread_id].w[i],creal(rtot),r_rough,(float)(rtot * r_rough));
 			exit(0);
 			}
 		} //for(i=0; i <= absmu->n_energy; i++)
 
-	if(calc[*thread_id].w[0] < 1.e-4) return -2;
+	if(calc[thread_id].w[0] < 1.e-4) return -2;
 
 	return 0;
 	}
 // ---------------------------------------------------------------------------------------------------
-void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *pcap_ini, struct inp_file *cap, int *icount, struct image_struct *imstr, struct calcstruct *calc, int *thread_id)
+void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *pcap_ini, struct inp_file *cap, int *icount, struct image_struct *imstr, struct calcstruct *calc, int thread_id)
 	{
 	int i, flag_restart;
 	int ix_cap, iy_cap; //indices of selected channel
@@ -567,17 +567,17 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 	double gamma, w_gamma; //photon origin to selected capillary angle and weight (cos(gamma))
 	double c; //distance bridged by photon between source and selected capillary
 
-	calc[*thread_id].i_refl = 0;
+	calc[thread_id].i_refl = 0;
 
-	for(i=0; i <= absmu->n_energy; i++) calc[*thread_id].w[i] = (float)1;
+	for(i=0; i <= absmu->n_energy; i++) calc[thread_id].w[i] = (float)1;
 	dx = 2e9; //set dx very high so it is certainly > single capillary radius (profil)
 	while(dx > profile->arr[0].profil){
 		//select capil
 		flag_restart = 0;
 		do{
-			r = polycap_rng_uniform(calc[*thread_id].rn);
+			r = polycap_rng_uniform(calc[thread_id].rn);
 			ix_cap = floor( pcap_ini->n_chan_max * (2.*fabs(r)-1.) + 0.5);
-			r = polycap_rng_uniform(calc[*thread_id].rn);
+			r = polycap_rng_uniform(calc[thread_id].rn);
 			iy_cap = floor( pcap_ini->n_chan_max * (2.*fabs(r)-1.) + 0.5);
 			} while( (double)abs(iy_cap+ix_cap) > pcap_ini->n_chan_max );
 		//calc_tube/calc_axs
@@ -593,106 +593,106 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 			}
 		cx = rr / profile->rtot1;
 		for(i=0; i <= profile->nmax; i++){
-			calc[*thread_id].sx[i] = profile->arr[i].d_arr * cosphi * cx;
-			calc[*thread_id].sy[i] = profile->arr[i].d_arr * sinphi * cx;
+			calc[thread_id].sx[i] = profile->arr[i].d_arr * cosphi * cx;
+			calc[thread_id].sy[i] = profile->arr[i].d_arr * sinphi * cx;
 			}
 
 		//sourcp
-		r = polycap_rng_uniform(calc[*thread_id].rn);
+		r = polycap_rng_uniform(calc[thread_id].rn);
 		rad = cap->src_x * sqrt(fabs(r)); //sqrt to simulate source intensity distribution (originally probably src_x * r/sqrt(r) )
 		if(rad != rad){
 			printf("rad: %lf, sigx: %lf, r:%lf, sqrt(r):%lf\n", rad, cap->src_x, r, sqrt(fabs(r)));
 			exit(0);
 			}
-		r = polycap_rng_uniform(calc[*thread_id].rn);
+		r = polycap_rng_uniform(calc[thread_id].rn);
 		fi = (double)2.*M_PI*fabs(r);
 		x = rad * cos(fi) + cap->src_shiftx;
 		y = rad * sin(fi) + cap->src_shifty;
-		calc[*thread_id].rh[0] = x;
-		if(calc[*thread_id].rh[0] != calc[*thread_id].rh[0]){
+		calc[thread_id].rh[0] = x;
+		if(calc[thread_id].rh[0] != calc[thread_id].rh[0]){
 			printf("rh[0]: %lf, x:%lf, rad:%lf, fi:%lf, cos(fi):%lf, shiftx:%lf\n",
-				calc[*thread_id].rh[0],x,rad,fi,cos(fi),cap->src_shiftx);
+				calc[thread_id].rh[0],x,rad,fi,cos(fi),cap->src_shiftx);
 			exit(0);
 			}
-		calc[*thread_id].rh[1] = y;
-		calc[*thread_id].rh[2] = (double)0.0;
+		calc[thread_id].rh[1] = y;
+		calc[thread_id].rh[2] = (double)0.0;
 		if(cap->src_sigx*cap->src_sigy < 1.e-20){ //uniform distribution over PC entrance
-			r = polycap_rng_uniform(calc[*thread_id].rn);
+			r = polycap_rng_uniform(calc[thread_id].rn);
 			rad = profile->arr[0].profil * sqrt(fabs(r));
-			r = polycap_rng_uniform(calc[*thread_id].rn);
+			r = polycap_rng_uniform(calc[thread_id].rn);
 			fi = (double)2.*M_PI*fabs(r);
 			xpc = rad * cos(fi) + ra;
 			ypc = rad * sin(fi) + rb;
-			calc[*thread_id].v[0] = xpc - x;
-			calc[*thread_id].v[1] = ypc - y;
-			calc[*thread_id].v[2] = cap->d_source;
+			calc[thread_id].v[0] = xpc - x;
+			calc[thread_id].v[1] = ypc - y;
+			calc[thread_id].v[2] = cap->d_source;
 			} else { //non-uniform distribution
-			r = polycap_rng_uniform(calc[*thread_id].rn);
-			calc[*thread_id].v[0] = cap->src_sigx * (1.-2.*fabs(r));
-			r = polycap_rng_uniform(calc[*thread_id].rn);
-			calc[*thread_id].v[1] = cap->src_sigy * (1.-2.*fabs(r));
-			calc[*thread_id].v[2] = 1.;
+			r = polycap_rng_uniform(calc[thread_id].rn);
+			calc[thread_id].v[0] = cap->src_sigx * (1.-2.*fabs(r));
+			r = polycap_rng_uniform(calc[thread_id].rn);
+			calc[thread_id].v[1] = cap->src_sigy * (1.-2.*fabs(r));
+			calc[thread_id].v[2] = 1.;
 			}
-		norm(calc[*thread_id].v, (int)3); //normalize vector v
-		calc[*thread_id].phase = 0.;
-		calc[*thread_id].amplitude = 1.;
-		calc[*thread_id].traj_length = 0.;
+		norm(calc[thread_id].v, (int)3); //normalize vector v
+		calc[thread_id].phase = 0.;
+		calc[thread_id].amplitude = 1.;
+		calc[thread_id].traj_length = 0.;
 
-		gamma = sqrt( (ra-calc[*thread_id].rh[0])*(ra-calc[*thread_id].rh[0]) + 
-			(rb-calc[*thread_id].rh[0])*(rb-calc[*thread_id].rh[0]) ) / cap->d_source;
+		gamma = sqrt( (ra-calc[thread_id].rh[0])*(ra-calc[thread_id].rh[0]) + 
+			(rb-calc[thread_id].rh[0])*(rb-calc[thread_id].rh[0]) ) / cap->d_source;
 		if(gamma != gamma){
-			printf("gamma1: %lf, cnt: %f, %d\n",gamma, calc[*thread_id].cnt[0], *thread_id);
+			printf("gamma1: %lf, cnt: %f, %d\n",gamma, calc[thread_id].cnt[0], thread_id);
 			printf("xcent: %lf, rh[0]: %lf, ycent: %lf, d_source: %lf\n", ra,
-			       calc[*thread_id].rh[0], rb, cap->d_source);
+			       calc[thread_id].rh[0], rb, cap->d_source);
 			exit(0);
 			}
 		gamma = atan(gamma);
 		if(gamma != gamma){
-			printf("gamma2: %lf, cnt: %f, %d\n",gamma, calc[*thread_id].cnt[0], *thread_id);
+			printf("gamma2: %lf, cnt: %f, %d\n",gamma, calc[thread_id].cnt[0], thread_id);
 			exit(0);
 			}
 		w_gamma = cos(gamma); /* weight factor to take into account the effective solid-angle 
 					of the capillary channel from the source point, 
 					should be nearly 1 for d_source > 10 cm */
 		if(w_gamma != w_gamma){
-			printf("w_gamma: %lf, cnt: %f, %d\n",gamma, calc[*thread_id].cnt[0], *thread_id);
+			printf("w_gamma: %lf, cnt: %f, %d\n",gamma, calc[thread_id].cnt[0], thread_id);
 			exit(0);
 			}
 		if(*icount < IMSIZE-1){
-			imstr[*icount].xsou = (float)calc[*thread_id].rh[1];
-			imstr[*icount].ysou = (float)calc[*thread_id].rh[0];
-			imstr[*icount].xsou1 = (float)calc[*thread_id].v[1];
-			imstr[*icount].ysou1 = (float)calc[*thread_id].v[0];
+			imstr[*icount].xsou = (float)calc[thread_id].rh[1];
+			imstr[*icount].ysou = (float)calc[thread_id].rh[0];
+			imstr[*icount].xsou1 = (float)calc[thread_id].v[1];
+			imstr[*icount].ysou1 = (float)calc[thread_id].v[0];
 			imstr[*icount].wsou = (float)1;
 			}
-		c = ( cap->d_source - calc[*thread_id].rh[2]) / calc[*thread_id].v[2];
-		calc[*thread_id].rh[0] = calc[*thread_id].rh[0] + c * calc[*thread_id].v[0];
-		calc[*thread_id].rh[1] = calc[*thread_id].rh[1] + c * calc[*thread_id].v[1];
-		calc[*thread_id].rh[2] = cap->d_source;
-		calc[*thread_id].traj_length = calc[*thread_id].traj_length + c;
+		c = ( cap->d_source - calc[thread_id].rh[2]) / calc[thread_id].v[2];
+		calc[thread_id].rh[0] = calc[thread_id].rh[0] + c * calc[thread_id].v[0];
+		calc[thread_id].rh[1] = calc[thread_id].rh[1] + c * calc[thread_id].v[1];
+		calc[thread_id].rh[2] = cap->d_source;
+		calc[thread_id].traj_length = calc[thread_id].traj_length + c;
 			/*first segment is to reach capillary entrance*/
 
-		//rotx -As long as theta_align =0 this doesn't actually change the values of calc[*thread_id].v
+		//rotx -As long as theta_align =0 this doesn't actually change the values of calc[thread_id].v
 		//cap->theta_align not used as in original code was just set to 0
-//		v1[0] = calc[*thread_id].v[0]*cos(cap->theta_align) - calc[*thread_id].v[2]*sin(cap->theta_align);
-//		v1[1] = calc[*thread_id].v[1];
-//		v1[2] = calc[*thread_id].v[0]*sin(cap->theta_align) + calc[*thread_id].v[2]*cos(cap->theta_align);
-//		calc[*thread_id].v[0] = v1[0];
-//		calc[*thread_id].v[1] = v1[1];
-//		calc[*thread_id].v[2] = v1[2];
+//		v1[0] = calc[thread_id].v[0]*cos(cap->theta_align) - calc[thread_id].v[2]*sin(cap->theta_align);
+//		v1[1] = calc[thread_id].v[1];
+//		v1[2] = calc[thread_id].v[0]*sin(cap->theta_align) + calc[thread_id].v[2]*cos(cap->theta_align);
+//		calc[thread_id].v[0] = v1[0];
+//		calc[thread_id].v[1] = v1[1];
+//		calc[thread_id].v[2] = v1[2];
 
-		calc[*thread_id].iesc = 0;
-		calc[*thread_id].istart++; //photon was started for simulation
-		dx = sqrt( (calc[*thread_id].rh[0]-ra)*(calc[*thread_id].rh[0]-ra) + 
-			(calc[*thread_id].rh[1]-rb)*(calc[*thread_id].rh[1]-rb));
+		calc[thread_id].iesc = 0;
+		calc[thread_id].istart++; //photon was started for simulation
+		dx = sqrt( (calc[thread_id].rh[0]-ra)*(calc[thread_id].rh[0]-ra) + 
+			(calc[thread_id].rh[1]-rb)*(calc[thread_id].rh[1]-rb));
 		} /*end of while(dx > profile->arr[0].profil)*/
 
-	calc[*thread_id].ienter++; //photon entered the PC
+	calc[thread_id].ienter++; //photon entered the PC
 	for(i=0; i<= absmu->n_energy;i++){
-		calc[*thread_id].w[i] = calc[*thread_id].w[i] * (float)w_gamma;
-		if(calc[*thread_id].w[i] != calc[*thread_id].w[i]){
+		calc[thread_id].w[i] = calc[thread_id].w[i] * (float)w_gamma;
+		if(calc[thread_id].w[i] != calc[thread_id].w[i]){
 			printf("thread:%d, w[%d]:%f,w_gamma:%lf,(float)w_gamma:%f\n",
-				*thread_id,i,calc[*thread_id].w[i],w_gamma,(float)w_gamma);
+				thread_id,i,calc[thread_id].w[i],w_gamma,(float)w_gamma);
 			exit(0);
 			}
 		}
@@ -700,7 +700,7 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 	return;
 	}
 // ---------------------------------------------------------------------------------------------------
-void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap, struct leakstruct *leaks, struct calcstruct *calc, int *thread_id)
+void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap, struct leakstruct *leaks, struct calcstruct *calc, int thread_id)
 	{
 	int64_t i;
 	double s0[3], s1[3]; //selected capillary axis coordinates
@@ -713,68 +713,68 @@ void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap
 	float w0, w1;
 	double salf2; //2* sin(alf) with alf=interaction angle
 
-	calc[*thread_id].iesc = 0;
-	if(calc[*thread_id].i_refl == 0) calc[*thread_id].ix = 0;
+	calc[thread_id].iesc = 0;
+	if(calc[thread_id].i_refl == 0) calc[thread_id].ix = 0;
 
 	//intersection
-	for(i=calc[*thread_id].ix+1; i<=profile->nmax; i++){
-		s0[0] = calc[*thread_id].sx[i-1];
-		s0[1] = calc[*thread_id].sy[i-1];
+	for(i=calc[thread_id].ix+1; i<=profile->nmax; i++){
+		s0[0] = calc[thread_id].sx[i-1];
+		s0[1] = calc[thread_id].sy[i-1];
 		s0[2] = profile->arr[i-1].zarr;
-		s1[0] = calc[*thread_id].sx[i];
-		s1[1] = calc[*thread_id].sy[i];
+		s1[0] = calc[thread_id].sx[i];
+		s1[1] = calc[thread_id].sy[i];
 		s1[2] = profile->arr[i].zarr;
 		rad0 = profile->arr[i-1].profil;
 		rad1 = profile->arr[i].profil;
-		rh1[0] = calc[*thread_id].rh[0];
-		rh1[1] = calc[*thread_id].rh[1];
-		rh1[2] = calc[*thread_id].rh[2] - cap->d_source;
-		calc[*thread_id].iesc = segment(s0,s1,rad0,rad1,rh1,calc[*thread_id].v,rn,&calf);
-		if(calc[*thread_id].iesc == 0){
-			calc[*thread_id].ix = i-1;
-			break; //break out of for loop and store previous i in calc[*thread_id].ix
+		rh1[0] = calc[thread_id].rh[0];
+		rh1[1] = calc[thread_id].rh[1];
+		rh1[2] = calc[thread_id].rh[2] - cap->d_source;
+		calc[thread_id].iesc = segment(s0,s1,rad0,rad1,rh1,calc[thread_id].v,rn,&calf);
+		if(calc[thread_id].iesc == 0){
+			calc[thread_id].ix = i-1;
+			break; //break out of for loop and store previous i in calc[thread_id].ix
 			}
 		}
 
 
-	if(calc[*thread_id].iesc !=0){
-		calc[*thread_id].iesc = 1;
+	if(calc[thread_id].iesc !=0){
+		calc[thread_id].iesc = 1;
 		}
-		else //calc[*thread_id].iesc == 0
+		else //calc[thread_id].iesc == 0
 		{
-		delta_traj[0] = rh1[0] - calc[*thread_id].rh[0];
-		delta_traj[1] = rh1[1] - calc[*thread_id].rh[1];
-		delta_traj[2] = rh1[2] + cap->d_source - calc[*thread_id].rh[2];
+		delta_traj[0] = rh1[0] - calc[thread_id].rh[0];
+		delta_traj[1] = rh1[1] - calc[thread_id].rh[1];
+		delta_traj[2] = rh1[2] + cap->d_source - calc[thread_id].rh[2];
 		ds = sqrt(scalar(delta_traj,delta_traj));
-		calc[*thread_id].traj_length = calc[*thread_id].traj_length + ds;
+		calc[thread_id].traj_length = calc[thread_id].traj_length + ds;
 		//store new interaction coordinates in appropriate array
-		calc[*thread_id].rh[0] = rh1[0];
-		calc[*thread_id].rh[1] = rh1[1];
-		calc[*thread_id].rh[2] = rh1[2] + cap->d_source;
+		calc[thread_id].rh[0] = rh1[0];
+		calc[thread_id].rh[1] = rh1[1];
+		calc[thread_id].rh[2] = rh1[2] + cap->d_source;
 
 		if(fabs(calf) > 1.0){
 			printf("COS(alfa) > 1\n");
-			calc[*thread_id].iesc = -1;
+			calc[thread_id].iesc = -1;
 			}
 			else
 			{
 			alf = acos(calf);
 			alf = M_PI/(double)2 - alf;
-			w0 = calc[*thread_id].w[0];
+			w0 = calc[thread_id].w[0];
 
-			calc[*thread_id].iesc = reflect(alf,cap,absmu,profile,leaks,calc,thread_id);
+			calc[thread_id].iesc = reflect(alf,cap,absmu,profile,leaks,calc,thread_id);
 
-			if(calc[*thread_id].iesc != -2){
-				w1 = calc[*thread_id].w[0];
-				calc[*thread_id].absorb[calc[*thread_id].ix] = calc[*thread_id].absorb[calc[*thread_id].ix] + (double)(w0-w1);
+			if(calc[thread_id].iesc != -2){
+				w1 = calc[thread_id].w[0];
+				calc[thread_id].absorb[calc[thread_id].ix] = calc[thread_id].absorb[calc[thread_id].ix] + (double)(w0-w1);
 
 				salf2 = (double)2.*sin(alf);
-				calc[*thread_id].v[0] = calc[*thread_id].v[0] - salf2*rn[0];
-				calc[*thread_id].v[1] = calc[*thread_id].v[1] - salf2*rn[1];
-				calc[*thread_id].v[2] = calc[*thread_id].v[2] - salf2*rn[2];
+				calc[thread_id].v[0] = calc[thread_id].v[0] - salf2*rn[0];
+				calc[thread_id].v[1] = calc[thread_id].v[1] - salf2*rn[1];
+				calc[thread_id].v[2] = calc[thread_id].v[2] - salf2*rn[2];
 
-				norm(calc[*thread_id].v, (int)3);
-				calc[*thread_id].i_refl++; //add a reflection
+				norm(calc[thread_id].v, (int)3);
+				calc[thread_id].i_refl++; //add a reflection
 				}
 			}
 		}
@@ -782,7 +782,7 @@ void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap
 	return;
 	}
 // ---------------------------------------------------------------------------------------------------
-void count(struct mumc *absmu, struct inp_file *cap, int *icount, struct cap_profile *profile, struct leakstruct *leaks, struct image_struct *imstr, struct calcstruct *calc, int *thread_id)
+void count(struct mumc *absmu, struct inp_file *cap, int *icount, struct cap_profile *profile, struct leakstruct *leaks, struct image_struct *imstr, struct calcstruct *calc, int thread_id)
 	{
 	int i;
 	double cc; //distance between last interaction and capillary exit, divided by propagation vector in z
@@ -797,9 +797,9 @@ void count(struct mumc *absmu, struct inp_file *cap, int *icount, struct cap_pro
 	int ind_x, ind_y; //indices of spot array corresponding to photon coordinate on screen
 
 	//simulate hexagonal polycapillary housing
-	cc = ((cap->d_source+profile->cl)-calc[*thread_id].rh[2])/calc[*thread_id].v[2];
-	xpend  = calc[*thread_id].rh[0] + cc*calc[*thread_id].v[0];
-	ypend  = calc[*thread_id].rh[1] + cc*calc[*thread_id].v[1];
+	cc = ((cap->d_source+profile->cl)-calc[thread_id].rh[2])/calc[thread_id].v[2];
+	xpend  = calc[thread_id].rh[0] + cc*calc[thread_id].v[0];
+	ypend  = calc[thread_id].rh[1] + cc*calc[thread_id].v[1];
 	v_hex1[0] = 0; //vert hex edges x vector
 	v_hex1[1] = 1; //vert hex edges y vector
 	v_hex2[0] = cos(M_PI/6); //upper right and lower left edges x vector
@@ -813,43 +813,43 @@ void count(struct mumc *absmu, struct inp_file *cap, int *icount, struct cap_pro
 	dp3 = fabs(v_hex3[0]*xpend + v_hex3[1]*ypend);
 	if(dp1 > hex_edge_dist || dp2 > hex_edge_dist || dp3 > hex_edge_dist){
 		//photon is outside of PC exit area
-		calc[*thread_id].iesc = -3;
+		calc[thread_id].iesc = -3;
 		}
 		else //photon inside PC exit area
 		{
 		for(i=0; i <= absmu->n_energy; i++){
-			calc[*thread_id].cnt[i] = calc[*thread_id].cnt[i] + calc[*thread_id].w[i];
-			if(calc[*thread_id].cnt[i] != calc[*thread_id].cnt[i]){
+			calc[thread_id].cnt[i] = calc[thread_id].cnt[i] + calc[thread_id].w[i];
+			if(calc[thread_id].cnt[i] != calc[thread_id].cnt[i]){
 				printf("thread: %d, icount: %d, cnt[%d]: %f, w[%d]: %f\n",
-					*thread_id,*icount,i,calc[*thread_id].cnt[i],i,calc[*thread_id].w[i]);
+					thread_id,*icount,i,calc[thread_id].cnt[i],i,calc[thread_id].w[i]);
 				exit(0);
 				}
 			} //for(i=0; i <= absmu->n_energy; i++)
 
-		c = (cap->d_screen - calc[*thread_id].rh[2]) / calc[*thread_id].v[2];
-		xp = (float)(calc[*thread_id].rh[0] + c*calc[*thread_id].v[0]);
-		yp = (float)(calc[*thread_id].rh[1] + c*calc[*thread_id].v[1]);
+		c = (cap->d_screen - calc[thread_id].rh[2]) / calc[thread_id].v[2];
+		xp = (float)(calc[thread_id].rh[0] + c*calc[thread_id].v[0]);
+		yp = (float)(calc[thread_id].rh[1] + c*calc[thread_id].v[1]);
 
-		delta_traj[0] = c*calc[*thread_id].v[0];
-		delta_traj[1] = c*calc[*thread_id].v[1];
-		delta_traj[2] = c*calc[*thread_id].v[2];
+		delta_traj[0] = c*calc[thread_id].v[0];
+		delta_traj[1] = c*calc[thread_id].v[1];
+		delta_traj[2] = c*calc[thread_id].v[2];
 		ds = sqrt(scalar(delta_traj,delta_traj));
-		calc[*thread_id].traj_length = calc[*thread_id].traj_length + ds;
+		calc[thread_id].traj_length = calc[thread_id].traj_length + ds;
 
 		ind_x = (int)floor(xp/profile->binsize)+NSPOT/2;
 		ind_y = (int)floor(yp/profile->binsize)+NSPOT/2;
 		if(ind_x < NSPOT && ind_x >= 0){
 			if(ind_y < NSPOT && ind_y >= 0){
-				leaks->spot[ind_x][ind_y] = leaks->spot[ind_x][ind_y] + calc[*thread_id].w[0];
+				leaks->spot[ind_x][ind_y] = leaks->spot[ind_x][ind_y] + calc[thread_id].w[0];
 				}
 			}
 
 		if(*icount <= IMSIZE-1){
 			imstr[*icount].xm = yp;
 			imstr[*icount].ym = xp;
-			imstr[*icount].xm1 = (float)calc[*thread_id].v[1];
-			imstr[*icount].ym1 = (float)calc[*thread_id].v[0];
-			imstr[*icount].warr = calc[*thread_id].w[0];
+			imstr[*icount].xm1 = (float)calc[thread_id].v[1];
+			imstr[*icount].ym1 = (float)calc[thread_id].v[0];
+			imstr[*icount].warr = calc[thread_id].w[0];
 			}
 		} //if(dp1 > hex_edge_dist || dp2 > hex_edge_dist || dp3 > hex_edge_dist) ... else ...
 	return;
@@ -1054,12 +1054,12 @@ int main(int argc, char *argv[])
 		thread_id = omp_get_thread_num();
 		do{
 			do{
-				start(absmu, profile, &pcap_ini, &cap, &icount, imstr, calc, &thread_id);
+				start(absmu, profile, &pcap_ini, &cap, &icount, imstr, calc, thread_id);
 				do{
-					capil(absmu, profile, &cap, leaks, calc, &thread_id);
+					capil(absmu, profile, &cap, leaks, calc, thread_id);
 					} while(calc[thread_id].iesc == 0);
 				} while(calc[thread_id].iesc == -2);
-			count(absmu, &cap, &icount, profile, leaks, imstr,calc, &thread_id);
+			count(absmu, &cap, &icount, profile, leaks, imstr,calc, thread_id);
 			} while(calc[thread_id].iesc == -3);
 		sum_irefl[thread_id] = sum_irefl[thread_id] + calc[thread_id].i_refl;
 		if(thread_id == 0 && (float)i/((float)cap.ndet/(float)thread_cnt/10.) >= 1.){
