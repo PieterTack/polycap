@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <stdint.h>
 #include <omp.h> /* openmp header */
 #include <limits.h>
 #include <float.h>
@@ -136,7 +137,7 @@ struct image_struct
 
 struct countvars
   {
-  long i_refl, istart, ienter;
+  int64_t i_refl, istart, ienter;
   double rh[3],v[3], traj_length, phase, amplitude; /*amplitude never really used*/
   float *w; /*actually dimension of n_energy+1*/
   };
@@ -148,9 +149,9 @@ struct calcstruct
   polycap_rng *rn;
   float *cnt;
   double *absorb;
-  long i_refl;
-  long istart;
-  long ienter;
+  int64_t i_refl;
+  int64_t istart;
+  int64_t ienter;
   double rh[3];
   double v[3];
   double traj_length;
@@ -566,7 +567,7 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 	double gamma, w_gamma; //photon origin to selected capillary angle and weight (cos(gamma))
 	double c; //distance bridged by photon between source and selected capillary
 
-	calc[*thread_id].i_refl = (long)0;
+	calc[*thread_id].i_refl = 0;
 
 	for(i=0; i <= absmu->n_energy; i++) calc[*thread_id].w[i] = (float)1;
 	dx = 2e9; //set dx very high so it is certainly > single capillary radius (profil)
@@ -701,7 +702,7 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 // ---------------------------------------------------------------------------------------------------
 void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap, struct leakstruct *leaks, struct calcstruct *calc, int *thread_id)
 	{
-	long i;
+	int64_t i;
 	double s0[3], s1[3]; //selected capillary axis coordinates
 	double rad0, rad1; //capillary radius
 	double rh1[3]; //essentially coordinates of photon in capillary at last interaction
@@ -869,12 +870,12 @@ int main(int argc, char *argv[])
 	struct image_struct *imstr;
 	struct countvars *ctvar;
 	struct calcstruct *calc;
-	long *sum_irefl;
+	int64_t *sum_irefl;
 	double *absorb_sum;
 	float*sum_cnt;
 	const polycap_rng_type *T = polycap_rng_mt19937; //Mersenne twister rng
 	int icount=0, thread_id=0;
-	long sum_refl=0, sum_istart=0, sum_ienter=0; //amount of reflected, started and entered photons
+	int64_t sum_refl=0, sum_istart=0, sum_ienter=0; //amount of reflected, started and entered photons
 	float ave_refl; //average amount of reflections
 	FILE *fptr; //pointer to access files
 	float e=0;
@@ -944,8 +945,8 @@ int main(int argc, char *argv[])
 		printf("Could not allocate ctvar->w memory.\n");
 		exit(0);
 		}
-	ctvar->istart = (long)0;
-	ctvar->ienter = (long)0;
+	ctvar->istart = 0;
+	ctvar->ienter = 0;
 
 	// create large structure containing all variables that should be private for one thread
 	// (can't use private command because this command does not handle pointers well, so instead
@@ -1015,8 +1016,8 @@ int main(int argc, char *argv[])
 		calc[i].phase = ctvar->phase;
 		calc[i].amplitude = ctvar->amplitude;
 		calc[i].iesc = *iesc;
-		calc[i].ix = 0.;
-		sum_irefl[i] = (long)0.;
+		calc[i].ix = 0;
+		sum_irefl[i] = 0;
 		for(j=0;j<3;j++){
 			calc[i].rh[j] = ctvar->rh[j];
 			calc[i].v[j] = ctvar->v[j];
@@ -1062,7 +1063,7 @@ int main(int argc, char *argv[])
 			} while(calc[thread_id].iesc == -3);
 		sum_irefl[thread_id] = sum_irefl[thread_id] + calc[thread_id].i_refl;
 		if(thread_id == 0 && (float)i/((float)cap.ndet/(float)thread_cnt/10.) >= 1.){
-			printf("%d%%\t%ld\t%f\n",((icount*100)/(cap.ndet/thread_cnt)),calc[0].i_refl,calc[0].rh[2]);
+			printf("%d%%\t%lld\t%f\n",((icount*100)/(cap.ndet/thread_cnt)),calc[0].i_refl,calc[0].rh[2]);
 			i=0;
 			}
 		i++;//counter just to follow % completed
@@ -1155,7 +1156,7 @@ int main(int argc, char *argv[])
 			sum_cnt[i]/(float)sum_ienter*pcap_ini.eta, sum_cnt[i]/(float)sum_istart,
 			(float)sum_ienter/(float)sum_istart, leaks->leak[i]/(float)sum_ienter);
 		}
-	fprintf(fptr,"\nThe started photons: %ld\n",sum_istart);
+	fprintf(fptr,"\nThe started photons: %lld\n",sum_istart);
 	fprintf(fptr,"\nAverage number of reflections: %f\n",ave_refl);
 	fclose(fptr);
 
