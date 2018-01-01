@@ -53,7 +53,7 @@ before_install:
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
       brew install git autoconf automake libtool curl wget pkg-config || exit 1
-      brew install $HOMEBREW_ARGS homebrew/science/xraylib || exit 1
+      brew install $HOMEBREW_ARGS tschoonj/tap/xraylib || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
     fi
