@@ -865,6 +865,15 @@ struct calcstruct *init_calcstruct(unsigned long int seed, struct cap_profile *p
 }
 
 // ---------------------------------------------------------------------------------------------------
+struct polycapshapestruct *pc_shape(unsigned long int shape, double length, double *rad_ext, double *rad_int, double open_area, double *v_axis){
+
+
+
+
+
+}
+
+// ---------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
 // Main polycap program
 int main(int argc, char *argv[])
