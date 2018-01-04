@@ -865,10 +865,52 @@ struct calcstruct *init_calcstruct(unsigned long int seed, struct cap_profile *p
 }
 
 // ---------------------------------------------------------------------------------------------------
-struct polycapshapestruct *pc_shape(unsigned long int shape, double length, double *rad_ext, double *rad_int, double open_area, double *v_axis){
+struct cap_profile *def_cap_profile(unsigned long int shape, double length, double *rad_ext, double *rad_int, double open_area, double *v_axis){
+	struct cap_profile *profile = malloc(sizeof(struct cap_profile));
+	int i;
 
+	//Make profile array of sufficient memory size (999 points along PC profile should be sufficient)
+        if(profile == NULL){
+                printf("Could not allocate profile memory.\n");
+                exit(0);
+                }
+        profile->nmax = 999;
+        profile->arr = malloc(sizeof(struct cap_prof_arrays)*(profile->nmax+1));
+	        if(profile->arr == NULL){
+                printf("Could not allocate profile->arr memory.\n");
+                exit(0);
+                }
 
+	//Define some general parameters
+        profile->rtot1 = rad_ext[0];
+        profile->rtot2 = rad_ext[1];
+        profile->cl = length;
+        cap->d_screen = cap->d_screen + cap->d_source + profile->cl; //position of screen on z axis //perhaps better idea to update this variable after calling the routine
+        profile->binsize = 20.e-4;
 
+	//Define actual shape
+	switch(shape){
+		case 0: //conical
+			for(i=0;i<profile->nmax;i++){
+				profile->arr[i].zarr = length/profile->nmax*i //z coordinates, from 0 to length
+				profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0] //single capillary shape always conical
+				
+			}
+			break;
+
+		case 1: //paraboloidal
+
+			break;
+
+		case 2: //ellipsoidal
+
+			break;
+
+		default:
+
+			break;
+
+	}
 
 
 }
