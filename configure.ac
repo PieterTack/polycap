@@ -47,7 +47,6 @@ PKG_CHECK_MODULES([easyRNG],[easyRNG >= 1.1],
 	[
 	AC_DEFINE([HAVE_EASYRNG], [], [building with easyRNG support])
 	],[
-	PKG_CHECK_MODULES([gsl],[gsl])
 	])
 
 
