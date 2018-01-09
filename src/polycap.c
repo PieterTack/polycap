@@ -39,6 +39,12 @@
 #endif
 #include <complex.h> //complex numbers required for Fresnel equation (reflect)
 
+#ifndef _POLIFITGSL_H //used in describing polycapillary shape
+  #define _POLIFITGSL_H
+  #include <gsl/gsl_multifit.h>
+  #include <stdbool.h>
+#endif
+
 #define NELEM 92  /* The maximum number of elements possible  */
 #define IDIM 1000 /* The maximum number of capillary segments */
 #define NDIM 420  /* The number of scattering factors per element */
@@ -76,12 +82,18 @@ struct inp_file
   double e_final;
   double delta_e;
   int ndet;
+  int shape;
   char prf[80];
   char axs[80];
   char ext[80];
+  double length; //in cm
+  double rad_ext[2]; //PC external radius, in cm
+  double rad_int[2]; //single capillary radius, in cm
+  double focal_dist[2]; //focal distance at both sides of PC, in cm
   double n_chan;
   char out[80];
   };
+//cap.shape, length, rad_ext[2], rad_int[2], focal_dist[2]
 
 struct cap_prof_arrays
   {
@@ -155,6 +167,47 @@ struct calcstruct
   };
 
 // ---------------------------------------------------------------------------------------------------
+bool polynomialfit(int obs, int degree, 
+		   double *dx, double *dy, double *store) /* n, p */
+{
+  gsl_multifit_linear_workspace *ws;
+  gsl_matrix *cov, *X;
+  gsl_vector *y, *c;
+  double chisq;
+ 
+  int i, j;
+ 
+  X = gsl_matrix_alloc(obs, degree);
+  y = gsl_vector_alloc(obs);
+  c = gsl_vector_alloc(degree);
+  cov = gsl_matrix_alloc(degree, degree);
+ 
+  for(i=0; i < obs; i++) {
+    for(j=0; j < degree; j++) {
+      gsl_matrix_set(X, i, j, pow(dx[i], j));
+    }
+    gsl_vector_set(y, i, dy[i]);
+  }
+ 
+  ws = gsl_multifit_linear_alloc(obs, degree);
+  gsl_multifit_linear(X, y, c, cov, &chisq, ws);
+ 
+  /* store result ... */
+  for(i=0; i < degree; i++)
+  {
+    store[i] = gsl_vector_get(c, i);
+  }
+ 
+  gsl_multifit_linear_free(ws);
+  gsl_matrix_free(X);
+  gsl_matrix_free(cov);
+  gsl_vector_free(y);
+  gsl_vector_free(c);
+  return true; /* we do not "analyse" the result (cov matrix mainly)
+		  to know if the fit is "good" */
+}
+
+// ---------------------------------------------------------------------------------------------------
 // Read in input file
 struct inp_file read_cap_data(char *filename)
 	{
@@ -167,7 +220,6 @@ struct inp_file read_cap_data(char *filename)
 		printf("%s file does not exist!\n",filename);
 		exit(0);
 		}
-
 	fscanf(fptr,"%lf",&cap.sig_rough);
 	fscanf(fptr,"%lf %lf",&cap.sig_wave, &cap.corr_length); //currently dummies
 	fscanf(fptr,"%lf",&cap.d_source);
@@ -183,9 +235,14 @@ struct inp_file read_cap_data(char *filename)
 	fscanf(fptr,"%lf",&cap.density);
 	fscanf(fptr,"%lf %lf %lf",&cap.e_start,&cap.e_final,&cap.delta_e);
 	fscanf(fptr,"%d",&cap.ndet);
-	fscanf(fptr,"%s",cap.prf);
-	fscanf(fptr,"%s",cap.axs);
-	fscanf(fptr,"%s",cap.ext);
+	fscanf(fptr,"%lf",&cap.shape);
+	if(cap.shape == 0 || cap.shape == 1 || cap.shape == 2){
+		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&cap.length,&cap.rad_ext[0],&cap.rad_ext[1],&cap.rad_int[0],&cap.rad_int[1],&cap.focal_dist[0],&cap.focal_dist[1]);
+	} else { //additional files to describe (poly)capillary profile were supplied
+		fscanf(fptr,"%s",cap.prf);
+		fscanf(fptr,"%s",cap.axs);
+		fscanf(fptr,"%s",cap.ext);
+	}
 	fscanf(fptr,"%lf",&cap.n_chan);
 	fscanf(fptr,"%s",cap.out);
 	fclose(fptr);
@@ -865,53 +922,102 @@ struct calcstruct *init_calcstruct(unsigned long int seed, struct cap_profile *p
 }
 
 // ---------------------------------------------------------------------------------------------------
-struct cap_profile *def_cap_profile(unsigned long int shape, double length, double *rad_ext, double *rad_int, double open_area, double *v_axis){
+struct cap_profile *def_cap_profile(unsigned long int shape, double length, double rad_ext[2], double rad_int[2], double focal_dist[2]){
 	struct cap_profile *profile = malloc(sizeof(struct cap_profile));
-	int i;
+	int i,j;
+	double pc_x[4], pc_y[4], coeff[3];
+	double slope, b, k, a;
 
-	//Make profile array of sufficient memory size (999 points along PC profile should be sufficient)
-        if(profile == NULL){
-                printf("Could not allocate profile memory.\n");
-                exit(0);
+	if(shape == 0 || shape == 1 || shape ==2){
+		//Make profile array of sufficient memory size (999 points along PC profile should be sufficient)
+		if(profile == NULL){
+			printf("Could not allocate profile memory.\n");
+			exit(0);
+		}
+		profile->nmax = 999;
+		profile->arr = malloc(sizeof(struct cap_prof_arrays)*(profile->nmax+1));
+		if(profile->arr == NULL){
+			printf("Could not allocate profile->arr memory.\n");
+			exit(0);
                 }
-        profile->nmax = 999;
-        profile->arr = malloc(sizeof(struct cap_prof_arrays)*(profile->nmax+1));
-	        if(profile->arr == NULL){
-                printf("Could not allocate profile->arr memory.\n");
-                exit(0);
-                }
 
-	//Define some general parameters
-        profile->rtot1 = rad_ext[0];
-        profile->rtot2 = rad_ext[1];
-        profile->cl = length;
-        cap->d_screen = cap->d_screen + cap->d_source + profile->cl; //position of screen on z axis //perhaps better idea to update this variable after calling the routine
-        profile->binsize = 20.e-4;
+		//Define some general parameters
+		profile->rtot1 = rad_ext[0];
+		profile->rtot2 = rad_ext[1];
+		profile->cl = length;
+	        profile->binsize = 20.e-4;
+	}
 
-	//Define actual shape
+	//Define actual capillary and PC shape
 	switch(shape){
 		case 0: //conical
 			for(i=0;i<profile->nmax;i++){
-				profile->arr[i].zarr = length/profile->nmax*i //z coordinates, from 0 to length
-				profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0] //single capillary shape always conical
-				
+				profile->arr[i].zarr = length/profile->nmax*i; //z coordinates, from 0 to length
+				profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0]; //single capillary shape always conical
+				profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
+				profile->arr[i].sy = 0;	
+				profile->arr[i].d_arr = (rad_ext[1]-rad_ext[0])/length*profile->arr[i].zarr + rad_ext[0];
 			}
 			break;
 
 		case 1: //paraboloidal
+			//determine points to be part of polycap external shape, based on focii and external radii
+			pc_x[0] = 0.;
+			pc_y[0] = rad_ext[0];
+			pc_x[3] = length;
+			pc_y[3] = rad_ext[1];
+			if(foc_dist[0] <= length) pc_x[1] = foc_dist[0]/10. else pc_x[1] = length/10.; 
+			pc_y[1] = (rad_ext[0]-0.)/(0.-(-1.*focal_dist[0])) * (pc_x[1] - 0.) + rad_ext[0]; //extrapolate line between focus point and PC entrance
+			if(foc_dist[1] <= length) pc_x[2] = length-foc_dist[0]/10. else pc_x[2] = length-length/10.; 
+			pc_y[2] = (rad_ext[1]-0.)/(length-(length+focal_dist[1])) * (pc_x[2] - length) + rad_ext[1]; //extrapolate line between focus point and PC exit
+			polynomialfit(4, 3, pc_x, pc_y, coeff);
 
+			//calculate shape coordinates
+			for(i=0;i<profile->nmax;i++){
+				profile->arr[i].zarr = length/profile->nmax*i; //z coordinates, from 0 to length
+				profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0]; //single capillary shape always conical
+				profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
+				profile->arr[i].sy = 0;	
+				
+				profile->arr[i].d_arr = coeff[0]+coeff[1]*profile->arr[i].zarr+coeff[2]*profile->arr[i].zarr*profile->arr[i].zarr;
+			}
 			break;
 
-		case 2: //ellipsoidal
-
+		case 2: //ellipsoidal; side with largest radius has horizontal tangent, other side points towards focal_dist corresponding to smallest external radius
+			if(rad_ext[1] < rad_ext[0]){ //focussing alignment
+				slope = rad_ext[1] / focal_dist[1];
+				b = (-1.*(rad_ext[1]-rad_ext[0])*(rad_ext[1]-rad_ext[0])-slope*length*(rad_ext[1]-rad_ext[0])) / (slope*length+2.*(rad_ext[1]-rad_ext[0]));
+				k = rad_ext[0] - b;
+				a = sqrt((b*b*length)/(slope*(rad_ext[1]-k)));
+				for(i=0;i<profile->nmax;i++){
+					profile->arr[i].zarr = length/profile->nmax*i; //z coordinates, from 0 to length
+					profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0]; //single capillary shape always conical
+					profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
+					profile->arr[i].sy = 0;	
+					profile->arr[i].d_arr = sqrt(b*b-(b*b*profile->arr[i].zarr*profile->arr[i].zarr)/(a*a))+k;
+				}
+			} else { //confocal (collimating) alignment
+				slope = rad_ext[0] / focal_dist[0];
+				b = (-1.*(rad_ext[0]-rad_ext[1])*(rad_ext[0]-rad_ext[1])-slope*length*(rad_ext[0]-rad_ext[1])) / (slope*length+2.*(rad_ext[0]-rad_ext[1]));
+				k = rad_ext[1] - b;
+				a = sqrt((b*b*length)/(slope*(rad_ext[0]-k)));
+				j = profile->nmax-1;
+				for(i=0;i<profile->nmax;i++){
+					profile->arr[i].zarr = length/profile->nmax*i; //z coordinates, from 0 to length
+					profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0]; //single capillary shape always conical
+					profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
+					profile->arr[i].sy = 0;	
+					profile->arr[i].d_arr = sqrt(b*b-(b*b*profile->arr[j].zarr*profile->arr[j].zarr)/(a*a))+k;
+					j--;
+				}
+			}
 			break;
 
 		default:
-
 			break;
 
 	}
-
+	return profile;
 
 }
 
@@ -957,10 +1063,15 @@ int main(int argc, char *argv[])
 	cap = read_cap_data(argv[1]);
 	printf("   OK\n");
 	
-	// Read capillary profile file;
-	printf("Reading capillary profile files...\n");
-	profile = read_cap_profile(&cap);
-	printf("Capillary profiles read.\n");
+	// Read/create capillary profile data;
+	if(cap.shape == 0 || cap.shape == 1 || cap.shape ==2){
+		profile = def_cap_profile(cap.shape, cap.length, cap.rad_ext[2], cap.rad_int[2], cap.focal_dist[2]);
+		cap.d_screen = cap.d_screen + cap.d_source + profile->cl; //position of screen on z axis
+	} else {
+		printf("Reading capillary profile files...\n");
+		profile = read_cap_profile(&cap);
+		printf("Capillary profiles read.\n");
+	}
 
 	//Initialize
 	absmu = ini_mumc(&cap);
