@@ -29,6 +29,7 @@ matrix:
             - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable'
               key_url: 'http://xmi-apt.tomschoonjans.eu/xmi.packages.key'
           packages:
+            - libgsl0-dev
             - libeasyrng-dev
             - libxrl7-dev
     - os: osx
@@ -42,7 +43,7 @@ matrix:
       env: CC='/usr/local/opt/llvm/bin/clang' CXX='/usr/local/opt/llvm/bin/clang++' HOMEBREW_ARGS='llvm tschoonj/tap/easyrng' LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
     - os: osx
       sudo: required
-      env: CC='/usr/local/bin/gcc-7' CXX='/usr/local/bin/g++-7' HOMEBREW_ARGS='gcc@7 tschoonj/tap/easyrng'
+      env: CC='/usr/local/bin/gcc-7' CXX='/usr/local/bin/g++-7' HOMEBREW_ARGS='gcc@7 tschoonj/tap/easyrng gsl'
 
 before_install:
   - |
