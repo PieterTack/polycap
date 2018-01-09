@@ -232,7 +232,7 @@ struct inp_file read_cap_data(char *filename)
 	fscanf(fptr,"%lf",&cap.density);
 	fscanf(fptr,"%lf %lf %lf",&cap.e_start,&cap.e_final,&cap.delta_e);
 	fscanf(fptr,"%d",&cap.ndet);
-	fscanf(fptr,"%lf",&cap.shape);
+	fscanf(fptr,"%d",&cap.shape);
 	if(cap.shape == 0 || cap.shape == 1 || cap.shape == 2){
 		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&cap.length,&cap.rad_ext[0],&cap.rad_ext[1],&cap.rad_int[0],&cap.rad_int[1],&cap.focal_dist[0],&cap.focal_dist[1]);
 	} else { //additional files to describe (poly)capillary profile were supplied
@@ -1063,6 +1063,7 @@ int main(int argc, char *argv[])
 	printf("   OK\n");
 	
 	// Read/create capillary profile data;
+printf("cap.shape: %lf\n",cap.shape);
 	if(cap.shape == 0 || cap.shape == 1 || cap.shape == 2){
 		profile = def_cap_profile(cap.shape, cap.length, cap.rad_ext, cap.rad_int, cap.focal_dist);
 		cap.d_screen = cap.d_screen + cap.d_source + profile->cl; //position of screen on z axis
