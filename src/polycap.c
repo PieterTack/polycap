@@ -966,9 +966,11 @@ struct cap_profile *def_cap_profile(unsigned long int shape, double length, doub
 			pc_y[0] = rad_ext[0];
 			pc_x[3] = length;
 			pc_y[3] = rad_ext[1];
-			if(foc_dist[0] <= length) pc_x[1] = foc_dist[0]/10. else pc_x[1] = length/10.; 
+			if(focal_dist[0] <= length) pc_x[1] = focal_dist[0]/10.;
+				else pc_x[1] = length/10.; 
 			pc_y[1] = (rad_ext[0]-0.)/(0.-(-1.*focal_dist[0])) * (pc_x[1] - 0.) + rad_ext[0]; //extrapolate line between focus point and PC entrance
-			if(foc_dist[1] <= length) pc_x[2] = length-foc_dist[0]/10. else pc_x[2] = length-length/10.; 
+			if(focal_dist[1] <= length) pc_x[2] = length-focal_dist[0]/10.;
+				else pc_x[2] = length-length/10.; 
 			pc_y[2] = (rad_ext[1]-0.)/(length-(length+focal_dist[1])) * (pc_x[2] - length) + rad_ext[1]; //extrapolate line between focus point and PC exit
 			polynomialfit(4, 3, pc_x, pc_y, coeff);
 
@@ -1065,7 +1067,7 @@ int main(int argc, char *argv[])
 	
 	// Read/create capillary profile data;
 	if(cap.shape == 0 || cap.shape == 1 || cap.shape ==2){
-		profile = def_cap_profile(cap.shape, cap.length, cap.rad_ext[2], cap.rad_int[2], cap.focal_dist[2]);
+		profile = def_cap_profile(cap.shape, cap.length, cap.rad_ext, cap.rad_int, cap.focal_dist);
 		cap.d_screen = cap.d_screen + cap.d_source + profile->cl; //position of screen on z axis
 	} else {
 		printf("Reading capillary profile files...\n");
