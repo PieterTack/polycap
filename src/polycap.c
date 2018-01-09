@@ -39,11 +39,8 @@
 #endif
 #include <complex.h> //complex numbers required for Fresnel equation (reflect)
 
-#ifndef _POLIFITGSL_H //used in describing polycapillary shape
-  #define _POLIFITGSL_H
-  #include <gsl/gsl_multifit.h>
-  #include <stdbool.h>
-#endif
+#include <gsl/gsl_multifit.h>
+#include <stdbool.h>
 
 #define NELEM 92  /* The maximum number of elements possible  */
 #define IDIM 1000 /* The maximum number of capillary segments */
@@ -1066,7 +1063,7 @@ int main(int argc, char *argv[])
 	printf("   OK\n");
 	
 	// Read/create capillary profile data;
-	if(cap.shape == 0 || cap.shape == 1 || cap.shape ==2){
+	if(cap.shape == 0 || cap.shape == 1 || cap.shape == 2){
 		profile = def_cap_profile(cap.shape, cap.length, cap.rad_ext, cap.rad_int, cap.focal_dist);
 		cap.d_screen = cap.d_screen + cap.d_source + profile->cl; //position of screen on z axis
 	} else {
