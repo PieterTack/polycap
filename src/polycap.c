@@ -921,7 +921,7 @@ struct calcstruct *init_calcstruct(unsigned long int seed, struct cap_profile *p
 // ---------------------------------------------------------------------------------------------------
 struct cap_profile *def_cap_profile(unsigned long int shape, double length, double rad_ext[2], double rad_int[2], double focal_dist[2]){
 	struct cap_profile *profile = malloc(sizeof(struct cap_profile));
-	int i,j;
+	int i;
 	double pc_x[4], pc_y[4], coeff[3];
 	double slope, b, k, a;
 
@@ -1005,10 +1005,7 @@ struct cap_profile *def_cap_profile(unsigned long int shape, double length, doub
 					profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0]; //single capillary shape always conical
 					profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
 					profile->arr[i].sy = 0;	
-				}
-				j = profile->nmax-1;
-				for(i=0;i<profile->nmax;i++){ //now profile->arr[].zarr array is properly defined, calculate d_arr
-					profile->arr[i].d_arr = sqrt(b*b-(b*b*profile->arr[j].zarr*profile->arr[j].zarr)/(a*a))+k;
+					profile->arr[i].d_arr = sqrt(b*b-(b*b*profile->arr[profile->nmax-1-i].zarr*profile->arr[profile->nmax-1-i].zarr)/(a*a))+k;
 					j--;
 				}
 			}
