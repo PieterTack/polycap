@@ -1000,12 +1000,14 @@ struct cap_profile *def_cap_profile(unsigned long int shape, double length, doub
 				b = (-1.*(rad_ext[0]-rad_ext[1])*(rad_ext[0]-rad_ext[1])-slope*length*(rad_ext[0]-rad_ext[1])) / (slope*length+2.*(rad_ext[0]-rad_ext[1]));
 				k = rad_ext[1] - b;
 				a = sqrt((b*b*length)/(slope*(rad_ext[0]-k)));
-				j = profile->nmax-1;
 				for(i=0;i<profile->nmax;i++){
 					profile->arr[i].zarr = length/profile->nmax*i; //z coordinates, from 0 to length
 					profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0]; //single capillary shape always conical
 					profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
 					profile->arr[i].sy = 0;	
+				}
+				j = profile->nmax-1;
+				for(i=0;i<profile->nmax;i++){ //now profile->arr[].zarr array is properly defined, calculate d_arr
 					profile->arr[i].d_arr = sqrt(b*b-(b*b*profile->arr[j].zarr*profile->arr[j].zarr)/(a*a))+k;
 					j--;
 				}
