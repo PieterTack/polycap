@@ -1006,7 +1006,6 @@ struct cap_profile *def_cap_profile(unsigned long int shape, double length, doub
 					profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
 					profile->arr[i].sy = 0;	
 					profile->arr[i].d_arr = sqrt(b*b-(b*b*profile->arr[profile->nmax-1-i].zarr*profile->arr[profile->nmax-1-i].zarr)/(a*a))+k;
-					j--;
 				}
 			}
 			break;
