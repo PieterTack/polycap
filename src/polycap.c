@@ -541,13 +541,26 @@ int segment(double s0[3], double s1[3], double rad0, double rad1, double rh1[3],
 	return iesc_local;
 	}
 // ---------------------------------------------------------------------------------------------------
+double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff){
+	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
+	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
+	double complex rtot; //reflectivity
+
+	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
+	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
+
+	rtot = ((complex double)theta - csqrt(cpow((complex double)theta,2) - 2.*(alfa - beta*I))) / ((complex double)theta + csqrt(cpow((complex double)theta,2) - 2.*(alfa - beta*I)));
+	rtot = creal(cpow(cabs(rtot),2.));
+
+	return rtot;
+}
+// ---------------------------------------------------------------------------------------------------
 int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_profile *profile, struct leakstruct *leaks, struct calcstruct *calc)
 	{
 	int i;
 	double desc; //distance in capillary at which photon escaped divided by propagation vector in z direction
 	double e; //energy
 	double cons1, r_rough;
-	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
 	double complex rtot; //reflectivity
 	double wleak;
 	double c; //distance between photon interaction and screen, divided by propagation vector in z direction
@@ -562,12 +575,9 @@ int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_pro
 		cons1 = (double)(1.01358e0*e)*alf*cap->sig_rough;
 		r_rough = exp(-1*cons1*cons1);
 
-		alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*cap->density)/(2*M_PI)) * absmu->arr[i].scatf;
-		beta = (double) (HC)/(4.*M_PI) * (absmu->arr[i].amu/e);
-
 		//reflectivity according to Fresnel expression
-		rtot = ((complex double)alf - csqrt(cpow((complex double)alf,2) - 2.*(alfa - beta*I))) / ((complex double)alf + csqrt(cpow((complex double)alf,2) - 2.*(alfa - beta*I)));
-		rtot = creal(cpow(cabs(rtot),2.));
+		rtot = polycap_refl(e, alf, cap->density, absmu->arr[i].scatf, absmu->arr[i].amu);
+
 		//printf("Energy: %f, creal(rtot): %lf, cimag(rtot): %lf\n",e, creal(rtot), cimag(rtot));
 		wleak = (1.-rtot) * calc->w[i] * exp(-1.*desc * absmu->arr[i].amu);
 		leaks->leak[i] = leaks->leak[i] + wleak;
@@ -1061,7 +1071,6 @@ int main(int argc, char *argv[])
 	printf("   OK\n");
 	
 	// Read/create capillary profile data;
-printf("cap.shape: %lf\n",cap.shape);
 	if(cap.shape == 0 || cap.shape == 1 || cap.shape == 2){
 		profile = def_cap_profile(cap.shape, cap.length, cap.rad_ext, cap.rad_int, cap.focal_dist);
 		cap.d_screen = cap.d_screen + cap.d_source + profile->cl; //position of screen on z axis
