@@ -1,3 +1,11 @@
+#ifndef POLYCAP_H
+#define POLYCAP_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 // Libraries to include
 #include "config.h"
 #include <stdio.h>
@@ -98,8 +106,11 @@ struct cap_profile *def_cap_profile(unsigned long int shape, double length, doub
 
 
 
+#ifdef __cplusplus
+}
+#endif
 
-
+#endif /* POLYCAP_H */
 
 
 

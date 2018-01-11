@@ -47,9 +47,6 @@
 #define NDIM 420  /* The number of scattering factors per element */
 #define NSPOT 1000  /* The number of bins in the grid for the spot*/
 #define IMSIZE 500001
-//#define CALFA 4.15189e-4   /* E = [KEV] ! */
-//#define CBETA 9.86643e-9   /* E = [KEV] ! */
-//#define C 299792458//light speed [m/s]
 #define HC 1.23984193E-7 //h*c [keV*cm]
 #define N_AVOG 6.022098e+23 //Avogadro constant
 #define R0 2.8179403227e-13 //classical electron radius [cm]
@@ -80,17 +77,16 @@ struct inp_file
   double delta_e;
   int ndet;
   int shape;
-  char prf[80];
-  char axs[80];
-  char ext[80];
+  char *prf;
+  char *axs;
+  char *ext;
   double length; //in cm
   double rad_ext[2]; //PC external radius, in cm
   double rad_int[2]; //single capillary radius, in cm
   double focal_dist[2]; //focal distance at both sides of PC, in cm
   double n_chan;
-  char out[80];
+  char *out;
   };
-//cap.shape, length, rad_ext[2], rad_int[2], focal_dist[2]
 
 struct cap_prof_arrays
   {
@@ -205,6 +201,34 @@ bool polynomialfit(int obs, int degree,
 }
 
 // ---------------------------------------------------------------------------------------------------
+char *polycap_read_input_line(FILE *fptr)
+{
+	char *strPtr;
+	unsigned int j = 0;
+	int ch;
+	unsigned int str_len_max = 128;
+	unsigned int str_current_size = 0;
+
+	//assign initial string memory size
+	strPtr = malloc(str_len_max);
+	if(strPtr == NULL){
+		printf("Could not allocate strPtr memory.\n");
+		exit(0);
+        }
+
+	//read in line character by character
+	while( (ch = fgetc(fptr)) != '\n' && ch != EOF){
+		strPtr[j++] = ch;
+		//if j reached max size, then realloc size
+		if(j == str_current_size){
+			str_current_size = j + str_len_max;
+			strPtr = realloc(strPtr,str_current_size);
+		}
+	}
+	strPtr[j++] = '\0';
+	return realloc(strPtr, sizeof(char)*j);
+}
+// ---------------------------------------------------------------------------------------------------
 // Read in input file
 struct inp_file read_cap_data(char *filename)
 	{
@@ -216,7 +240,7 @@ struct inp_file read_cap_data(char *filename)
 	if(fptr == NULL){
 		printf("%s file does not exist!\n",filename);
 		exit(0);
-		}
+	}
 	fscanf(fptr,"%lf",&cap.sig_rough);
 	fscanf(fptr,"%lf %lf",&cap.sig_wave, &cap.corr_length); //currently dummies
 	fscanf(fptr,"%lf",&cap.d_source);
@@ -228,7 +252,7 @@ struct inp_file read_cap_data(char *filename)
 	for(i=0; i<cap.nelem; i++){
 		fscanf(fptr,"%d %lf",&cap.iz[i],&cap.wi[i]);
 		cap.wi[i] /= 100.0;
-		}
+	}
 	fscanf(fptr,"%lf",&cap.density);
 	fscanf(fptr,"%lf %lf %lf",&cap.e_start,&cap.e_final,&cap.delta_e);
 	fscanf(fptr,"%d",&cap.ndet);
@@ -236,12 +260,14 @@ struct inp_file read_cap_data(char *filename)
 	if(cap.shape == 0 || cap.shape == 1 || cap.shape == 2){
 		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&cap.length,&cap.rad_ext[0],&cap.rad_ext[1],&cap.rad_int[0],&cap.rad_int[1],&cap.focal_dist[0],&cap.focal_dist[1]);
 	} else { //additional files to describe (poly)capillary profile were supplied
-		fscanf(fptr,"%s",cap.prf);
-		fscanf(fptr,"%s",cap.axs);
-		fscanf(fptr,"%s",cap.ext);
+		i=fgetc(fptr); //reads in \n from last line still
+		cap.prf = polycap_read_input_line(fptr);
+		cap.axs = polycap_read_input_line(fptr);
+		cap.ext = polycap_read_input_line(fptr);
 	}
 	fscanf(fptr,"%lf",&cap.n_chan);
-	fscanf(fptr,"%s",cap.out);
+	i=fgetc(fptr); //reads in \n from last line still
+	cap.out = polycap_read_input_line(fptr);
 	fclose(fptr);
 
 	return cap;
