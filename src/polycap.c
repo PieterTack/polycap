@@ -5,17 +5,11 @@
 // ---------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
 #include "config.h"
-#include <stdio.h>
+#include "polycap.h"
 #ifdef _WIN32
   #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
 #endif
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <stdint.h>
 #include <omp.h> /* openmp header */
-#include <limits.h>
-#include <xraylib.h>
 #ifdef HAVE_EASYRNG
   #include <easy_rng.h>
   #include <easy_randist.h>
@@ -37,18 +31,10 @@
   #define polycap_rng_uniform(rng) gsl_rng_uniform(rng)
   #define polycap_rng_mt19937 gsl_rng_mt19937
 #endif
-#include <complex.h> //complex numbers required for Fresnel equation (reflect)
-
-#include <gsl/gsl_multifit.h>
-#include <stdbool.h>
 
 #define NSPOT 1000  /* The number of bins in the grid for the spot*/
 #define IMSIZE 500001
-#define HC 1.23984193E-7 //h*c [keV*cm]
-#define N_AVOG 6.022098e+23 //Avogadro constant
-#define R0 2.8179403227e-13 //classical electron radius [cm]
 #define DELTA 1.e-10
-#define EPSILON 1.0e-30
 
 // ---------------------------------------------------------------------------------------------------
 // Define structures
@@ -204,7 +190,7 @@ char *polycap_read_input_line(FILE *fptr)
 	unsigned int j = 0;
 	int ch;
 	unsigned int str_len_max = 128;
-	unsigned int str_current_size = 0;
+	unsigned int str_current_size = 128;
 
 	//assign initial string memory size
 	strPtr = malloc(str_len_max);
