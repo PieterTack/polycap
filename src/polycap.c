@@ -42,9 +42,6 @@
 #include <gsl/gsl_multifit.h>
 #include <stdbool.h>
 
-#define NELEM 92  /* The maximum number of elements possible  */
-#define IDIM 1000 /* The maximum number of capillary segments */
-#define NDIM 420  /* The number of scattering factors per element */
 #define NSPOT 1000  /* The number of bins in the grid for the spot*/
 #define IMSIZE 500001
 #define HC 1.23984193E-7 //h*c [keV*cm]
@@ -69,8 +66,8 @@ struct inp_file
   double src_shiftx;
   double src_shifty;
   int nelem;
-  int iz[NELEM];
-  double wi[NELEM];
+  int *iz;
+  double *wi;
   double density;
   double e_start;
   double e_final;
@@ -249,6 +246,16 @@ struct inp_file read_cap_data(char *filename)
 	fscanf(fptr,"%lf %lf",&cap.src_sigx, &cap.src_sigy);
 	fscanf(fptr,"%lf %lf",&cap.src_shiftx, &cap.src_shifty);
 	fscanf(fptr,"%d",&cap.nelem);
+	cap.iz = malloc(cap.nelem*sizeof(cap.iz[0]));
+	if(cap.iz == NULL){
+		printf("Could not allocate cap.iz memory.\n");
+		exit(0);
+	}
+	cap.wi = malloc(cap.nelem*sizeof(cap.wi[0]));
+	if(cap.wi == NULL){
+		printf("Could not allocate cap.wi memory.\n");
+		exit(0);
+	}
 	for(i=0; i<cap.nelem; i++){
 		fscanf(fptr,"%d %lf",&cap.iz[i],&cap.wi[i]);
 		cap.wi[i] /= 100.0;
