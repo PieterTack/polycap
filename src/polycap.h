@@ -6,18 +6,6 @@ extern "C" {
 #endif
 
 
-// Libraries to include
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <stdint.h>
-#include <limits.h>
-#include <xraylib.h>
-#include <complex.h> //complex numbers required for Fresnel equation (reflect)
-#include <gsl/gsl_multifit.h>
-#include <stdbool.h>
-
 //Define constants
 #define HC 1.23984193E-7 //h*c [keV*cm]
 #define N_AVOG 6.022098e+23 //Avogadro constant

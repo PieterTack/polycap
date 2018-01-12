@@ -10,6 +10,17 @@
   #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
 #endif
 #include <omp.h> /* openmp header */
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <stdint.h>
+#include <limits.h>
+#include <xraylib.h>
+#include <complex.h> //complex numbers required for Fresnel equation (reflect)
+#include <gsl/gsl_multifit.h>
+#include <stdbool.h>
+
 #ifdef HAVE_EASYRNG
   #include <easy_rng.h>
   #include <easy_randist.h>
