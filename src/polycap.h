@@ -18,8 +18,6 @@ struct inp_file;
 struct cap_profile;
 
 // Functions
-struct mumc *ini_mumc(struct inp_file *cap); // Calculate total cross sections and scatter factor
-int segment(double s0[3], double s1[3], double rad0, double rad1, double rh1[3], double v[3], double rn[3], double *calf); // calculates the intersection point coordinates of the photon trajectory and a given linear segment of the capillary wall
 double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff); //calculates reflectivity according to Fresnel equation
 struct cap_profile *def_cap_profile(unsigned long int shape, double length, double rad_ext[2], double rad_int[2], double focal_dist[2]); //calculates polycapillary shapes (shape 0: cone, 1: paraboloid, 2: ellipsoid)
 

@@ -1,157 +1,3 @@
-//Polycap program, based on Laszlo Vincze's code.
-//Reworked for more clear overview of simulation + simulation of confocally arranged optics
-//Date of birth: 20171102
-
-// ---------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------
-#include "config.h"
-#include "polycap.h"
-#ifdef _WIN32
-  #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
-#endif
-#include <omp.h> /* openmp header */
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <stdint.h>
-#include <limits.h>
-#include <xraylib.h>
-#include <complex.h> //complex numbers required for Fresnel equation (reflect)
-#include <gsl/gsl_multifit.h>
-#include <stdbool.h>
-
-#ifdef HAVE_EASYRNG
-  #include <easy_rng.h>
-  #include <easy_randist.h>
-  typedef easy_rng_type polycap_rng_type;
-  typedef easy_rng polycap_rng;
-  #define polycap_rng_alloc(T) easy_rng_alloc(T)
-  #define polycap_rng_free(rng) easy_rng_free(rng)
-  #define polycap_rng_set(rng, seed) easy_rng_set(rng, seed)
-  #define polycap_rng_uniform(rng) easy_rng_uniform(rng)
-  #define polycap_rng_mt19937 easy_rng_mt19937
-#else
-  #include <gsl/gsl_rng.h>
-  #include <gsl/gsl_randist.h>
-  typedef gsl_rng_type polycap_rng_type;
-  typedef gsl_rng polycap_rng;
-  #define polycap_rng_alloc(T) gsl_rng_alloc(T)
-  #define polycap_rng_free(rng) gsl_rng_free(rng)
-  #define polycap_rng_set(rng, seed) gsl_rng_set(rng, seed)
-  #define polycap_rng_uniform(rng) gsl_rng_uniform(rng)
-  #define polycap_rng_mt19937 gsl_rng_mt19937
-#endif
-
-#define NSPOT 1000  /* The number of bins in the grid for the spot*/
-#define IMSIZE 500001
-#define DELTA 1.e-10
-
-// ---------------------------------------------------------------------------------------------------
-// Define structures
-struct inp_file
-  {
-  double sig_rough;
-  double sig_wave;
-  double corr_length;
-  double d_source;
-  double d_screen;
-  double src_x;
-  double src_y;
-  double src_sigx;
-  double src_sigy;
-  double src_shiftx;
-  double src_shifty;
-  int nelem;
-  int *iz;
-  double *wi;
-  double density;
-  double e_start;
-  double e_final;
-  double delta_e;
-  int ndet;
-  int shape;
-  char *prf;
-  char *axs;
-  char *ext;
-  double length; //in cm
-  double rad_ext[2]; //PC external radius, in cm
-  double rad_int[2]; //single capillary radius, in cm
-  double focal_dist[2]; //focal distance at both sides of PC, in cm
-  double n_chan;
-  char *out;
-  };
-
-struct cap_prof_arrays
-  {
-  double zarr;
-  double profil;
-  double sx;
-  double sy;
-  double d_arr;
-  };
-
-struct cap_profile
-  {
-  int nmax; /*nr of points defined along capillary profile*/
-  double rtot1; /*radius at start position*/
-  double rtot2; /*radius at end position*/
-  double cl;	/*capillary length*/
-  double binsize; /*20.e-4 cm*/
-  struct cap_prof_arrays *arr; /* will get proper size allocated to it later */
-  };
-
-struct amu_cnt
-  {
-  double amu;
-  double cnt;
-  double scatf;
-  };
-
-struct mumc
-  {
-  int n_energy;
-  struct amu_cnt *arr; /* Actual size defined later (n_energy+1)*double */
-  };
-
-struct leakstruct
-  {
-  double spot[NSPOT][NSPOT], lspot[NSPOT][NSPOT];
-  double *leak;
-  };
-
-struct ini_polycap
-  {
-  double eta, n_chan_max; /* estimated open area, n_chan*/
-  double cap_unita[2]; /* 2*chan_rad, 0 */
-  double cap_unitb[2]; /* 2*chan_rad*cos(60), 2*chan_rad*sin(60) */
-  };
-
-struct image_struct
-  {
-  double xsou, ysou, xsou1, ysou1, wsou;
-  double xm, ym, xm1, ym1, warr;
-  };
-
-struct calcstruct
-  {
-  double *sx;
-  double *sy;
-  polycap_rng *rn;
-  double *cnt;
-  double *absorb;
-  int64_t i_refl;
-  int64_t istart;
-  int64_t ienter;
-  double rh[3];
-  double v[3];
-  double traj_length;
-  double phase;
-  double amplitude;
-  double *w;
-  int iesc;
-  int ix;
-  };
 
 // ---------------------------------------------------------------------------------------------------
 bool polynomialfit(int obs, int degree, 
@@ -224,42 +70,44 @@ char *polycap_read_input_line(FILE *fptr)
 }
 // ---------------------------------------------------------------------------------------------------
 // Read in input file
-struct inp_file read_cap_data(char *filename)
+struct inp_file read_cap_data(char *filename, struct cap_profile *profile, struct polycap_source *source)
 	{
 	FILE *fptr;
 	int i;
 	struct inp_file cap;
+	struct cap_profile *profile = malloc(sizeof(struct cap_profile));
+	struct polycap_source *source = malloc(sizeof(struct polycap_source));
 
 	fptr = fopen(filename,"r");
 	if(fptr == NULL){
 		printf("%s file does not exist!\n",filename);
 		exit(0);
 	}
-	fscanf(fptr,"%lf",&cap.sig_rough);
+	fscanf(fptr,"%lf",profile.sig_rough);
 	fscanf(fptr,"%lf %lf",&cap.sig_wave, &cap.corr_length); //currently dummies
-	fscanf(fptr,"%lf",&cap.d_source);
-	fscanf(fptr,"%lf",&cap.d_screen);
-	fscanf(fptr,"%lf %lf",&cap.src_x, &cap.src_y);
-	fscanf(fptr,"%lf %lf",&cap.src_sigx, &cap.src_sigy);
-	fscanf(fptr,"%lf %lf",&cap.src_shiftx, &cap.src_shifty);
-	fscanf(fptr,"%d",&cap.nelem);
-	cap.iz = malloc(cap.nelem*sizeof(cap.iz[0]));
-	if(cap.iz == NULL){
-		printf("Could not allocate cap.iz memory.\n");
+	fscanf(fptr,"%lf",source.d_source);
+	fscanf(fptr,"%lf",source.d_screen);
+	fscanf(fptr,"%lf %lf",source.src_x, source.src_y);
+	fscanf(fptr,"%lf %lf",source.src_sigx, source.src_sigy);
+	fscanf(fptr,"%lf %lf",source.src_shiftx, source.src_shifty);
+	fscanf(fptr,"%d",profile.nelem);
+	profile.iz = malloc(profile->nelem*sizeof(profile.iz[0]));
+	if(profile.iz == NULL){
+		printf("Could not allocate profile.iz memory.\n");
 		exit(0);
 	}
-	cap.wi = malloc(cap.nelem*sizeof(cap.wi[0]));
-	if(cap.wi == NULL){
-		printf("Could not allocate cap.wi memory.\n");
+	profile.wi = malloc(profile->nelem*sizeof(profile.wi[0]));
+	if(profile.wi == NULL){
+		printf("Could not allocate profile.wi memory.\n");
 		exit(0);
 	}
-	for(i=0; i<cap.nelem; i++){
-		fscanf(fptr,"%d %lf",&cap.iz[i],&cap.wi[i]);
-		cap.wi[i] /= 100.0;
+	for(i=0; i<profile->nelem; i++){
+		fscanf(fptr,"%d %lf",profile.iz[i],profile.wi[i]);
+		profile.wi[i] /= 100.0;
 	}
-	fscanf(fptr,"%lf",&cap.density);
-	fscanf(fptr,"%lf %lf %lf",&cap.e_start,&cap.e_final,&cap.delta_e);
-	fscanf(fptr,"%d",&cap.ndet);
+	fscanf(fptr,"%lf",profile.density);
+	fscanf(fptr,"%lf %lf %lf",source.e_start,source.e_final,source.delta_e);
+	fscanf(fptr,"%d",source.ndet);
 	fscanf(fptr,"%d",&cap.shape);
 	if(cap.shape == 0 || cap.shape == 1 || cap.shape == 2){
 		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&cap.length,&cap.rad_ext[0],&cap.rad_ext[1],&cap.rad_int[0],&cap.rad_int[1],&cap.focal_dist[0],&cap.focal_dist[1]);
@@ -269,7 +117,7 @@ struct inp_file read_cap_data(char *filename)
 		cap.axs = polycap_read_input_line(fptr);
 		cap.ext = polycap_read_input_line(fptr);
 	}
-	fscanf(fptr,"%lf",&cap.n_chan);
+	fscanf(fptr,"%lf",profile.n_chan);
 	i=fgetc(fptr); //reads in \n from last line still
 	cap.out = polycap_read_input_line(fptr);
 	fclose(fptr);
@@ -278,7 +126,7 @@ struct inp_file read_cap_data(char *filename)
 	}
 // ---------------------------------------------------------------------------------------------------
 // Read in polycapillary profile data
-struct cap_profile *read_cap_profile(struct inp_file *cap)
+void read_cap_profile(struct inp_file *cap, struct cap_profile *profile)
 	{
 	FILE *fptr;
 	int i, n_tmp;
@@ -291,11 +139,6 @@ struct cap_profile *read_cap_profile(struct inp_file *cap)
 		}
 	fscanf(fptr,"%d",&n_tmp);
 
-	struct cap_profile *profile = malloc(sizeof(struct cap_profile));
-	if(profile == NULL){
-		printf("Could not allocate profile memory.\n");
-		exit(0);
-		}
 	profile->arr = malloc(sizeof(struct cap_prof_arrays)*(n_tmp+1));
 	if(profile->arr == NULL){
 		printf("Could not allocate profile->arr memory.\n");
@@ -342,20 +185,18 @@ struct cap_profile *read_cap_profile(struct inp_file *cap)
 	profile->rtot1 = profile->arr[0].d_arr;
 	profile->rtot2 = profile->arr[profile->nmax].d_arr;
 	profile->cl = profile->arr[profile->nmax].zarr;
-	cap->d_screen = cap->d_screen + cap->d_source + profile->cl; //position of screen on z axis
-	profile->binsize = 20.e-4; 
 
-	return profile;
+	return;
 	}
 // ---------------------------------------------------------------------------------------------------
 // Calculate total cross sections and scatter factor
-struct mumc *ini_mumc(struct inp_file *cap)
+struct mumc *ini_mumc(struct polycap_source *source, struct cap_profile *profile)
 	{
 	int i, j, n_energy_tmp;//,nn=1;
 	double e, totmu;
 	double scatf;
 
-	n_energy_tmp = (int)( (cap->e_final - cap->e_start) / cap->delta_e);
+	n_energy_tmp = (int)( (source->e_final - source->e_start) / source->delta_e);
 	struct mumc *absmu = malloc(sizeof(struct mumc));
 	if(absmu == NULL){
 		printf("Could not allocate absmu memory.\n");
@@ -370,15 +211,15 @@ struct mumc *ini_mumc(struct inp_file *cap)
 
 	absmu->n_energy = n_energy_tmp;
 	for(i=0; i<=absmu->n_energy; i++){
-		e = cap->e_start + i*cap->delta_e;
+		e = source->e_start + i*source->delta_e;
 		totmu = 0.;
 		scatf = 0.;
-		for(j=0; j<cap->nelem;j++){
-			totmu = totmu + CS_Total(cap->iz[j],e) * cap->wi[j];
+		for(j=0; j<profile->nelem;j++){
+			totmu = totmu + CS_Total(profile->iz[j],e) * profile->wi[j];
 
-			scatf = scatf + (cap->iz[j] + Fi(cap->iz[j],e) ) * (cap->wi[j] / AtomicWeight(cap->iz[j]) );
+			scatf = scatf + (profile->iz[j] + Fi(profile->iz[j],e) ) * (profile->wi[j] / AtomicWeight(profile->iz[j]) );
 			}
-		absmu->arr[i].amu = totmu * cap->density;
+		absmu->arr[i].amu = totmu * profile->density;
 
 		absmu->arr[i].scatf = scatf;
 		}
@@ -412,26 +253,25 @@ struct leakstruct *reset_leak(struct cap_profile *profile,struct mumc *absmu)
 	return leaks;
 	}
 // ---------------------------------------------------------------------------------------------------
-struct ini_polycap ini_polycap(struct inp_file *cap, struct cap_profile *profile)
+void ini_polycap(struct cap_profile *profile)
 	{
 	double chan_rad, s_unit;
-	struct ini_polycap pcap_ini;
 
 	chan_rad = profile->arr[0].profil; //entrance radius of single capillary
-	pcap_ini.eta = chan_rad / profile->rtot1; //devide by external PC entrance radius
-	pcap_ini.eta = pcap_ini.eta * pcap_ini.eta * cap->n_chan; //polycapillary open area (assuming circle)
-	pcap_ini.n_chan_max = sqrt(12. * cap->n_chan - 3.)/6.-0.5; //amount of 'shells' in hexagon PC
-	if(pcap_ini.n_chan_max <= 0){
+	profile->eta = chan_rad / profile->rtot1; //devide by external PC entrance radius
+	profile->eta = profile->eta * profile->eta * profile->n_chan; //polycapillary open area (assuming circle)
+	profile->n_chan_max = sqrt(12. * profile->n_chan - 3.)/6.-0.5; //amount of 'shells' in hexagon PC
+	if(profile->n_chan_max <= 0){
 		printf("N_CHANNEL must be >=7\n");
 		exit(0);
 		}
-	s_unit = profile->rtot1/(pcap_ini.n_chan_max); //width of a single shell
-	pcap_ini.cap_unita[0] = s_unit;
-	pcap_ini.cap_unita[1] = 0.;
-	pcap_ini.cap_unitb[0] = s_unit * cos(M_PI/3.);
-	pcap_ini.cap_unitb[1] = s_unit * sin(M_PI/3.);
+	s_unit = profile->rtot1/(profile->n_chan_max); //width of a single shell
+	profile->cap_unita[0] = s_unit;
+	profile->cap_unita[1] = 0.;
+	profile->cap_unitb[0] = s_unit * cos(M_PI/3.);
+	profile->cap_unitb[1] = s_unit * sin(M_PI/3.);
 
-	return pcap_ini;
+	return;
 	}
 // ---------------------------------------------------------------------------------------------------
 void norm(double *vect, int ndim)
@@ -585,7 +425,7 @@ double polycap_refl(double e, double theta, double density, double scatf, double
 	return rtot;
 }
 // ---------------------------------------------------------------------------------------------------
-int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_profile *profile, struct leakstruct *leaks, struct calcstruct *calc)
+int reflect(double alf, struct mumc *absmu, struct polycap_source *source, struct cap_profile *profile, struct leakstruct *leaks, struct calcstruct *calc)
 	{
 	int i;
 	double desc; //distance in capillary at which photon escaped divided by propagation vector in z direction
@@ -598,25 +438,25 @@ int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_pro
 	int ind_x, ind_y; //indices of array lspot where photon will hit screen
 
 	//escape
-	desc = (profile->cl + cap->d_source - calc->rh[2]) / calc->v[2];
+	desc = (profile->cl + source->d_source - calc->rh[2]) / calc->v[2];
 	if(desc < 0) desc = profile->cl;
 	for(i=0; i <= absmu->n_energy; i++){
-		e = cap->e_start + i * cap->delta_e;
-		cons1 = (double)(1.01358e0*e)*alf*cap->sig_rough;
+		e = source->e_start + i * source->delta_e;
+		cons1 = (double)(1.01358e0*e)*alf*profile->sig_rough;
 		r_rough = exp(-1*cons1*cons1);
 
 		//reflectivity according to Fresnel expression
-		rtot = polycap_refl(e, alf, cap->density, absmu->arr[i].scatf, absmu->arr[i].amu);
+		rtot = polycap_refl(e, alf, profile->density, absmu->arr[i].scatf, absmu->arr[i].amu);
 
 		//printf("Energy: %f, creal(rtot): %lf, cimag(rtot): %lf\n",e, creal(rtot), cimag(rtot));
 		wleak = (1.-rtot) * calc->w[i] * exp(-1.*desc * absmu->arr[i].amu);
 		leaks->leak[i] = leaks->leak[i] + wleak;
 		if(i==0){
-			c = (cap->d_screen - calc->rh[2]) / calc->v[2];
+			c = (source->d_screen - calc->rh[2]) / calc->v[2];
 			xp = calc->rh[0] + c*calc->v[0];
 			yp = calc->rh[1] + c*calc->v[1];
-			ind_x = (int)floor(xp/profile->binsize)+NSPOT/2;
-			ind_y = (int)floor(yp/profile->binsize)+NSPOT/2;
+			ind_x = (int)floor(xp/BINSIZE)+NSPOT/2;
+			ind_y = (int)floor(yp/BINSIZE)+NSPOT/2;
 			if(ind_x < NSPOT && ind_x >= 0){
 				if(ind_y < NSPOT && ind_y >= 0){
 					leaks->lspot[ind_x][ind_y] = leaks->lspot[ind_x][ind_y] + wleak;
@@ -631,7 +471,7 @@ int reflect(double alf, struct inp_file *cap, struct mumc *absmu, struct cap_pro
 	return 0;
 	}
 // ---------------------------------------------------------------------------------------------------
-void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *pcap_ini, struct inp_file *cap, int icount, struct image_struct *imstr, struct calcstruct *calc)
+void start(struct mumc *absmu, struct cap_profile *profile, struct polycap_source *source, int icount, struct image_struct *imstr, struct calcstruct *calc)
 	{
 	int i, flag_restart;
 	int ix_cap, iy_cap; //indices of selected channel
@@ -658,13 +498,13 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 		flag_restart = 0;
 		do{
 			r = polycap_rng_uniform(calc->rn);
-			ix_cap = floor( pcap_ini->n_chan_max * (2.*fabs(r)-1.) + 0.5);
+			ix_cap = floor( profile->n_chan_max * (2.*fabs(r)-1.) + 0.5);
 			r = polycap_rng_uniform(calc->rn);
-			iy_cap = floor( pcap_ini->n_chan_max * (2.*fabs(r)-1.) + 0.5);
-			} while(abs(iy_cap+ix_cap) > pcap_ini->n_chan_max );
+			iy_cap = floor( profile->n_chan_max * (2.*fabs(r)-1.) + 0.5);
+			} while(abs(iy_cap+ix_cap) > profile->n_chan_max );
 		//calc_tube/calc_axs
-		ra = ix_cap*pcap_ini->cap_unita[0] + iy_cap*pcap_ini->cap_unitb[0];
-		rb = ix_cap*pcap_ini->cap_unita[1] + iy_cap*pcap_ini->cap_unitb[1];
+		ra = ix_cap*profile->cap_unita[0] + iy_cap*profile->cap_unitb[0];
+		rb = ix_cap*profile->cap_unita[1] + iy_cap*profile->cap_unitb[1];
 		rr = sqrt(ra*ra+rb*rb);
 		if(rr <= DELTA){
 			cosphi = 0;
@@ -681,15 +521,15 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 
 		//sourcp
 		r = polycap_rng_uniform(calc->rn);
-		rad = cap->src_x * sqrt(fabs(r)); //sqrt to simulate source intensity distribution (originally probably src_x * r/sqrt(r) )
+		rad = source->src_x * sqrt(fabs(r)); //sqrt to simulate source intensity distribution (originally probably src_x * r/sqrt(r) )
 		r = polycap_rng_uniform(calc->rn);
 		fi = 2.0*M_PI*fabs(r);
-		x = rad * cos(fi) + cap->src_shiftx;
-		y = rad * sin(fi) + cap->src_shifty;
+		x = rad * cos(fi) + source->src_shiftx;
+		y = rad * sin(fi) + source->src_shifty;
 		calc->rh[0] = x;
 		calc->rh[1] = y;
 		calc->rh[2] = 0.0;
-		if(cap->src_sigx*cap->src_sigy < 1.e-20){ //uniform distribution over PC entrance
+		if(source->src_sigx*source->src_sigy < 1.e-20){ //uniform distribution over PC entrance
 			r = polycap_rng_uniform(calc->rn);
 			rad = profile->arr[0].profil * sqrt(fabs(r));
 			r = polycap_rng_uniform(calc->rn);
@@ -698,12 +538,12 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 			ypc = rad * sin(fi) + rb;
 			calc->v[0] = xpc - x;
 			calc->v[1] = ypc - y;
-			calc->v[2] = cap->d_source;
+			calc->v[2] = source->d_source;
 			} else { //non-uniform distribution
 			r = polycap_rng_uniform(calc->rn);
-			calc->v[0] = cap->src_sigx * (1.-2.*fabs(r));
+			calc->v[0] = source->src_sigx * (1.-2.*fabs(r));
 			r = polycap_rng_uniform(calc->rn);
-			calc->v[1] = cap->src_sigy * (1.-2.*fabs(r));
+			calc->v[1] = source->src_sigy * (1.-2.*fabs(r));
 			calc->v[2] = 1.;
 			}
 		norm(calc->v, 3); //normalize vector v
@@ -712,7 +552,7 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 		calc->traj_length = 0.;
 
 		gamma = sqrt( (ra-calc->rh[0])*(ra-calc->rh[0]) + 
-			(rb-calc->rh[0])*(rb-calc->rh[0]) ) / cap->d_source;
+			(rb-calc->rh[0])*(rb-calc->rh[0]) ) / source->d_source;
 		gamma = atan(gamma);
 		w_gamma = cos(gamma); /* weight factor to take into account the effective solid-angle 
 					of the capillary channel from the source point, 
@@ -724,18 +564,18 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 			imstr[icount].ysou1 = calc->v[0];
 			imstr[icount].wsou = 1.0;
 			}
-		c = ( cap->d_source - calc->rh[2]) / calc->v[2];
+		c = ( source->d_source - calc->rh[2]) / calc->v[2];
 		calc->rh[0] = calc->rh[0] + c * calc->v[0];
 		calc->rh[1] = calc->rh[1] + c * calc->v[1];
-		calc->rh[2] = cap->d_source;
+		calc->rh[2] = source->d_source;
 		calc->traj_length = calc->traj_length + c;
 			/*first segment is to reach capillary entrance*/
 
 		//rotx -As long as theta_align =0 this doesn't actually change the values of calc->v
-		//cap->theta_align not used as in original code was just set to 0
-//		v1[0] = calc->v[0]*cos(cap->theta_align) - calc->v[2]*sin(cap->theta_align);
+		//source->theta_align not used as in original code was just set to 0
+//		v1[0] = calc->v[0]*cos(source->theta_align) - calc->v[2]*sin(source->theta_align);
 //		v1[1] = calc->v[1];
-//		v1[2] = calc->v[0]*sin(cap->theta_align) + calc->v[2]*cos(cap->theta_align);
+//		v1[2] = calc->v[0]*sin(source->theta_align) + calc->v[2]*cos(source->theta_align);
 //		calc->v[0] = v1[0];
 //		calc->v[1] = v1[1];
 //		calc->v[2] = v1[2];
@@ -754,7 +594,7 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct ini_polycap *
 	return;
 	}
 // ---------------------------------------------------------------------------------------------------
-void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap, struct leakstruct *leaks, struct calcstruct *calc)
+void capil(struct mumc *absmu, struct cap_profile *profile, struct polycap_source *source, struct leakstruct *leaks, struct calcstruct *calc)
 	{
 	int64_t i;
 	double s0[3], s1[3]; //selected capillary axis coordinates
@@ -782,7 +622,7 @@ void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap
 		rad1 = profile->arr[i].profil;
 		rh1[0] = calc->rh[0];
 		rh1[1] = calc->rh[1];
-		rh1[2] = calc->rh[2] - cap->d_source;
+		rh1[2] = calc->rh[2] - source->d_source;
 		calc->iesc = segment(s0,s1,rad0,rad1,rh1,calc->v,rn,&calf);
 		if(calc->iesc == 0){
 			calc->ix = i-1;
@@ -798,13 +638,13 @@ void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap
 		{
 		delta_traj[0] = rh1[0] - calc->rh[0];
 		delta_traj[1] = rh1[1] - calc->rh[1];
-		delta_traj[2] = rh1[2] + cap->d_source - calc->rh[2];
+		delta_traj[2] = rh1[2] + source->d_source - calc->rh[2];
 		ds = sqrt(scalar(delta_traj,delta_traj));
 		calc->traj_length = calc->traj_length + ds;
 		//store new interaction coordinates in appropriate array
 		calc->rh[0] = rh1[0];
 		calc->rh[1] = rh1[1];
-		calc->rh[2] = rh1[2] + cap->d_source;
+		calc->rh[2] = rh1[2] + source->d_source;
 
 		if(fabs(calf) > 1.0){
 			printf("COS(alfa) > 1\n");
@@ -816,7 +656,7 @@ void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap
 			alf = M_PI_2 - alf;
 			w0 = calc->w[0];
 
-			calc->iesc = reflect(alf,cap,absmu,profile,leaks,calc);
+			calc->iesc = reflect(alf,absmu,source,profile,leaks,calc);
 
 			if(calc->iesc != -2){
 				w1 = calc->w[0];
@@ -836,7 +676,7 @@ void capil(struct mumc *absmu, struct cap_profile *profile, struct inp_file *cap
 	return;
 	}
 // ---------------------------------------------------------------------------------------------------
-void count(struct mumc *absmu, struct inp_file *cap, int icount, struct cap_profile *profile, struct leakstruct *leaks, struct image_struct *imstr, struct calcstruct *calc)
+void count(struct mumc *absmu, struct polycap_source *source, int icount, struct cap_profile *profile, struct leakstruct *leaks, struct image_struct *imstr, struct calcstruct *calc)
 	{
 	int i;
 	double cc; //distance between last interaction and capillary exit, divided by propagation vector in z
@@ -851,7 +691,7 @@ void count(struct mumc *absmu, struct inp_file *cap, int icount, struct cap_prof
 	int ind_x, ind_y; //indices of spot array corresponding to photon coordinate on screen
 
 	//simulate hexagonal polycapillary housing
-	cc = ((cap->d_source+profile->cl)-calc->rh[2])/calc->v[2];
+	cc = ((source->d_source+profile->cl)-calc->rh[2])/calc->v[2];
 	xpend  = calc->rh[0] + cc*calc->v[0];
 	ypend  = calc->rh[1] + cc*calc->v[1];
 	v_hex1[0] = 0; //vert hex edges x vector
@@ -875,7 +715,7 @@ void count(struct mumc *absmu, struct inp_file *cap, int icount, struct cap_prof
 			calc->cnt[i] = calc->cnt[i] + calc->w[i];
 			} //for(i=0; i <= absmu->n_energy; i++)
 
-		c = (cap->d_screen - calc->rh[2]) / calc->v[2];
+		c = (source->d_screen - calc->rh[2]) / calc->v[2];
 		xp = calc->rh[0] + c*calc->v[0];
 		yp = calc->rh[1] + c*calc->v[1];
 
@@ -885,8 +725,8 @@ void count(struct mumc *absmu, struct inp_file *cap, int icount, struct cap_prof
 		ds = sqrt(scalar(delta_traj,delta_traj));
 		calc->traj_length = calc->traj_length + ds;
 
-		ind_x = (int)floor(xp/profile->binsize)+NSPOT/2;
-		ind_y = (int)floor(yp/profile->binsize)+NSPOT/2;
+		ind_x = (int)floor(xp/BINSIZE)+NSPOT/2;
+		ind_y = (int)floor(yp/BINSIZE)+NSPOT/2;
 		if(ind_x < NSPOT && ind_x >= 0){
 			if(ind_y < NSPOT && ind_y >= 0){
 				leaks->spot[ind_x][ind_y] = leaks->spot[ind_x][ind_y] + calc->w[0];
@@ -959,41 +799,28 @@ struct calcstruct *init_calcstruct(unsigned long int seed, struct cap_profile *p
 }
 
 // ---------------------------------------------------------------------------------------------------
-struct cap_profile *def_cap_profile(unsigned long int shape, double length, double rad_ext[2], double rad_int[2], double focal_dist[2]){
-	struct cap_profile *profile = malloc(sizeof(struct cap_profile));
-	int i;
+struct cap_prof_arrays *def_cap_profile(unsigned long int shape, double length, double rad_ext[2], double rad_int[2], double focal_dist[2]){
+//	struct cap_profile *profile = malloc(sizeof(struct cap_profile));
+	int i, nmax=999;
 	double pc_x[4], pc_y[4], coeff[3];
 	double slope, b, k, a;
 
 	if(shape == 0 || shape == 1 || shape ==2){
-		//Make profile array of sufficient memory size (999 points along PC profile should be sufficient)
-		if(profile == NULL){
-			printf("Could not allocate profile memory.\n");
-			exit(0);
-		}
-		profile->nmax = 999;
-		profile->arr = malloc(sizeof(struct cap_prof_arrays)*(profile->nmax+1));
-		if(profile->arr == NULL){
-			printf("Could not allocate profile->arr memory.\n");
+		//Make shape array of sufficient memory size (999 points along PC shape should be sufficient)
+		shape_arr = malloc(sizeof(struct cap_prof_arrays)*(nmax+1));
+		if(shape_arr == NULL){
+			printf("Could not allocate shape_arr memory.\n");
 			exit(0);
                 }
-
-		//Define some general parameters
-		profile->rtot1 = rad_ext[0];
-		profile->rtot2 = rad_ext[1];
-		profile->cl = length;
-	        profile->binsize = 20.e-4;
 	}
 
 	//Define actual capillary and PC shape
 	switch(shape){
 		case 0: //conical
-			for(i=0;i<profile->nmax;i++){
-				profile->arr[i].zarr = length/profile->nmax*i; //z coordinates, from 0 to length
-				profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0]; //single capillary shape always conical
-				profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
-				profile->arr[i].sy = 0;	
-				profile->arr[i].d_arr = (rad_ext[1]-rad_ext[0])/length*profile->arr[i].zarr + rad_ext[0];
+			for(i=0;i<=nmax;i++){
+				shape_arr[i].zarr = length/nmax*i; //z coordinates, from 0 to length
+				shape_arr[i].profil = (rad_int[1]-rad_int[0])/length*shape_arr[i].zarr + rad_int[0]; //single capillary shape always conical
+				shape_arr[i].d_arr = (rad_ext[1]-rad_ext[0])/length*shape_arr[i].zarr + rad_ext[0];
 			}
 			break;
 
@@ -1012,13 +839,10 @@ struct cap_profile *def_cap_profile(unsigned long int shape, double length, doub
 			polynomialfit(4, 3, pc_x, pc_y, coeff);
 
 			//calculate shape coordinates
-			for(i=0;i<profile->nmax;i++){
-				profile->arr[i].zarr = length/profile->nmax*i; //z coordinates, from 0 to length
-				profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0]; //single capillary shape always conical
-				profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
-				profile->arr[i].sy = 0;	
-				
-				profile->arr[i].d_arr = coeff[0]+coeff[1]*profile->arr[i].zarr+coeff[2]*profile->arr[i].zarr*profile->arr[i].zarr;
+			for(i=0;i<=nmax;i++){
+				shape_arr[i].zarr = length/nmax*i; //z coordinates, from 0 to length
+				shape_arr[i].profil = (rad_int[1]-rad_int[0])/length*shape_arr[i].zarr + rad_int[0]; //single capillary shape always conical
+				shape_arr[i].d_arr = coeff[0]+coeff[1]*shape_arr[i].zarr+coeff[2]*shape_arr[i].zarr*shape_arr[i].zarr;
 			}
 			break;
 
@@ -1028,24 +852,20 @@ struct cap_profile *def_cap_profile(unsigned long int shape, double length, doub
 				b = (-1.*(rad_ext[1]-rad_ext[0])*(rad_ext[1]-rad_ext[0])-slope*length*(rad_ext[1]-rad_ext[0])) / (slope*length+2.*(rad_ext[1]-rad_ext[0]));
 				k = rad_ext[0] - b;
 				a = sqrt((b*b*length)/(slope*(rad_ext[1]-k)));
-				for(i=0;i<profile->nmax;i++){
-					profile->arr[i].zarr = length/profile->nmax*i; //z coordinates, from 0 to length
-					profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0]; //single capillary shape always conical
-					profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
-					profile->arr[i].sy = 0;	
-					profile->arr[i].d_arr = sqrt(b*b-(b*b*profile->arr[i].zarr*profile->arr[i].zarr)/(a*a))+k;
+				for(i=0;i<=nmax;i++){
+					shape_arr[i].zarr = length/nmax*i; //z coordinates, from 0 to length
+					shape_arr[i].profil = (rad_int[1]-rad_int[0])/length*shape_arr[i].zarr + rad_int[0]; //single capillary shape always conical
+					shape_arr[i].d_arr = sqrt(b*b-(b*b*shape_arr[i].zarr*shape_arr[i].zarr)/(a*a))+k;
 				}
 			} else { //confocal (collimating) alignment
 				slope = rad_ext[0] / focal_dist[0];
 				b = (-1.*(rad_ext[0]-rad_ext[1])*(rad_ext[0]-rad_ext[1])-slope*length*(rad_ext[0]-rad_ext[1])) / (slope*length+2.*(rad_ext[0]-rad_ext[1]));
 				k = rad_ext[1] - b;
 				a = sqrt((b*b*length)/(slope*(rad_ext[0]-k)));
-				for(i=0;i<profile->nmax;i++){
-					profile->arr[i].zarr = length/profile->nmax*i; //z coordinates, from 0 to length
-					profile->arr[i].profil = (rad_int[1]-rad_int[0])/length*profile->arr[i].zarr + rad_int[0]; //single capillary shape always conical
-					profile->arr[i].sx = 0; //set sx and sy to 0 as they are overwritten in start() anyway. 
-					profile->arr[i].sy = 0;	
-					profile->arr[i].d_arr = sqrt(b*b-(b*b*profile->arr[profile->nmax-1-i].zarr*profile->arr[profile->nmax-1-i].zarr)/(a*a))+k;
+				for(i=0;i<=nmax;i++){
+					shape_arr[i].zarr = length/nmax*i; //z coordinates, from 0 to length
+					shape_arr[i].profil = (rad_int[1]-rad_int[0])/length*shape_arr[i].zarr + rad_int[0]; //single capillary shape always conical
+					shape_arr[i].d_arr = sqrt(b*b-(b*b*shape_arr[nmax-i].zarr*shape_arr[nmax-i].zarr)/(a*a))+k;
 				}
 			}
 			break;
@@ -1054,191 +874,28 @@ struct cap_profile *def_cap_profile(unsigned long int shape, double length, doub
 			break;
 
 	}
-	return profile;
+	return shape_arr;
 
 }
 
 // ---------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
-// Main polycap program
-int main(int argc, char *argv[])
+// Output writing
+void polycap_out(struct inp_file *cap, struct image_struct *imstr, struct leakstruct *leaks, char *inp_file, struct mumc *absmu, struct cap_profile *profile, struct polycap_source *source, struct polycap_result *rslt)
 	{
-	struct inp_file cap;
-	struct cap_profile *profile;
-        int thread_max, thread_cnt;
-	struct mumc *absmu;
-	struct leakstruct *leaks;
-	struct ini_polycap pcap_ini;
-	int iesc_value,i,j;
-	int *iesc = &iesc_value;
-	struct image_struct *imstr;
-	double *absorb_sum;
-	double *sum_cnt;
-	int icount=0;
-	int64_t sum_refl=0, sum_istart=0, sum_ienter=0; //amount of reflected, started and entered photons
-	double ave_refl; //average amount of reflections
-	FILE *fptr; //pointer to access files
+	int i, j;
+	char *f_abs = malloc(sizeof(cap->out)+4*sizeof(char));
 	double e=0;
 	double dist=0;
-	char f_abs[100];
 	int arrsize=0;
+	FILE *fptr; //pointer to access files
 
-	// Check whether input file argument was supplied
-	if(argc <= 1){
-		printf("Usage: polycap input-file should be supplied.\n");
-		exit(0);
-		}
-
-	// Check maximal amount of threads and let user choose the amount of threads to use
-	thread_max = omp_get_max_threads();
-	printf("Type in the amount of threads to use (max %d):\n",thread_max);
-	scanf("%d",&thread_cnt);
-	printf("%d threads out of %d selected.\n",thread_cnt, thread_max);
-
-	// Read *.inp file and save all information in cap structure;
-	printf("Reading input file...");
-	cap = read_cap_data(argv[1]);
-	printf("   OK\n");
-	
-	// Read/create capillary profile data;
-	if(cap.shape == 0 || cap.shape == 1 || cap.shape == 2){
-		profile = def_cap_profile(cap.shape, cap.length, cap.rad_ext, cap.rad_int, cap.focal_dist);
-		cap.d_screen = cap.d_screen + cap.d_source + profile->cl; //position of screen on z axis
-	} else {
-		printf("Reading capillary profile files...\n");
-		profile = read_cap_profile(&cap);
-		printf("Capillary profiles read.\n");
-	}
-
-	//Initialize
-	absmu = ini_mumc(&cap);
-	leaks = reset_leak(profile,absmu);
-	pcap_ini = ini_polycap(&cap,profile);
-
-	//allocate memory to imstr
-	imstr = malloc(sizeof(struct image_struct)*IMSIZE);
-	if(imstr == NULL){
-		printf("Could not allocate imstr memory.\n");
-		exit(0);
-		}
-
-	*iesc = 0;
-	for(i=0; i<= IMSIZE-1; i++){
-		imstr[i].xsou  = 0;
-		imstr[i].ysou  = 0;
-		imstr[i].xsou1 = 0;
-		imstr[i].ysou1 = 0;
-		imstr[i].wsou  = 0;
-		imstr[i].xm    = 0;
-		imstr[i].ym    = 0;
-		imstr[i].xm1   = 0;
-		imstr[i].ym1   = 0;
-		imstr[i].warr  = 0;
-		}
-
-	printf("Starting calculations...\n");
-
-	absorb_sum = malloc(sizeof(*absorb_sum)*(profile->nmax+1));
-	if(absorb_sum == NULL){
-		printf("Could not allocate absorb_sum memory.\n");
-		exit(0);
-	}
-	for(j=0; j<=profile->nmax; j++){
-		absorb_sum[j] = 0.;
-	}
-	sum_cnt = malloc(sizeof(*sum_cnt)*(absmu->n_energy+1));
-	if(sum_cnt == NULL){
-		printf("Could not allocate sum_cnt memory.\n");
-		exit(0);
-	}
-	for(j=0; j<=absmu->n_energy;j++){
-		sum_cnt[j] = 0.;
-	}
-
-#ifndef _WIN32
-	FILE *random_device;
-	if ((random_device = fopen("/dev/urandom", "r")) == NULL) {
-		printf("Could not open /dev/urandom");
-		exit(0);
-	}
-#endif
-	
-	unsigned long int *seeds = malloc(sizeof(unsigned long int) * thread_cnt);
-	for(i=0;i<thread_cnt;i++){
-#ifdef _WIN32
-		rand_s(&seeds[i]);
-#else
-		fread(&seeds[i], sizeof(unsigned long int), 1, random_device);
-#endif
-	}
-#ifndef _WIN32
-	fclose(random_device);
-#endif
-
-	//Actual multi-core loop where the calculations happen.
-	#pragma omp parallel \
-		    default(shared) \
-		    private(icount,i,j) \
-		    firstprivate(cap,profile,absmu,leaks,pcap_ini,thread_cnt) \
-		    num_threads(thread_cnt) \
-		    reduction(+:sum_refl,sum_istart,sum_ienter)
-	{
-		int thread_id = omp_get_thread_num();
-		struct calcstruct *calc = init_calcstruct(seeds[thread_id], profile, absmu);
-		i = 0;
-		#pragma omp for nowait
-		for(icount=0 ; icount <= cap.ndet ; icount++) {
-			do {
-				do {
-					start(absmu, profile, &pcap_ini, &cap, icount, imstr, calc);
-					do {
-						capil(absmu, profile, &cap, leaks, calc);
-					} while(calc->iesc == 0);
-				} while(calc->iesc == -2);
-				count(absmu, &cap, icount, profile, leaks, imstr,calc);
-			} while(calc->iesc == -3);
-			sum_refl += calc->i_refl;
-			if(thread_id == 0 && (double)i/((double)cap.ndet/(double)thread_cnt/10.) >= 1.){
-				printf("%d%%\t%lld\t%f\n",((icount*100)/(cap.ndet/thread_cnt)),calc->i_refl,calc->rh[2]);
-				i=0;
-			}
-			i++;//counter just to follow % completed
-		} //for(icount=0; icount <= cap.ndet; icount++)
-
-		sum_istart += calc->istart;
-		sum_ienter += calc->ienter;
-
-		#pragma omp critical
-		{
-			for(j=0; j <= profile->nmax; j++){
-				absorb_sum[j] += calc->absorb[j];
-			}
-			for(j=0; j <= absmu->n_energy; j++){
-				sum_cnt[j] += calc->cnt[j];
-			}
-		}
-
-		// free memory
-		polycap_rng_free(calc->rn);
-		free(calc->sx);
-		free(calc->sy);
-		free(calc->absorb);
-		free(calc->w);
-		free(calc->cnt);
-		free(calc);
-	}
-
-	ave_refl = (double)sum_refl/(double)cap.ndet;
-	printf("Average number of reflections: %f\n",ave_refl);
-
-
-	// Output writing
 	fptr = fopen("xy.dat","w"); //stores coordinates of photon on screen(xm, ym), as well as direction(xm1,ym1)
-	if(IMSIZE > cap.ndet) arrsize = cap.ndet+1;
+	if(IMSIZE > source->ndet) arrsize = source->ndet+1;
 		 else arrsize = IMSIZE;
 	fprintf(fptr,"%d\n",arrsize);
 	fprintf(fptr,"%f\n",e);
-	fprintf(fptr,"%f\n",cap.e_start);
+	fprintf(fptr,"%f\n",source->e_start);
 	fprintf(fptr,"%f\n",dist);
 	for(i=0; i<arrsize; i++){
 		fprintf(fptr,"%f\t%f\t%f\t%f\t%f\n",imstr[i].xm,imstr[i].xm1,imstr[i].ym,imstr[i].ym1,imstr[i].warr);
@@ -1248,7 +905,7 @@ int main(int argc, char *argv[])
 	fptr = fopen("xys.dat","w"); //coordinates and direction of photon from source origin
 	fprintf(fptr,"%d\n",arrsize);
 	fprintf(fptr,"%f\n",e);
-        fprintf(fptr,"%f\n",cap.e_start);
+        fprintf(fptr,"%f\n",source->e_start);
         fprintf(fptr,"%f\n",dist);
         for(i=0; i<arrsize; i++){
 		fprintf(fptr,"%f\t%f\t%f\t%f\t%f\n",imstr[i].xsou,imstr[i].xsou1,imstr[i].ysou,imstr[i].ysou1,imstr[i].wsou);
@@ -1275,56 +932,163 @@ int main(int argc, char *argv[])
 		}
 	fclose(fptr);
 
-	fptr = fopen(cap.out,"w");
+	fptr = fopen(cap->out,"w");
 	if(fptr == NULL){
 		printf("Trouble with output...\n");
 		exit(0);
 		}
-	fprintf(fptr,"Surface roughness [Angstrom]:\t %f\n",cap.sig_rough);
-	fprintf(fptr,"Amplitude of Waviness [cm]:\t %f\n",cap.sig_wave);
-	fprintf(fptr,"Waviness corr. length [cm]:\t %f\n",cap.corr_length);
-	fprintf(fptr,"Source distance [cm]:\t\t %f\n",cap.d_source);
-	fprintf(fptr,"Screen distance [cm]:\t\t %f\n",cap.d_screen);
-	fprintf(fptr,"Source diameter [cm]:\t\t %f\n",cap.src_x*2.);
-	fprintf(fptr,"Capillary foc. distances [cm]:\t %f\t%f\n",cap.src_sigx,cap.src_sigy);//this is not what's written here...
-	fprintf(fptr,"Number of channels:\t\t %5.0f\n",cap.n_chan);
-	fprintf(fptr,"Calculated capillary open area:\t %5.3f\n",pcap_ini.eta);
-	fprintf(fptr,"Misalignment rotation [rad]/translation [cm]: %f\t%f\n",cap.src_shiftx,cap.src_shifty); //only translation
-	fprintf(fptr,"Capillary profile: %s\n",cap.prf);
-	fprintf(fptr,"Capillary axis   : %s\n",cap.axs);
-	fprintf(fptr,"External profile : %s\n",cap.ext);
-	fprintf(fptr,"Input file       : %s\n",argv[1]);
+	fprintf(fptr,"Surface roughness [Angstrom]:\t %f\n",profile->sig_rough);
+	fprintf(fptr,"Amplitude of Waviness [cm]:\t %f\n",cap->sig_wave);
+	fprintf(fptr,"Waviness corr. length [cm]:\t %f\n",cap->corr_length);
+	fprintf(fptr,"Source distance [cm]:\t\t %f\n",source->d_source);
+	fprintf(fptr,"Screen distance [cm]:\t\t %f\n",source->d_screen);
+	fprintf(fptr,"Source diameter [cm]:\t\t %f\n",source->src_x*2.);
+	fprintf(fptr,"Capillary foc. distances [cm]:\t %f\t%f\n",source->src_sigx,source->src_sigy);//this is not what's written here...
+	fprintf(fptr,"Number of channels:\t\t %5.0f\n",profile->n_chan);
+	fprintf(fptr,"Calculated capillary open area:\t %5.3f\n",profile->eta);
+	fprintf(fptr,"Misalignment rotation [rad]/translation [cm]: %f\t%f\n",source->src_shiftx,source->src_shifty); //only translation
+	fprintf(fptr,"Capillary profile: %s\n",cap->prf);
+	fprintf(fptr,"Capillary axis   : %s\n",cap->axs);
+	fprintf(fptr,"External profile : %s\n",cap->ext);
+	fprintf(fptr,"Input file       : %s\n",inp_file);
 	fprintf(fptr,"  E [keV]      I/I0\n");
 	fprintf(fptr,"$DATA:\n");
 	fprintf(fptr,"%d\t%d\n",absmu->n_energy+1,5);
 	for(i=0; i<=absmu->n_energy; i++){
-		fprintf(fptr,"%8.2f\t%10.9f\t%10.9f\t%10.9f\t%10.9f\n",cap.e_start+i*cap.delta_e,
-			sum_cnt[i]/(double)sum_ienter*pcap_ini.eta, sum_cnt[i]/(double)sum_istart,
-			(double)sum_ienter/(double)sum_istart, leaks->leak[i]/(double)sum_ienter);
+		fprintf(fptr,"%8.2f\t%10.9f\t%10.9f\t%10.9f\t%10.9f\n",source->e_start+i*source->delta_e,
+			rslt->sum_cnt[i]/(double)rslt->sum_ienter*profile->eta, rslt->sum_cnt[i]/(double)rslt->sum_istart,
+			(double)rslt->sum_ienter/(double)rslt->sum_istart, leaks->leak[i]/(double)rslt->sum_ienter);
 		}
-	fprintf(fptr,"\nThe started photons: %lld\n",sum_istart);
-	fprintf(fptr,"\nAverage number of reflections: %f\n",ave_refl);
+	fprintf(fptr,"\nThe started photons: %lld\n",rslt->sum_istart);
+	fprintf(fptr,"\nAverage number of reflections: %f\n",rslt->ave_refl);
 	fclose(fptr);
 
-	sprintf(f_abs,"%s.abs",cap.out);
+	sprintf(f_abs,"%s.abs",cap->out);
 	fptr = fopen(f_abs,"w");
 	fprintf(fptr,"$DATA:\n");
 	fprintf(fptr,"%d\t%d\n",profile->nmax,2);
-	for(i=0;i<=profile->nmax;i++) fprintf(fptr,"%f\t%f\n",profile->arr[i].zarr,absorb_sum[i]);
+	for(i=0;i<=profile->nmax;i++) fprintf(fptr,"%f\t%f\n",profile->arr[i].zarr,rslt->absorb_sum[i]);
 	fclose(fptr);
 
+	//FREE ALLOCATED MEMORY
+	free(f_abs)
 
-	// free allocated memory
-	free(profile->arr);
-	free(profile);
-	free(imstr);
-	free(absorb_sum);
-	free(sum_cnt);
-	free(absmu->arr);
-	free(absmu);
-	free(leaks->leak);
-	free(leaks);
 	return 0;
+	}
+// ---------------------------------------------------------------------------------------------------
+// Main polycap calculation program
+struct polycap_result polycap_calc(int thread_cnt, struct inp_file *cap, struct cap_profile *profile, struct mumc *absmu, struct leakstruct *leaks, struct image_struct *imstr, struct polycap_source *source)
+	{
+	int iesc_value,i,j;
+	int *iesc = &iesc_value;
+	int icount=0;
+	struct polycap_result rslt=malloc(sizeof(struct polycap_result));
+
+	*iesc =0;
+
+	//amount of reflected, started and entered photons
+	rslt.sum_refl=0;
+	rslt.sum_istart=0;
+	rslt.sum_ienter=0;
+
+	rslt.absorb_sum = malloc(sizeof(rslt.absorb_sum[0])*(profile->nmax+1));
+	if(rslt.absorb_sum == NULL){
+		printf("Could not allocate rslt.absorb_sum memory.\n");
+		exit(0);
+	}
+	for(j=0; j<=profile->nmax; j++){
+		rslt.absorb_sum[j] = 0.;
+	}
+	rslt.sum_cnt = malloc(sizeof(rslt.sum_cnt[0])*(absmu->n_energy+1));
+	if(rslt.sum_cnt == NULL){
+		printf("Could not allocate rslt.sum_cnt memory.\n");
+		exit(0);
+	}
+	for(j=0; j<=absmu->n_energy;j++){
+		rslt.sum_cnt[j] = 0.;
+	}
+
+#ifndef _WIN32
+	FILE *random_device;
+	if ((random_device = fopen("/dev/urandom", "r")) == NULL) {
+		printf("Could not open /dev/urandom");
+		exit(0);
+	}
+#endif
+	
+	unsigned long int *seeds = malloc(sizeof(unsigned long int) * thread_cnt);
+	for(i=0;i<thread_cnt;i++){
+#ifdef _WIN32
+		rand_s(&seeds[i]);
+#else
+		fread(&seeds[i], sizeof(unsigned long int), 1, random_device);
+#endif
+	}
+#ifndef _WIN32
+	fclose(random_device);
+#endif
+
+
+//put this for loop in separate function
+//make sure it gives an output structure containing only: photon exit coordinate, translation vector, trans. eff. and total traveled distance
+
+	//Actual multi-core loop where the calculations happen.
+	#pragma omp parallel \
+		    default(shared) \
+		    private(icount,i,j) \
+		    firstprivate(cap,profile,absmu,leaks,thread_cnt) \
+		    num_threads(thread_cnt) \
+		    reduction(+:rslt.sum_refl,rslt.sum_istart,rslt.sum_ienter)
+	{
+		int thread_id = omp_get_thread_num();
+		struct calcstruct *calc = init_calcstruct(seeds[thread_id], profile, absmu);
+		i = 0;
+		#pragma omp for nowait
+		for(icount=0 ; icount <= source->ndet ; icount++) {
+			do {
+				do {
+					start(absmu, profile, source, icount, imstr, calc);
+					do {
+						capil(absmu, profile, source, leaks, calc);
+					} while(calc->iesc == 0);
+				} while(calc->iesc == -2);
+				count(absmu, source, icount, profile, leaks, imstr,calc);
+			} while(calc->iesc == -3);
+			rslt.sum_refl += calc->i_refl;
+			if(thread_id == 0 && (double)i/((double)source->ndet/(double)thread_cnt/10.) >= 1.){
+				printf("%d%%\t%lld\t%f\n",((icount*100)/(source->ndet/thread_cnt)),calc->i_refl,calc->rh[2]);
+				i=0;
+			}
+			i++;//counter just to follow % completed
+		} //for(icount=0; icount <= source->ndet; icount++)
+
+		rslt.sum_istart += calc->istart;
+		rslt.sum_ienter += calc->ienter;
+
+		#pragma omp critical
+		{
+			for(j=0; j <= profile->nmax; j++){
+				rslt.absorb_sum[j] += calc->absorb[j];
+			}
+			for(j=0; j <= absmu->n_energy; j++){
+				rslt.sum_cnt[j] += calc->cnt[j];
+			}
+		}
+
+		// free memory
+		polycap_rng_free(calc->rn);
+		free(calc->sx);
+		free(calc->sy);
+		free(calc->absorb);
+		free(calc->w);
+		free(calc->cnt);
+		free(calc);
+	}
+
+	rslt.ave_refl = (double)rslt.sum_refl/(double)source->ndet;
+	printf("Average number of reflections: %f\n",rslt.ave_refl);
+
+	return rslt;
 	}
 // ---------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------
