@@ -2,6 +2,7 @@
 #define POLYCAP_PRIVATE_H
 
 #include "config.h"
+#include <stdint.h>
 
 #define NSPOT 1000  /* The number of bins in the grid for the spot*/
 #define IMSIZE 500001

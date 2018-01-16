@@ -54,9 +54,10 @@ int main(int argc, char *argv[])
 	// Read/create capillary profile data;
 	if(cap->shape == 0 || cap->shape == 1 || cap->shape == 2){
 		shape_arr = def_cap_profile(cap->shape, cap->length, cap->rad_ext, cap->rad_int, cap->focal_dist);
+		profile->nmax = 999;
 		//fill shape_arr in profile.arr
-		profile->arr = malloc(sizeof(struct cap_prof_arrays)*(999+1));
-		for(i=0;i<=999;i++){
+		profile->arr = malloc(sizeof(struct cap_prof_arrays)*(profile->nmax+1));
+		for(i=0;i<=profile->nmax;i++){
 			profile->arr[i].zarr = shape_arr[i].zarr;
 			profile->arr[i].profil = shape_arr[i].profil;
 			profile->arr[i].d_arr = shape_arr[i].d_arr;
@@ -68,6 +69,36 @@ int main(int argc, char *argv[])
 		profile->rtot1 = cap->rad_ext[0];
 		profile->rtot2 = cap->rad_ext[1];
 		profile->cl = cap->length;
+		//Define output file names
+		//prf, axs and ext are just identical to input as all this info is given in there
+		cap->prf = malloc(sizeof(argv[1]));
+		if(cap->prf == NULL){
+			printf("Could not allocate cap->prf memory.\n");
+			exit(0);
+		}
+		cap->prf = argv[1];
+		cap->axs = malloc(sizeof(argv[1]));
+		if(cap->axs == NULL){
+			printf("Could not allocate cap->axs memory.\n");
+			exit(0);
+		}
+		cap->axs = argv[1];
+		cap->ext = malloc(sizeof(argv[1]));
+		if(cap->ext == NULL){
+			printf("Could not allocate cap->ext memory.\n");
+			exit(0);
+		}
+		cap->ext = argv[1];
+		//cap->out should be same as input file (FILE.inp -> FILE.out)
+		cap->out = malloc(sizeof(argv[1]));
+		if(cap->out == NULL){
+			printf("Could not allocate cap->out memory.\n");
+			exit(0);
+		}
+		char *p=strstr(argv[1],"."); //where is . in FILE.inp
+		strncpy(cap->out, argv[1], p-argv[1]); //copy argv[1] start to . in cap->out
+		cap->out[p-argv[1]] = '\0';
+		sprintf(cap->out+(p-argv[1]),".out");
 	} else {
 		printf("Reading capillary profile files...\n");
 		read_cap_profile(cap, profile);
@@ -126,6 +157,10 @@ int main(int argc, char *argv[])
 	free(rslt->sum_cnt);
 	free(rslt);
 	free(source);
+
+	return 0;
 }
+
+
 
 

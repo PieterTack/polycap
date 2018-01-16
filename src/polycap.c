@@ -6,6 +6,7 @@
 #include <complex.h> //complex numbers required for Fresnel equation (reflect)
 #include <stdlib.h>
 #include <xraylib.h>
+#include <string.h>
 #include <omp.h> /* openmp header */
 
 #ifdef _WIN32
@@ -251,7 +252,7 @@ struct leakstruct *reset_leak(struct cap_profile *profile,struct mumc *absmu)
 		printf("Could not allocate leaks memory.\n");
 		exit(0);
 		}
-	leaks->leak = malloc(sizeof(leaks->leak)*(profile->nmax+1));
+	leaks->leak = malloc(sizeof(leaks->leak[0])*(profile->nmax+1));
 	if(leaks->leak == NULL){
 		printf("Could not allocate leaks->leak memory.\n");
 		exit(0);
@@ -973,8 +974,7 @@ void polycap_out(struct inp_file *cap, struct image_struct *imstr, struct leakst
 	fprintf(fptr,"%d\t%d\n",absmu->n_energy+1,5);
 	for(i=0; i<=absmu->n_energy; i++){
 		fprintf(fptr,"%8.2f\t%10.9f\t%10.9f\t%10.9f\t%10.9f\n",source->e_start+i*source->delta_e,
-			rslt->sum_cnt[i]/(double)rslt->sum_ienter*profile->eta, rslt->sum_cnt[i]/(double)rslt->sum_istart,
-			(double)rslt->sum_ienter/(double)rslt->sum_istart, leaks->leak[i]/(double)rslt->sum_ienter);
+			rslt->sum_cnt[i]/(double)rslt->sum_ienter*profile->eta, rslt->sum_cnt[i]/(double)rslt->sum_istart,(double)rslt->sum_ienter/(double)rslt->sum_istart, leaks->leak[i]/(double)rslt->sum_ienter);
 		}
 	fprintf(fptr,"\nThe started photons: %ld\n",rslt->sum_istart);
 	fprintf(fptr,"\nAverage number of reflections: %f\n",rslt->ave_refl);
