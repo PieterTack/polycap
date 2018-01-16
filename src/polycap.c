@@ -1,3 +1,16 @@
+#include "config.h"
+#include "polycap.h"
+#include "polycap-private.h"
+#include <gsl/gsl_multifit.h>
+#include <stdbool.h>
+#include <complex.h> //complex numbers required for Fresnel equation (reflect)
+#include <stdlib.h>
+#include <xraylib.h>
+#include <omp.h> /* openmp header */
+
+#ifdef _WIN32
+  #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
+#endif
 
 // ---------------------------------------------------------------------------------------------------
 bool polynomialfit(int obs, int degree, 
@@ -70,57 +83,60 @@ char *polycap_read_input_line(FILE *fptr)
 }
 // ---------------------------------------------------------------------------------------------------
 // Read in input file
-struct inp_file read_cap_data(char *filename, struct cap_profile *profile, struct polycap_source *source)
+struct inp_file* read_cap_data(char *filename, struct cap_profile **profile, struct polycap_source **source)
 	{
 	FILE *fptr;
 	int i;
-	struct inp_file cap;
-	struct cap_profile *profile = malloc(sizeof(struct cap_profile));
-	struct polycap_source *source = malloc(sizeof(struct polycap_source));
+	struct inp_file *cap = malloc(sizeof(struct inp_file));
+	struct cap_profile *my_profile = malloc(sizeof(struct cap_profile));
+	struct polycap_source *my_source = malloc(sizeof(struct polycap_source));
 
 	fptr = fopen(filename,"r");
 	if(fptr == NULL){
 		printf("%s file does not exist!\n",filename);
 		exit(0);
 	}
-	fscanf(fptr,"%lf",profile.sig_rough);
-	fscanf(fptr,"%lf %lf",&cap.sig_wave, &cap.corr_length); //currently dummies
-	fscanf(fptr,"%lf",source.d_source);
-	fscanf(fptr,"%lf",source.d_screen);
-	fscanf(fptr,"%lf %lf",source.src_x, source.src_y);
-	fscanf(fptr,"%lf %lf",source.src_sigx, source.src_sigy);
-	fscanf(fptr,"%lf %lf",source.src_shiftx, source.src_shifty);
-	fscanf(fptr,"%d",profile.nelem);
-	profile.iz = malloc(profile->nelem*sizeof(profile.iz[0]));
-	if(profile.iz == NULL){
+	fscanf(fptr,"%lf", &my_profile->sig_rough);
+	fscanf(fptr,"%lf %lf", &cap->sig_wave, &cap->corr_length); //currently dummies
+	fscanf(fptr,"%lf", &my_source->d_source);
+	fscanf(fptr,"%lf", &my_source->d_screen);
+	fscanf(fptr,"%lf %lf", &my_source->src_x, &my_source->src_y);
+	fscanf(fptr,"%lf %lf", &my_source->src_sigx, &my_source->src_sigy);
+	fscanf(fptr,"%lf %lf", &my_source->src_shiftx, &my_source->src_shifty);
+	fscanf(fptr,"%d", &my_profile->nelem);
+	my_profile->iz = malloc(my_profile->nelem*sizeof(my_profile->iz[0]));
+	if(my_profile->iz == NULL){
 		printf("Could not allocate profile.iz memory.\n");
 		exit(0);
 	}
-	profile.wi = malloc(profile->nelem*sizeof(profile.wi[0]));
-	if(profile.wi == NULL){
+	my_profile->wi = malloc(my_profile->nelem*sizeof(my_profile->wi[0]));
+	if(my_profile->wi == NULL){
 		printf("Could not allocate profile.wi memory.\n");
 		exit(0);
 	}
-	for(i=0; i<profile->nelem; i++){
-		fscanf(fptr,"%d %lf",profile.iz[i],profile.wi[i]);
-		profile.wi[i] /= 100.0;
+	for(i=0; i<my_profile->nelem; i++){
+		fscanf(fptr,"%d %lf", &my_profile->iz[i], &my_profile->wi[i]);
+		my_profile->wi[i] /= 100.0;
 	}
-	fscanf(fptr,"%lf",profile.density);
-	fscanf(fptr,"%lf %lf %lf",source.e_start,source.e_final,source.delta_e);
-	fscanf(fptr,"%d",source.ndet);
-	fscanf(fptr,"%d",&cap.shape);
-	if(cap.shape == 0 || cap.shape == 1 || cap.shape == 2){
-		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&cap.length,&cap.rad_ext[0],&cap.rad_ext[1],&cap.rad_int[0],&cap.rad_int[1],&cap.focal_dist[0],&cap.focal_dist[1]);
+	fscanf(fptr,"%lf", &my_profile->density);
+	fscanf(fptr,"%lf %lf %lf", &my_source->e_start, &my_source->e_final, &my_source->delta_e);
+	fscanf(fptr,"%d", &my_source->ndet);
+	fscanf(fptr,"%d", &cap->shape);
+	if(cap->shape == 0 || cap->shape == 1 || cap->shape == 2){
+		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&cap->length,&cap->rad_ext[0],&cap->rad_ext[1],&cap->rad_int[0],&cap->rad_int[1],&cap->focal_dist[0],&cap->focal_dist[1]);
 	} else { //additional files to describe (poly)capillary profile were supplied
 		i=fgetc(fptr); //reads in \n from last line still
-		cap.prf = polycap_read_input_line(fptr);
-		cap.axs = polycap_read_input_line(fptr);
-		cap.ext = polycap_read_input_line(fptr);
+		cap->prf = polycap_read_input_line(fptr);
+		cap->axs = polycap_read_input_line(fptr);
+		cap->ext = polycap_read_input_line(fptr);
 	}
-	fscanf(fptr,"%lf",profile.n_chan);
+	fscanf(fptr,"%lf", &my_profile->n_chan);
 	i=fgetc(fptr); //reads in \n from last line still
-	cap.out = polycap_read_input_line(fptr);
+	cap->out = polycap_read_input_line(fptr);
 	fclose(fptr);
+
+	*profile = my_profile;
+	*source = my_source;
 
 	return cap;
 	}
@@ -804,6 +820,7 @@ struct cap_prof_arrays *def_cap_profile(unsigned long int shape, double length, 
 	int i, nmax=999;
 	double pc_x[4], pc_y[4], coeff[3];
 	double slope, b, k, a;
+	struct cap_prof_arrays *shape_arr;
 
 	if(shape == 0 || shape == 1 || shape ==2){
 		//Make shape array of sufficient memory size (999 points along PC shape should be sufficient)
@@ -959,7 +976,7 @@ void polycap_out(struct inp_file *cap, struct image_struct *imstr, struct leakst
 			rslt->sum_cnt[i]/(double)rslt->sum_ienter*profile->eta, rslt->sum_cnt[i]/(double)rslt->sum_istart,
 			(double)rslt->sum_ienter/(double)rslt->sum_istart, leaks->leak[i]/(double)rslt->sum_ienter);
 		}
-	fprintf(fptr,"\nThe started photons: %lld\n",rslt->sum_istart);
+	fprintf(fptr,"\nThe started photons: %ld\n",rslt->sum_istart);
 	fprintf(fptr,"\nAverage number of reflections: %f\n",rslt->ave_refl);
 	fclose(fptr);
 
@@ -971,41 +988,40 @@ void polycap_out(struct inp_file *cap, struct image_struct *imstr, struct leakst
 	fclose(fptr);
 
 	//FREE ALLOCATED MEMORY
-	free(f_abs)
+	free(f_abs);
 
-	return 0;
 	}
 // ---------------------------------------------------------------------------------------------------
 // Main polycap calculation program
-struct polycap_result polycap_calc(int thread_cnt, struct cap_profile *profile, struct mumc *absmu, struct leakstruct *leaks, struct image_struct *imstr, struct polycap_source *source)
+struct polycap_result *polycap_calc(int thread_cnt, struct cap_profile *profile, struct mumc *absmu, struct leakstruct *leaks, struct image_struct *imstr, struct polycap_source *source)
 	{
 	int iesc_value,i,j;
 	int *iesc = &iesc_value;
 	int icount=0;
-	struct polycap_result rslt=malloc(sizeof(struct polycap_result));
+	struct polycap_result *rslt = malloc(sizeof(struct polycap_result));
 
 	*iesc =0;
 
 	//amount of reflected, started and entered photons
-	rslt.sum_refl=0;
-	rslt.sum_istart=0;
-	rslt.sum_ienter=0;
+	rslt->sum_refl=0;
+	rslt->sum_istart=0;
+	rslt->sum_ienter=0;
 
-	rslt.absorb_sum = malloc(sizeof(rslt.absorb_sum[0])*(profile->nmax+1));
-	if(rslt.absorb_sum == NULL){
+	rslt->absorb_sum = malloc(sizeof(rslt->absorb_sum[0])*(profile->nmax+1));
+	if(rslt->absorb_sum == NULL){
 		printf("Could not allocate rslt.absorb_sum memory.\n");
 		exit(0);
 	}
 	for(j=0; j<=profile->nmax; j++){
-		rslt.absorb_sum[j] = 0.;
+		rslt->absorb_sum[j] = 0.;
 	}
-	rslt.sum_cnt = malloc(sizeof(rslt.sum_cnt[0])*(absmu->n_energy+1));
-	if(rslt.sum_cnt == NULL){
+	rslt->sum_cnt = malloc(sizeof(rslt->sum_cnt[0])*(absmu->n_energy+1));
+	if(rslt->sum_cnt == NULL){
 		printf("Could not allocate rslt.sum_cnt memory.\n");
 		exit(0);
 	}
 	for(j=0; j<=absmu->n_energy;j++){
-		rslt.sum_cnt[j] = 0.;
+		rslt->sum_cnt[j] = 0.;
 	}
 
 #ifndef _WIN32
@@ -1038,7 +1054,7 @@ struct polycap_result polycap_calc(int thread_cnt, struct cap_profile *profile, 
 		    private(icount,i,j) \
 		    firstprivate(profile,absmu,leaks,thread_cnt) \
 		    num_threads(thread_cnt) \
-		    reduction(+:rslt.sum_refl,rslt.sum_istart,rslt.sum_ienter)
+		    reduction(+:rslt->sum_refl,rslt->sum_istart,rslt->sum_ienter)
 	{
 		int thread_id = omp_get_thread_num();
 		struct calcstruct *calc = init_calcstruct(seeds[thread_id], profile, absmu);
@@ -1054,24 +1070,27 @@ struct polycap_result polycap_calc(int thread_cnt, struct cap_profile *profile, 
 				} while(calc->iesc == -2);
 				count(absmu, source, icount, profile, leaks, imstr,calc);
 			} while(calc->iesc == -3);
-			rslt.sum_refl += calc->i_refl;
+			#pragma omp critical
+			{
+				rslt->sum_refl += calc->i_refl;
+			}
 			if(thread_id == 0 && (double)i/((double)source->ndet/(double)thread_cnt/10.) >= 1.){
-				printf("%d%%\t%lld\t%f\n",((icount*100)/(source->ndet/thread_cnt)),calc->i_refl,calc->rh[2]);
+				printf("%d%%\t%ld\t%f\n",((icount*100)/(source->ndet/thread_cnt)),calc->i_refl,calc->rh[2]);
 				i=0;
 			}
 			i++;//counter just to follow % completed
 		} //for(icount=0; icount <= source->ndet; icount++)
 
-		rslt.sum_istart += calc->istart;
-		rslt.sum_ienter += calc->ienter;
-
 		#pragma omp critical
 		{
+			rslt->sum_istart += calc->istart;
+			rslt->sum_ienter += calc->ienter;
+
 			for(j=0; j <= profile->nmax; j++){
-				rslt.absorb_sum[j] += calc->absorb[j];
+				rslt->absorb_sum[j] += calc->absorb[j];
 			}
 			for(j=0; j <= absmu->n_energy; j++){
-				rslt.sum_cnt[j] += calc->cnt[j];
+				rslt->sum_cnt[j] += calc->cnt[j];
 			}
 		}
 
@@ -1085,8 +1104,8 @@ struct polycap_result polycap_calc(int thread_cnt, struct cap_profile *profile, 
 		free(calc);
 	}
 
-	rslt.ave_refl = (double)rslt.sum_refl/(double)source->ndet;
-	printf("Average number of reflections: %f\n",rslt.ave_refl);
+	rslt->ave_refl = (double)rslt->sum_refl/(double)source->ndet;
+	printf("Average number of reflections: %f\n",rslt->ave_refl);
 
 	return rslt;
 	}
