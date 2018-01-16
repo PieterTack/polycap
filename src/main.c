@@ -71,26 +71,26 @@ int main(int argc, char *argv[])
 		profile->cl = cap->length;
 		//Define output file names
 		//prf, axs and ext are just identical to input as all this info is given in there
-		cap->prf = malloc(sizeof(argv[1]));
+		cap->prf = malloc(sizeof(char)*(strlen(argv[1])+1));
 		if(cap->prf == NULL){
 			printf("Could not allocate cap->prf memory.\n");
 			exit(0);
 		}
 		cap->prf = argv[1];
-		cap->axs = malloc(sizeof(argv[1]));
+		cap->axs = malloc(sizeof(char)*(strlen(argv[1])+1));
 		if(cap->axs == NULL){
 			printf("Could not allocate cap->axs memory.\n");
 			exit(0);
 		}
 		cap->axs = argv[1];
-		cap->ext = malloc(sizeof(argv[1]));
+		cap->ext = malloc(sizeof(char)*(strlen(argv[1])+1));
 		if(cap->ext == NULL){
 			printf("Could not allocate cap->ext memory.\n");
 			exit(0);
 		}
 		cap->ext = argv[1];
 		//cap->out should be same as input file (FILE.inp -> FILE.out)
-		cap->out = malloc(sizeof(argv[1]));
+		cap->out = malloc(sizeof(char)*(strlen(argv[1])+1));
 		if(cap->out == NULL){
 			printf("Could not allocate cap->out memory.\n");
 			exit(0);

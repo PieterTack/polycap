@@ -902,11 +902,13 @@ struct cap_prof_arrays *def_cap_profile(unsigned long int shape, double length, 
 void polycap_out(struct inp_file *cap, struct image_struct *imstr, struct leakstruct *leaks, char *inp_file, struct mumc *absmu, struct cap_profile *profile, struct polycap_source *source, struct polycap_result *rslt)
 	{
 	int i, j;
-	char *f_abs = malloc(sizeof(cap->out)+4*sizeof(char));
+	char *f_abs;
 	double e=0;
 	double dist=0;
 	int arrsize=0;
 	FILE *fptr; //pointer to access files
+
+	f_abs = malloc(sizeof(char)*(strlen(cap->out)+5));
 
 	fptr = fopen("xy.dat","w"); //stores coordinates of photon on screen(xm, ym), as well as direction(xm1,ym1)
 	if(IMSIZE > source->ndet) arrsize = source->ndet+1;
