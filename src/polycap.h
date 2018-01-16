@@ -29,7 +29,7 @@ void read_cap_profile(struct inp_file *cap, struct cap_profile *profile);
 struct mumc *ini_mumc(struct polycap_source *source, struct cap_profile *profile);
 struct leakstruct *reset_leak(struct cap_profile *profile,struct mumc *absmu);
 void ini_polycap(struct cap_profile *profile);
-struct polycap_result* polycap_calc(int thread_cnt, struct inp_file *cap, struct cap_profile *profile, struct mumc *absmu, struct leakstruct *leaks, struct image_struct *imstr, struct polycap_source *source);
+struct polycap_result* polycap_calc(int thread_cnt, struct cap_profile *profile, struct mumc *absmu, struct leakstruct *leaks, struct image_struct *imstr, struct polycap_source *source);
 void polycap_out(struct inp_file *cap, struct image_struct *imstr, struct leakstruct *leaks, char *inp_file, struct mumc *absmu, struct cap_profile *profile, struct polycap_source *source, struct polycap_result *rslt);
 
 
