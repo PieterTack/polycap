@@ -977,7 +977,7 @@ void polycap_out(struct inp_file *cap, struct image_struct *imstr, struct leakst
 	}
 // ---------------------------------------------------------------------------------------------------
 // Main polycap calculation program
-struct polycap_result polycap_calc(int thread_cnt, struct inp_file *cap, struct cap_profile *profile, struct mumc *absmu, struct leakstruct *leaks, struct image_struct *imstr, struct polycap_source *source)
+struct polycap_result polycap_calc(int thread_cnt, struct cap_profile *profile, struct mumc *absmu, struct leakstruct *leaks, struct image_struct *imstr, struct polycap_source *source)
 	{
 	int iesc_value,i,j;
 	int *iesc = &iesc_value;
@@ -1036,7 +1036,7 @@ struct polycap_result polycap_calc(int thread_cnt, struct inp_file *cap, struct 
 	#pragma omp parallel \
 		    default(shared) \
 		    private(icount,i,j) \
-		    firstprivate(cap,profile,absmu,leaks,thread_cnt) \
+		    firstprivate(profile,absmu,leaks,thread_cnt) \
 		    num_threads(thread_cnt) \
 		    reduction(+:rslt.sum_refl,rslt.sum_istart,rslt.sum_ienter)
 	{

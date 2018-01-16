@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 	printf("Starting calculations...\n");
 
 	//NEW FUNCTION PERFORMING CALCULATIONS
-	rslt = polycap_calc(thread_cnt,&cap,profile,absmu,leaks,imstr,source);
+	rslt = polycap_calc(thread_cnt,profile,absmu,leaks,imstr,source);
 
 	//NEW FUNCTION WRITING OUTPUT
 	polycap_out(&cap,imstr,leaks,argv[1],absmu,profile,source,&rslt);
