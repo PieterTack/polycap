@@ -71,24 +71,9 @@ int main(int argc, char *argv[])
 		profile->cl = cap->length;
 		//Define output file names
 		//prf, axs and ext are just identical to input as all this info is given in there
-		cap->prf = malloc(sizeof(char)*(strlen(argv[1])+1));
-		if(cap->prf == NULL){
-			printf("Could not allocate cap->prf memory.\n");
-			exit(0);
-		}
-		cap->prf = argv[1];
-		cap->axs = malloc(sizeof(char)*(strlen(argv[1])+1));
-		if(cap->axs == NULL){
-			printf("Could not allocate cap->axs memory.\n");
-			exit(0);
-		}
-		cap->axs = argv[1];
-		cap->ext = malloc(sizeof(char)*(strlen(argv[1])+1));
-		if(cap->ext == NULL){
-			printf("Could not allocate cap->ext memory.\n");
-			exit(0);
-		}
-		cap->ext = argv[1];
+		cap->prf = strdup(argv[1]);
+		cap->axs = strdup(argv[1]);
+		cap->ext = strdup(argv[1]);
 		//cap->out should be same as input file (FILE.inp -> FILE.out)
 		cap->out = malloc(sizeof(char)*(strlen(argv[1])+1));
 		if(cap->out == NULL){
@@ -137,7 +122,9 @@ int main(int argc, char *argv[])
 	rslt = polycap_calc(thread_cnt,profile,absmu,leaks,imstr,source);
 
 	//NEW FUNCTION WRITING OUTPUT
+	printf("Writing output files...");
 	polycap_out(cap,imstr,leaks,argv[1],absmu,profile,source,rslt);
+	printf("   OK\n");
 
 	//FREE ALLOCATED MEMORY
 	free(profile->wi);
@@ -145,6 +132,7 @@ int main(int argc, char *argv[])
 	free(cap->prf);
 	free(cap->axs);
 	free(cap->ext);
+	free(cap->out);
 	free(cap);
 	free(absmu->arr);
 	free(absmu);
