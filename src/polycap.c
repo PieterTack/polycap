@@ -492,7 +492,7 @@ int reflect(double alf, struct mumc *absmu, struct polycap_source *source, struc
 // ---------------------------------------------------------------------------------------------------
 void start(struct mumc *absmu, struct cap_profile *profile, struct polycap_source *source, int icount, struct image_struct *imstr, struct calcstruct *calc)
 	{
-	int i, flag_restart;
+	int i;
 	int ix_cap, iy_cap; //indices of selected channel
 	double dx; //distance between photon's source origin and PC entrance coordinates (projected on same plane)
 		// dx is just a measure to see if can quit while loop or not, essentially only runs once through it
@@ -514,7 +514,6 @@ void start(struct mumc *absmu, struct cap_profile *profile, struct polycap_sourc
 	dx = 2e9; //set dx very high so it is certainly > single capillary radius (profil)
 	while(dx > profile->arr[0].profil){
 		//select capil
-		flag_restart = 0;
 		do{
 			r = polycap_rng_uniform(calc->rn);
 			ix_cap = floor( profile->n_chan_max * (2.*fabs(r)-1.) + 0.5);
