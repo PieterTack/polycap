@@ -10,7 +10,7 @@ cd $APPVEYOR_BUILD_FOLDER
 
 autoreconf -fi
 export CPPFLAGS="-I/usr/local/include -I$HOME/install/include"
-export CFLAGS="-Wno-deprecated -Wno-deprecated-declarations"
+export CFLAGS="-Wall -Werror"
 ./configure --prefix=$HOME/install
 make
 make check

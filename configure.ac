@@ -40,12 +40,14 @@ PKG_PROG_PKG_CONFIG
 
 #search for xraylib and other modules
 PKG_CHECK_MODULES([xraylib],libxrl >= 3.3.0)
+#search for gsl
+PKG_CHECK_MODULES([gsl],[gsl])
 #try easyRNG first, gsl as fallback
 PKG_CHECK_MODULES([easyRNG],[easyRNG >= 1.1],
 	[
 	AC_DEFINE([HAVE_EASYRNG], [], [building with easyRNG support])
 	],[
-	PKG_CHECK_MODULES([gsl],[gsl])
+	USELESS_ASSIGNMENT=1
 	])
 
 

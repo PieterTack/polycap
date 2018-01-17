@@ -2,8 +2,8 @@ language: generic
 
 env:
   global:
-    - CXXFLAGS="-Wno-deprecated -Wno-deprecated-declarations -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int"
-    - CFLAGS="-Wno-deprecated -Wno-deprecated-declarations -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int"
+    - CXXFLAGS="-Wall -Werror"
+    - CFLAGS="-Wall -Werror"
     - LD_LIBRARY_PATH='/usr/local/lib'
     - PKG_CONFIG_PATH='/usr/local/lib/pkgconfig'
 
@@ -29,14 +29,15 @@ matrix:
             - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable'
               key_url: 'http://xmi-apt.tomschoonjans.eu/xmi.packages.key'
           packages:
+            - libgsl0-dev
             - libeasyrng-dev
             - libxrl7-dev
     - os: osx
       sudo: required
-      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm gsl' LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
+      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm' LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
     - os: osx
       sudo: required
-      env: CC='/usr/local/bin/gcc-7' HOMEBREW_ARGS='gcc@7 gsl'
+      env: CC='/usr/local/bin/gcc-7' HOMEBREW_ARGS='gcc@7'
     - os: osx
       sudo: required
       env: CC='/usr/local/opt/llvm/bin/clang' CXX='/usr/local/opt/llvm/bin/clang++' HOMEBREW_ARGS='llvm tschoonj/tap/easyrng' LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
@@ -52,7 +53,7 @@ before_install:
       brew update || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
-      brew install git autoconf automake libtool curl wget pkg-config || exit 1
+      brew install git autoconf automake libtool curl wget pkg-config gsl || exit 1
       brew install $HOMEBREW_ARGS tschoonj/tap/xraylib || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
