@@ -11,6 +11,7 @@
 
 #ifdef _WIN32
   #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
+  #include <windows.h>
 #endif
 
 // ---------------------------------------------------------------------------------------------------
