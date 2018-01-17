@@ -1,19 +1,18 @@
 #include "config.h"
+#ifdef _WIN32
+  // needs to be define before including stdlib.h
+  #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
+#endif
+#include <stdlib.h>
 #include "polycap.h"
 #include "polycap-private.h"
 #include <gsl/gsl_multifit.h>
 #include <stdbool.h>
 #include <complex.h> //complex numbers required for Fresnel equation (reflect)
-#include <stdlib.h>
 #include <xraylib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <omp.h> /* openmp header */
-
-#ifdef _WIN32
-  #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
-  #define WIN32_LEAN_AND_MEAN
-  #include <windows.h>
-#endif
 
 // ---------------------------------------------------------------------------------------------------
 bool polynomialfit(int obs, int degree, 
@@ -979,7 +978,7 @@ void polycap_out(struct inp_file *cap, struct image_struct *imstr, struct leakst
 		fprintf(fptr,"%8.2f\t%10.9f\t%10.9f\t%10.9f\t%10.9f\n",source->e_start+i*source->delta_e,
 			rslt->sum_cnt[i]/(double)rslt->sum_ienter*profile->eta, rslt->sum_cnt[i]/(double)rslt->sum_istart,(double)rslt->sum_ienter/(double)rslt->sum_istart, leaks->leak[i]/(double)rslt->sum_ienter);
 		}
-	fprintf(fptr,"\nThe started photons: %ld\n",rslt->sum_istart);
+	fprintf(fptr,"\nThe started photons: %" PRId64 "\n",rslt->sum_istart);
 	fprintf(fptr,"\nAverage number of reflections: %f\n",rslt->ave_refl);
 	fclose(fptr);
 
@@ -1038,7 +1037,9 @@ struct polycap_result* polycap_calc(int thread_cnt, struct cap_profile *profile,
 	unsigned long int *seeds = malloc(sizeof(unsigned long int) * thread_cnt);
 	for(i=0;i<thread_cnt;i++){
 #ifdef _WIN32
-		rand_s(&seeds[i]);
+		unsigned int seed;
+		rand_s(&seed);
+		seeds[i] = seed;
 #else
 		fread(&seeds[i], sizeof(unsigned long int), 1, random_device);
 #endif
@@ -1077,7 +1078,7 @@ struct polycap_result* polycap_calc(int thread_cnt, struct cap_profile *profile,
 				rslt->sum_refl += calc->i_refl;
 			}
 			if(thread_id == 0 && (double)i/((double)source->ndet/(double)thread_cnt/10.) >= 1.){
-				printf("%d%%\t%ld\t%f\n",((icount*100)/(source->ndet/thread_cnt)),calc->i_refl,calc->rh[2]);
+				printf("%d%%\t%" PRId64 "\t%f\n",((icount*100)/(source->ndet/thread_cnt)),calc->i_refl,calc->rh[2]);
 				i=0;
 			}
 			i++;//counter just to follow % completed
