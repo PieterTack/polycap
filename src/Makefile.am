@@ -6,6 +6,6 @@ polycap_CFLAGS = @OPENMP_CFLAGS@
 polycap_LDFLAGS = @OPENMP_CFLAGS@
 
 
-lib_LTLIBRARIES = polycap.la
-polycap_la_SOURCES = main.c polycap.c polycap-private.h
-polycap_la_HEADERS = polycap.h
+lib_LTLIBRARIES = libpolycap.la
+libpolycap_la_SOURCES = main.c polycap.c polycap-private.h
+libpolycap_la_HEADERS = polycap.h
