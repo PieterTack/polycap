@@ -64,4 +64,7 @@ AC_CONFIG_FILES([ 	Makefile
 		])
 AC_CONFIG_HEADERS([config.h])
 
+#AC_CONFIG_LIBOBJ_DIR([lib])
+AC_PROG_RANLIB
+
 AC_OUTPUT
