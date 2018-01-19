@@ -1052,6 +1052,7 @@ struct polycap_result* polycap_calc(int thread_cnt, struct cap_profile *profile,
 //put this for loop in separate function
 //make sure it gives an output structure containing only: photon exit coordinate, translation vector, trans. eff. and total traveled distance
 
+
 	//Actual multi-core loop where the calculations happen.
 	#pragma omp parallel \
 		    default(shared) \
