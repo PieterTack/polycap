@@ -60,6 +60,7 @@ if test $ac_cv_prog_c_openmp = unsupported ; then
 fi
 
 AC_CONFIG_FILES([ 	Makefile
+		 	include/Makefile
 			src/Makefile
 			tests/Makefile
 		])
