@@ -10,6 +10,7 @@ libpolycap_la_LDFLAGS = @OPENMP_CFLAGS@
 
 bin_PROGRAMS = polycap
 polycap_SOURCES = main.c 
+polycap_CPPFLAGS = @easyRNG_CFLAGS@ @gsl_CFLAGS@
 polycap_LDADD = libpolycap.la
 
 
