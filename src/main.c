@@ -14,7 +14,6 @@
 #include "polycap.h"
 #include "polycap-private.h"
 #include <omp.h> /* openmp header */
-#include <xraylib.h>
 
 
 
