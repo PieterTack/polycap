@@ -13,6 +13,7 @@
 #include <limits.h>
 #include "polycap.h"
 #include "polycap-private.h"
+#include "polycap-old.h"
 #include <omp.h> /* openmp header */
 
 

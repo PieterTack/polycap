@@ -1,6 +1,7 @@
 #include "polycap-private.h"
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 // get a new profile for a given type with properties
 polycap_profile* polycap_profile_new(polycap_profile_type type, double length, double rad_ext[2], double rad_int[2], double focal_dist[2])
