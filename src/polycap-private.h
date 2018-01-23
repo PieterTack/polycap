@@ -157,5 +157,15 @@ struct polycap_result
   double *absorb_sum, *sum_cnt;
   };
 
+//================================
+
+struct _polycap_profile
+  {
+  double z;
+  double cap;
+  double ext;
+  };
+
+
 #endif
 
