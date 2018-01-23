@@ -1,5 +1,9 @@
+#include "polycap-private.h"
+#include <string.h>
+#include <stdlib.h>
+
 // get a new profile for a given type with properties
-polycap_profile* polycap_profile_new(enum polycap_profile_type type, double length, double rad_ext[2], double rad_int[2], double focal_dist[2])
+polycap_profile* polycap_profile_new(polycap_profile_type type, double length, double rad_ext[2], double rad_int[2], double focal_dist[2])
 {
 	struct cap_prof_arrays *shape_arr;
 
@@ -30,6 +34,8 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 
 	//transfer shape information to structure with identical output as polycap_profile_new()
 	shape_arr = malloc(sizeof(struct cap_prof_arrays)*(profile->nmax+1));
+	unsigned int i;
+
 	for(i=0;i<=profile->nmax;i++){
 		shape_arr[i].zarr = profile->arr[i].zarr;
 		shape_arr[i].profil = profile->arr[i].profil;

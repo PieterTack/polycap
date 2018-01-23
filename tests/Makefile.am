@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I${top_srcdir}/src
+AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include
 
 check_PROGRAMS = test1
 TESTS = $(check_PROGRAMS)

@@ -2,6 +2,7 @@
 #define POLYCAP_PRIVATE_H
 
 #include "config.h"
+#include "polycap.h"
 #include <stdint.h>
 
 #define NSPOT 1000  /* The number of bins in the grid for the spot*/
@@ -12,24 +13,38 @@
 #ifdef HAVE_EASYRNG
   #include <easy_rng.h>
   #include <easy_randist.h>
+
+  struct _polycap_rng {
+  	easy_rng *_rng;
+  };
+
   typedef easy_rng_type polycap_rng_type;
-  typedef easy_rng polycap_rng;
-  #define polycap_rng_alloc(T) easy_rng_alloc(T)
-  #define polycap_rng_free(rng) easy_rng_free(rng)
-  #define polycap_rng_set(rng, seed) easy_rng_set(rng, seed)
-  #define polycap_rng_uniform(rng) easy_rng_uniform(rng)
+  #define _polycap_rng_alloc(T) easy_rng_alloc(T)
+  #define _polycap_rng_free(rng) easy_rng_free(rng->_rng)
+  #define _polycap_rng_set(rng, seed) easy_rng_set(rng->_rng, seed)
+  #define _polycap_rng_uniform(rng) easy_rng_uniform(rng->_rng)
   #define polycap_rng_mt19937 easy_rng_mt19937
 #else
   #include <gsl/gsl_rng.h>
   #include <gsl/gsl_randist.h>
+
+  struct _polycap_rng {
+  	gsl_rng *_rng;
+  };
+
   typedef gsl_rng_type polycap_rng_type;
-  typedef gsl_rng polycap_rng;
-  #define polycap_rng_alloc(T) gsl_rng_alloc(T)
-  #define polycap_rng_free(rng) gsl_rng_free(rng)
-  #define polycap_rng_set(rng, seed) gsl_rng_set(rng, seed)
-  #define polycap_rng_uniform(rng) gsl_rng_uniform(rng)
+  #define _polycap_rng_alloc(T) gsl_rng_alloc(T)
+  #define _polycap_rng_free(rng) gsl_rng_free(rng->_rng)
+  #define _polycap_rng_set(rng, seed) gsl_rng_set(rng->_rng, seed)
+  #define _polycap_rng_uniform(rng) gsl_rng_uniform(rng->_rng)
   #define polycap_rng_mt19937 gsl_rng_mt19937
 #endif
+
+polycap_rng * polycap_rng_alloc(const polycap_rng_type * T);
+void polycap_rng_set(const polycap_rng * r, unsigned long int s);
+double polycap_rng_uniform(const polycap_rng * r);
+
+
 // ---------------------------------------------------------------------------------------------------
 // Define structures
 struct inp_file

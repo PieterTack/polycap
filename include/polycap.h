@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
 
 //Define constants
 #define HC 1.23984193E-7 //h*c [keV*cm]
@@ -37,7 +38,7 @@ typedef struct {
 
 // get a new profile for a given type with properties
 polycap_profile* polycap_profile_new(
-	enum polycap_profile_type type,
+	polycap_profile_type type,
 	double length,
 	double rad_ext[2],
 	double rad_int[2],
@@ -59,7 +60,7 @@ polycap_description* polycap_description_new_from_file(const char *filename);
 // get a new polycap_description by providing all its properties... perhaps a simpler variant of this function could be defined that would only set the most important parameters and use defaults for the others??
 polycap_description* polycap_description_new(
 	double sig_rough,
-	double sig_wave
+	double sig_wave,
 	double corr_length,
 	double d_source,
 	double d_screen,
