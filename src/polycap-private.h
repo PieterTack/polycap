@@ -161,9 +161,10 @@ struct polycap_result
 
 struct _polycap_profile
   {
-  double z;
-  double cap;
-  double ext;
+  int nmax;
+  double *z;
+  double *cap;
+  double *ext;
   };
 
 

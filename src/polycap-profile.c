@@ -16,18 +16,18 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 		printf("Could not allocate profile memory.\n");
 		exit(1);
 	}
-	profile->nmax = 999;
-	profile->z = malloc(sizeof(profile->z[0])*(profile->nmax+1));
+	profile->nmax = nmax;
+	profile->z = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->z == NULL){
 		printf("Could not allocate profile->z memory.\n");
 		exit(1);
 	}
-	profile->cap = malloc(sizeof(profile->cap[0])*(profile->nmax+1));
+	profile->cap = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->cap == NULL){
 		printf("Could not allocate profile->cap memory.\n");
 		exit(1);
 	}
-	profile->ext = malloc(sizeof(profile->ext[0])*(profile->nmax+1));
+	profile->ext = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->ext == NULL){
 		printf("Could not allocate profile->ext memory.\n");
 		exit(1);
@@ -102,7 +102,7 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 // get a new profile from Laszlo's ASCII files
 polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_file, const char *central_axis_file, const char *external_shape_file)
 {
-	struct cap_prof_arrays *profile;
+	polycap_profile *profile;
 	FILE *fptr;
 	int i, n_tmp;
 	double sx, sy;
@@ -122,17 +122,17 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 		exit(1);
 	}
 	profile->nmax = n_tmp;
-	profile->z = malloc(sizeof(profile->z[0])*(profile->nmax+1));
+	profile->z = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->z == NULL){
 		printf("Could not allocate profile->z memory.\n");
 		exit(1);
 	}
-	profile->cap = malloc(sizeof(profile->cap[0])*(profile->nmax+1));
+	profile->cap = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->cap == NULL){
 		printf("Could not allocate profile->cap memory.\n");
 		exit(1);
 	}
-	profile->ext = malloc(sizeof(profile->ext[0])*(profile->nmax+1));
+	profile->ext = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->ext == NULL){
 		printf("Could not allocate profile->ext memory.\n");
 		exit(1);
