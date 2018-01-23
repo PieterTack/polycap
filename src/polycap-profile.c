@@ -1,25 +1,18 @@
 // get a new profile for a given type with properties
-polycap_profile* polycap_profile_new(
-	enum polycap_profile_type type,
-	double length,
-	double rad_ext[2],
-	double rad_int[2],
-	double focal_dist[2])
+polycap_profile* polycap_profile_new(enum polycap_profile_type type, double length, double rad_ext[2], double rad_int[2], double focal_dist[2])
 {
 	struct cap_prof_arrays *shape_arr;
 
-	shape_arr = def_cap_profile(enum polycap_profile_type type, double length, double rad_ext[2], double rad_int[2], double focal_dist[2]);
+	shape_arr = def_cap_profile(type, length, rad_ext[2], rad_int[2], focal_dist[2]);
 
 	return shape_arr;
 
 }
 //===========================================
 // get a new profile from Laszlo's ASCII files
-polycap_profile* polycap_profile_new_from_file(
-	const char *single_cap_profile_file,
-	const char *central_axis_file,
-	const char *external_shape_file)
+polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_file, const char *central_axis_file, const char *external_shape_file)
 {
+
 	struct cap_prof_arrays *shape_arr;
 	struct inp_file *cap;
 	struct cap_profile *profile;
@@ -54,7 +47,6 @@ polycap_profile* polycap_profile_new_from_file(
 // free the polycap_profile structure and its associated data
 void polycap_profile_free(polycap_profile *profile)
 {
-
 	free(profile);
 
 }
