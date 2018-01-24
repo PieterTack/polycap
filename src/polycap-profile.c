@@ -139,7 +139,6 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 
 	}
 
-
 	return profile;
 
 }
