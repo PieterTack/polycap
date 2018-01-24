@@ -4,10 +4,11 @@
   #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
 #endif
 #include <stdlib.h>
-#include "polycap.h"
+#include "polycap-old.h"
 #include "polycap-private.h"
-#include <gsl/gsl_multifit.h>
-#include <stdbool.h>
+//#include <gsl/gsl_multifit.h>
+//#include <stdbool.h>
+#include <math.h>
 #include <complex.h> //complex numbers required for Fresnel equation (reflect)
 #include <xraylib.h>
 #include <string.h>
@@ -15,45 +16,45 @@
 #include <omp.h> /* openmp header */
 
 // ---------------------------------------------------------------------------------------------------
-bool polynomialfit(int obs, int degree, 
-		   double *dx, double *dy, double *store) /* n, p */
-{
-  gsl_multifit_linear_workspace *ws;
-  gsl_matrix *cov, *X;
-  gsl_vector *y, *c;
-  double chisq;
- 
-  int i, j;
- 
-  X = gsl_matrix_alloc(obs, degree);
-  y = gsl_vector_alloc(obs);
-  c = gsl_vector_alloc(degree);
-  cov = gsl_matrix_alloc(degree, degree);
- 
-  for(i=0; i < obs; i++) {
-    for(j=0; j < degree; j++) {
-      gsl_matrix_set(X, i, j, pow(dx[i], j));
-    }
-    gsl_vector_set(y, i, dy[i]);
-  }
- 
-  ws = gsl_multifit_linear_alloc(obs, degree);
-  gsl_multifit_linear(X, y, c, cov, &chisq, ws);
- 
-  /* store result ... */
-  for(i=0; i < degree; i++)
-  {
-    store[i] = gsl_vector_get(c, i);
-  }
- 
-  gsl_multifit_linear_free(ws);
-  gsl_matrix_free(X);
-  gsl_matrix_free(cov);
-  gsl_vector_free(y);
-  gsl_vector_free(c);
-  return true; /* we do not "analyse" the result (cov matrix mainly)
-		  to know if the fit is "good" */
-}
+//bool polynomialfit(int obs, int degree, 
+//		   double *dx, double *dy, double *store) /* n, p */
+//{
+// gsl_multifit_linear_workspace *ws;
+//  gsl_matrix *cov, *X;
+//  gsl_vector *y, *c;
+//  double chisq;
+// 
+//  int i, j;
+// 
+//  X = gsl_matrix_alloc(obs, degree);
+//  y = gsl_vector_alloc(obs);
+//  c = gsl_vector_alloc(degree);
+//  cov = gsl_matrix_alloc(degree, degree);
+// 
+//  for(i=0; i < obs; i++) {
+//    for(j=0; j < degree; j++) {
+//      gsl_matrix_set(X, i, j, pow(dx[i], j));
+//    }
+//    gsl_vector_set(y, i, dy[i]);
+//  }
+// 
+//  ws = gsl_multifit_linear_alloc(obs, degree);
+//  gsl_multifit_linear(X, y, c, cov, &chisq, ws);
+// 
+//  /* store result ... */
+//  for(i=0; i < degree; i++)
+//  {
+//    store[i] = gsl_vector_get(c, i);
+//  }
+// 
+//  gsl_multifit_linear_free(ws);
+//  gsl_matrix_free(X);
+//  gsl_matrix_free(cov);
+//  gsl_vector_free(y);
+//  gsl_vector_free(c);
+//  return true; /* we do not "analyse" the result (cov matrix mainly)
+//		  to know if the fit is "good" */
+//}
 
 // ---------------------------------------------------------------------------------------------------
 char *polycap_read_input_line(FILE *fptr)
