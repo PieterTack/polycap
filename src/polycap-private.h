@@ -186,7 +186,7 @@ struct _polycap_description
   double *wi;
   double density;
   struct _polycap_profile *profile;
-  }
+  };
 
 #endif
 

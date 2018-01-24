@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include <stdint.h>
 
 //Define constants
 #define HC 1.23984193E-7 //h*c [keV*cm]
