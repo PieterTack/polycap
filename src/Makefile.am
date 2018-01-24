@@ -8,7 +8,9 @@ libpolycap_la_LDFLAGS = @OPENMP_CFLAGS@
 
 bin_PROGRAMS = polycap
 polycap_SOURCES = main.c 
+polycap_CFLAGS = @OPENMP_CFLAGS@
 polycap_CPPFLAGS = @easyRNG_CFLAGS@ @gsl_CFLAGS@ -I$(srcdir) -I$(top_srcdir)/include
 polycap_LDADD = libpolycap.la
+polycap_LDFLAGS = libpolycap.la @OPENMP_CFLAGS@
 
 
