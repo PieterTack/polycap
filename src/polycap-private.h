@@ -167,6 +167,26 @@ struct _polycap_profile
   double *ext;
   };
 
+struct _polycap_description
+  {
+  double sig_rough;
+  double sig_wave;
+  double corr_length;
+  int64_t n_cap;
+  double d_source;
+  double d_screen;
+  double src_x;
+  double src_y;
+  double src_sigx;
+  double src_sigy;
+  double src_shiftx;
+  double src_shifty;
+  size_t nelem;
+  int *iz;
+  double *wi;
+  double density;
+  struct _polycap_profile *profile;
+  }
 
 #endif
 

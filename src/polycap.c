@@ -21,33 +21,33 @@ bool polynomialfit(int obs, int degree,
 		   double *dx, double *dy, double *store);
 
 // ---------------------------------------------------------------------------------------------------
-char *polycap_read_input_line(FILE *fptr)
-{
-	char *strPtr;
-	unsigned int j = 0;
-	int ch;
-	unsigned int str_len_max = 128;
-	unsigned int str_current_size = 128;
-
-	//assign initial string memory size
-	strPtr = malloc(str_len_max);
-	if(strPtr == NULL){
-		printf("Could not allocate strPtr memory.\n");
-		exit(0);
-        }
-
-	//read in line character by character
-	while( (ch = fgetc(fptr)) != '\n' && ch != EOF){
-		strPtr[j++] = ch;
-		//if j reached max size, then realloc size
-		if(j == str_current_size){
-			str_current_size = j + str_len_max;
-			strPtr = realloc(strPtr,str_current_size);
-		}
-	}
-	strPtr[j++] = '\0';
-	return realloc(strPtr, sizeof(char)*j);
-}
+char *polycap_read_input_line(FILE *fptr);
+//{
+//	char *strPtr;
+//	unsigned int j = 0;
+//	int ch;
+//	unsigned int str_len_max = 128;
+//	unsigned int str_current_size = 128;
+//
+//	//assign initial string memory size
+//	strPtr = malloc(str_len_max);
+//	if(strPtr == NULL){
+//		printf("Could not allocate strPtr memory.\n");
+//		exit(0);
+//       }
+//
+//	//read in line character by character
+//	while( (ch = fgetc(fptr)) != '\n' && ch != EOF){
+//		strPtr[j++] = ch;
+//		//if j reached max size, then realloc size
+//		if(j == str_current_size){
+//			str_current_size = j + str_len_max;
+//			strPtr = realloc(strPtr,str_current_size);
+//		}
+//	}
+//	strPtr[j++] = '\0';
+//	return realloc(strPtr, sizeof(char)*j);
+//}
 // ---------------------------------------------------------------------------------------------------
 // Read in input file
 struct inp_file* read_cap_data(char *filename, struct cap_profile **profile, struct polycap_source **source)
