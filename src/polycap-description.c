@@ -38,8 +38,9 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 	FILE *fptr;
 	int i;
 	polycap_description *description;	
-	double e_start, e_finale, delta_e;
+	double e_start, e_final, delta_e;
 	int type, nphotons;
+	double length, rad_ext[2], rad_int[2], focal_dist[2];
 	char *single_cap_profile_file, *central_axis_file, *external_shape_file, *out;
 	
 	description = malloc(sizeof(polycap_description));
@@ -62,7 +63,7 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 	fscanf(fptr,"%lf %lf", &description->src_x, &description->src_y);
 	fscanf(fptr,"%lf %lf", &description->src_sigx, &description->src_sigy);
 	fscanf(fptr,"%lf %lf", &description->src_shiftx, &description->src_shifty);
-	fscanf(fptr,"%d", &description->nelem);
+	fscanf(fptr,"%zu", &description->nelem);
 	description->iz = malloc(sizeof(int)*description->nelem);
 	if(description->iz == NULL){
 		printf("Could not allocate description->iz memory.\n");
@@ -74,7 +75,7 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 		exit(1);
 	}
 	for(i=0; i<description->nelem; i++){
-		fscanf(fptr,"%d %lf", &description->iz[i], description->wi[i]);
+		fscanf(fptr,"%d %lf", &description->iz[i], &description->wi[i]);
 		description->wi[i] /= 100.0;
 	}
 	fscanf(fptr,"%lf", &description->density);
@@ -91,9 +92,9 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 		central_axis_file = polycap_read_input_line(fptr);
 		external_shape_file = polycap_read_input_line(fptr);
 		// generate polycap profile from files
-		description->profile = polycap_profile_new_from_file(single_cap_profile_file, central_axis_file, external_shape_file)
+		description->profile = polycap_profile_new_from_file(single_cap_profile_file, central_axis_file, external_shape_file);
 	}
-	fscanf(fptr,"%lf", &descripton->n_cap);
+	fscanf(fptr,"%lf", &description->n_cap);
 	i=fgetc(fptr); //reads in \n from last line still
 	out = polycap_read_input_line(fptr);
 	fclose(fptr);
