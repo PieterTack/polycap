@@ -213,11 +213,11 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 		}
 	fscanf(fptr,"%d",&n_tmp);
 	if(profile->nmax != n_tmp){
-		printf("Inconsistent *.ext file: number of intervals different.\n");
+		printf("Inconsistent *.axs file: number of intervals different.\n");
 		exit(3);
 		}
 	for(i=0; i<=profile->nmax; i++){
-		fscanf(fptr,"%lf %lf",&profile->z[i],&profile->ext[i]);
+		fscanf(fptr,"%lf %lf %lf",&profile->z[i],&sx,&sy);
 		}
 	fclose(fptr);
 
@@ -227,9 +227,9 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 // free the polycap_profile structure and its associated data
 void polycap_profile_free(polycap_profile *profile)
 {
-	free(profile->z);
-	free(profile->cap);
-	free(profile->ext);
+	free(profile->z)
+	free(profile->cap)
+	free(profile->ext)
 	free(profile);
 }
 
