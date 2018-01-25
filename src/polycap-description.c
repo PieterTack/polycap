@@ -41,7 +41,13 @@ void polycap_description_check_weight(size_t nelem, double wi[])
 		sum += wi[i];
 	}
 
-	if(sum > 1.) for(i=0; i<nelem; i++) wi[i] /= 100.0;
+	if(sum > 1.){
+		sum = 0;
+		for(i=0; i<nelem; i++){
+			wi[i] /= 100.0;
+			sum += wi[i];
+		}
+	}
 	if(sum == 1.){
 		return;
 	} else {
@@ -118,6 +124,9 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 	out = polycap_read_input_line(fptr);
 	fclose(fptr);
 
+	// Check whether weights add to 1
+	polycap_description_check_weight(description->nelem, description->wi);
+
 	return description;
 }
 
@@ -164,6 +173,9 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 		description->iz[i] = iz[i];
 		description->wi[i] = wi[i]; //assumes weights are already provided as fractions (not percentages)
 	}
+
+	// Check whether weights add to 1
+	polycap_description_check_weight(description->nelem, description->wi);
 
 	//allocate profile memory
 	description->profile = malloc(sizeof(polycap_profile));
