@@ -88,7 +88,7 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 	fscanf(fptr,"%lf %lf", &description->src_x, &description->src_y);
 	fscanf(fptr,"%lf %lf", &description->src_sigx, &description->src_sigy);
 	fscanf(fptr,"%lf %lf", &description->src_shiftx, &description->src_shifty);
-	fscanf(fptr,"%zu", &description->nelem);
+	fscanf(fptr,"%u", &description->nelem);
 	description->iz = malloc(sizeof(int)*description->nelem);
 	if(description->iz == NULL){
 		printf("Could not allocate description->iz memory.\n");
@@ -132,7 +132,7 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 
 //===========================================
 // get a new polycap_description by providing all its properties
-polycap_description* polycap_description_new(double sig_rough, double sig_wave, double corr_length, int64_t n_cap, double d_source, double d_screen, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, size_t nelem, int iz[], double wi[], double density, polycap_profile *profile)
+polycap_description* polycap_description_new(double sig_rough, double sig_wave, double corr_length, int64_t n_cap, double d_source, double d_screen, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, unsigned int nelem, int iz[], double wi[], double density, polycap_profile *profile)
 {
 	int i;
 	polycap_description *description;

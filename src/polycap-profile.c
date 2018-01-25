@@ -154,7 +154,7 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 	//single capillary profile
 	fptr = fopen(single_cap_profile_file,"r");
 	if(fptr == NULL){
-		printf("%s file does not exist.\n",single_cap_profile_file);
+		printf("Could not open %s\n",single_cap_profile_file);
 		exit(2);
 		}
 	fscanf(fptr,"%d",&n_tmp);

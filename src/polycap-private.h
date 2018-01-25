@@ -181,11 +181,24 @@ struct _polycap_description
   double src_sigy;
   double src_shiftx;
   double src_shifty;
-  size_t nelem;
+  unsigned int nelem;
   int *iz;
   double *wi;
   double density;
   struct _polycap_profile *profile;
+  };
+
+struct _polycap_photon
+  {
+  polycap_rng *rng;
+  polycap_vector3 start_coords;
+  polycap_vector3 start_direction;
+  polycap_vector3 start_electric_vector;
+  polycap_vector3 exit_coords;
+  polycap_vector3 exit_direction;
+  polycap_vector3 exit_electric_vector;
+  size_t n_energies;
+  double *energies;
   };
 
 #endif

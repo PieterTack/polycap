@@ -1,7 +1,9 @@
 #include "config.h"
 #ifdef _WIN32
+  #ifndef _CRT_RAND_S
   // needs to be define before including stdlib.h
   #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
+  #endif
 #endif
 #include <stdlib.h>
 #include "polycap-old.h"

@@ -72,7 +72,7 @@ polycap_description* polycap_description_new(
 	double src_sigy,
 	double src_shiftx,
 	double src_shifty,
-	size_t nelem,
+	unsigned int nelem,
 	int iz[],
 	double wi[],
 	double density,
@@ -98,10 +98,11 @@ void polycap_rng_free(polycap_rng *rng);
 // construct a new polycap_photon with its initial position, direction, electric field vector and energy
 polycap_photon* polycap_photon_new(
 	polycap_rng *rng,
-	polycap_vector3 start_coords[3],
+	polycap_vector3 start_coords[3], //is the [3] relevant? Should just supply one start_coords structure of type polycap_vector3, not 3 such structures...
 	polycap_vector3 start_direction[3],
 	polycap_vector3 start_electric_vector[3],
-	double energy);
+	size_t n_energies,
+	double *energies); //give full energy range as for each photon a full spectrum transmission is simulated
 
 // simulate a single photon for a given polycap_description
 int polycap_photon_launch(polycap_photon *photon, polycap_description *description);
