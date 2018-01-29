@@ -181,6 +181,7 @@ struct _polycap_description
   double src_sigy;
   double src_shiftx;
   double src_shifty;
+  double open_area;
   unsigned int nelem;
   int *iz;
   double *wi;
@@ -199,6 +200,9 @@ struct _polycap_photon
   polycap_vector3 exit_electric_vector;
   size_t n_energies;
   double *energies;
+  double *weight;
+  double *amu;
+  double *scatf;
   };
 
 #endif

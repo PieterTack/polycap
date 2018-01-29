@@ -127,6 +127,9 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 	// Check whether weights add to 1
 	polycap_description_check_weight(description->nelem, description->wi);
 
+	// Calculate open area
+	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
+
 	return description;
 }
 
@@ -205,6 +208,9 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 		description->profile->cap[i] = profile->cap[i];
 		description->profile->ext[i] = profile->ext[i];
 	}
+
+	// Calculate open area
+	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
 
 	return description;
 }

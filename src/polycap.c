@@ -396,19 +396,19 @@ int segment(double s0[3], double s1[3], double rad0, double rad1, double rh1[3],
 	return iesc_local;
 	}
 // ---------------------------------------------------------------------------------------------------
-double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff){
-	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
-	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
-	double complex rtot; //reflectivity
-
-	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
-	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
-
-	rtot = ((complex double)theta - csqrt(cpow((complex double)theta,2) - 2.*(alfa - beta*I))) / ((complex double)theta + csqrt(cpow((complex double)theta,2) - 2.*(alfa - beta*I)));
-	rtot = creal(cpow(cabs(rtot),2.));
-
-	return rtot;
-}
+double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff);//{
+//	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
+//	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
+//	double complex rtot; //reflectivity
+//
+//	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
+//	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
+//
+//	rtot = ((complex double)theta - csqrt(cpow((complex double)theta,2) - 2.*(alfa - beta*I))) / ((complex double)theta + csqrt(cpow((complex double)theta,2) - 2.*(alfa - beta*I)));
+//	rtot = creal(cpow(cabs(rtot),2.));
+//
+//	return rtot;
+//}
 // ---------------------------------------------------------------------------------------------------
 int reflect(double alf, struct mumc *absmu, struct polycap_source *source, struct cap_profile *profile, struct leakstruct *leaks, struct calcstruct *calc)
 	{
