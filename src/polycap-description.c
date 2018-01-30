@@ -2,7 +2,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <math.h>
+#include <omp.h> /* openmp header */
 
+int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord);
+void polycap_norm(polycap_vector3 *vect);
 //===========================================
 char *polycap_read_input_line(FILE *fptr)
 {
@@ -84,7 +88,7 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 	fscanf(fptr,"%lf", &description->sig_rough);
 	fscanf(fptr,"%lf %lf", &description->sig_wave, &description->corr_length);
 	fscanf(fptr,"%lf", &description->d_source);
-	fscanf(fptr,"%lf", &description->d_screen);
+//	fscanf(fptr,"%lf", &description->d_screen);
 	fscanf(fptr,"%lf %lf", &description->src_x, &description->src_y);
 	fscanf(fptr,"%lf %lf", &description->src_sigx, &description->src_sigy);
 	fscanf(fptr,"%lf %lf", &description->src_shiftx, &description->src_shifty);
@@ -135,7 +139,7 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 
 //===========================================
 // get a new polycap_description by providing all its properties
-polycap_description* polycap_description_new(double sig_rough, double sig_wave, double corr_length, int64_t n_cap, double d_source, double d_screen, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, unsigned int nelem, int iz[], double wi[], double density, polycap_profile *profile)
+polycap_description* polycap_description_new(double sig_rough, double sig_wave, double corr_length, int64_t n_cap, double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, unsigned int nelem, int iz[], double wi[], double density, polycap_profile *profile)
 {
 	int i;
 	polycap_description *description;
@@ -163,7 +167,7 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 	description->corr_length = corr_length;
 	description->n_cap = n_cap;
 	description->d_source = d_source;
-	description->d_screen = d_screen;
+//	description->d_screen = d_screen;
 	description->src_x = src_x;
 	description->src_y = src_y;
 	description->src_sigx = src_sigx;
@@ -258,17 +262,177 @@ polycap_profile* polycap_description_get_profile(polycap_description *descriptio
 
 //===========================================
 // for a given array of energies, and a full polycap_description, get the transmission efficiencies.
+//   NOTE:
+// -Does not make photon image arrays (yet)
+// -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
 int polycap_description_get_transmission_efficiencies(polycap_description *description, size_t n_energies, double *energies, double **efficiencies)
 {
 //why return an integer? Something like 0 for succes, -1 for fail, ...?
+	int thread_cnt, thread_max, i, j;
+	int icount = 5000; //simulate 5000 photons hitting the detector
+	int64_t sum_istart=0, sum_irefl=0;
+	double *sum_weights;
 
-//this is essentially the full old polycap program. Write later, as it may use some additional functions such as polycap_photon_launch.
+	// Check maximal amount of threads and let user choose the amount of threads to use
+	thread_max = omp_get_max_threads();
+	printf("Type in the amount of threads to use (max %d):\n",thread_max);
+	scanf("%d",&thread_cnt);
+	printf("%d threads out of %d selected.\n",thread_cnt, thread_max);
+
+	// Prepare arrays to save results
+	sum_weights = malloc(sizeof(double)*n_energies);
+	if(sum_weights == NULL){
+		printf("Could not allocate sum_weights memory.\n");
+		exit(1);
+	}
+	for(i=0; i<n_energies; i++) sum_weights[i] = 0.;
 
 
+//OpenMP loop
+#pragma omp parallel \
+	default(shared) \
+	private(icount, i, j) \
+	firstprivate(description, n_energies, energies) \
+	num_threads(thread_cnt)
+{
+	int thread_id = omp_get_thread_num();
+	polycap_rng *rng;
+	unsigned int seed;
+	polycap_vector3 start_coords, start_direction, start_electric_vector;
+	double r; //random number
+	double n_shells; //amount of capillary shells in polycapillary
+	int boundary_check;
+	double src_rad_x, src_rad_y, phi; //distance from source centre in x and y direction and angle phi from x axis
+	double src_start_x, src_start_y;
+	double pc_rad, pc_x, pc_y; //pc radius and coordinates to direct photon to
+	polycap_photon *photon;
+	int iesc, k;
+	int64_t istart=0; //amount of started photons
+	double *weights;
+
+	weights = malloc(sizeof(double)*n_energies);
+	if(weights == NULL){
+		printf("Could not allocate weights memory.\n");
+		exit(1);
+	}
+	for(k=0; k<n_energies; k++) weights[k] = 0.;
+
+	// Create new rng
+#ifdef _WIN32
+	rand_s(&seed);
+#else
+	FILE *random_device;
+	if((random_device = fopen("/dev/urandom", "r")) == NULL){
+		printf("Could not open /dev/urandom\n");
+		exit(2);
+	}
+	fread(&seed, sizeof(unsigned long int), 1, random_device);
+	fclose(random_device);
+#endif
+	rng = polycap_rng_new(seed);
 
 
+	#pragma omp for nowait
+	for(j=0; j < icount; j++){
+		// Obtain photon start coordinates
+		n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
+		if(n_shells == 0.){ //monocapillary case
+			r = polycap_rng_uniform(rng);
+			start_coords.x = (2.*r-1) * description->profile->cap[0];
+			r = polycap_rng_uniform(rng);
+			start_coords.y = (2.*r-1) * description->profile->cap[0];
+			start_coords.z = 0.;
+		} else { // polycapillary case
+			// select random coordinates, check whether they are inside polycap boundary
+			boundary_check = -1;
+			do{
+				r = polycap_rng_uniform(rng);
+				start_coords.x = (2.*r-1) * description->profile->ext[0];
+				r = polycap_rng_uniform(rng);
+				start_coords.y = (2.*r-1) * description->profile->ext[0];
+				start_coords.z = 0.;
+				boundary_check = polycap_photon_within_pc_boundary(description->profile->ext[0], start_coords);
+			} while(boundary_check == -1);
+		}
+	
+		// Obtain point from source as photon origin, determining photon start_direction
+		r = polycap_rng_uniform(rng);
+		src_rad_x = description->src_x * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution (originally src_x * r/sqrt(r) )
+		r = polycap_rng_uniform(rng);
+		src_rad_y = description->src_y * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution
+		r = polycap_rng_uniform(rng);
+		phi = 2.0*M_PI*fabs(r);
+		src_start_x = src_rad_x * cos(phi) + description->src_shiftx;
+		src_start_y = src_rad_y * sin(phi) + description->src_shifty;
+		if((description->src_sigx * description->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
+			r = polycap_rng_uniform(rng);
+			pc_rad = description->profile->ext[0] * sqrt(fabs(r));
+			r = polycap_rng_uniform(rng);
+			phi = 2.0*M_PI*fabs(r);
+			pc_x = pc_rad * cos(phi) + start_coords.x;
+			pc_y = pc_rad * sin(phi) + start_coords.y;
+			start_direction.x = pc_x - src_start_x;
+			start_direction.y = pc_y - src_start_y;
+			start_direction.z = description->d_source;
+		} else { //non-uniform distribution, direction vector is within +- sigx
+			r = polycap_rng_uniform(rng);
+			start_direction.x = description->src_sigx * (1.-2.*fabs(r));
+			r = polycap_rng_uniform(rng);
+			start_direction.y = description->src_sigy * (1.-2.*fabs(r));
+			start_direction.z = 1.;
+		}
+		polycap_norm(&start_direction);
+
+		// Create photon structure
+		photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies);
+
+		// Launch photon
+		istart++; //Here all photons that started, also enter the polycapillary
+		photon->i_refl = 0; //set reflections to 0
+		iesc = polycap_photon_launch(photon, description);
+			//if iesc == -1 here a new photon should be simulated/started.
+			//	essentially do j-1 as this will have same effect
+		if(iesc == -1) j--;
+
+		//COUNT function here... If required...
+
+		if(thread_id == 0 && (double)i/((double)icount/(double)thread_cnt/10.) >= 1.){
+			printf("%d%%\t%" PRId64 "\t%f\n",((j*100)/(icount/thread_cnt)),photon->i_refl,photon->exit_coords.z);
+			i=0;
+		}
+		i++;//counter just to follow % completed
+
+		//save photon->weight in thread unique array
+		for(k=0; k<n_energies; k++) weights[k] += photon->weight[k];
+		#pragma omp critical
+		{
+		sum_irefl += photon->i_refl;
+		}
+
+		//free photon structure (new one created for each for loop instance)
+		polycap_photon_free(photon);
+
+	} //for(j=0; j < icount; j++)
+
+	#pragma omp critical
+	{
+	sum_istart += istart;
+	for(i=0; i<n_energies; i++) sum_weights[i] += weights[i];
+	}
+	polycap_rng_free(rng);
+	free(weights);
+} //#pragma omp parallel
+
+	printf("Average number of reflections: %f\n",(double)sum_irefl/5000.);
+
+	for(i=0; i<n_energies; i++){
+		*efficiencies[i] = (sum_weights[i] / sum_istart) * description->open_area;
+	}
+
+
+	//free alloc'ed memory
+	free(sum_weights);
 	return 0;
-
 }
 
 //===========================================

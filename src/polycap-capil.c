@@ -136,7 +136,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_description *descripti
 
 	d_esc = (description->profile->z[description->profile->nmax] - photon->exit_coords.z) / photon->exit_direction.z;
 	if(d_esc < 0) d_esc = description->profile->z[description->profile->nmax];
-	for(i=0; i <= photon->n_energies; i++){
+	for(i=0; i < photon->n_energies; i++){
 		cons1 = (1.01358e0*photon->energies[i])*alfa*description->sig_rough;
 		r_rough = exp(-1.*cons1*cons1);
 
@@ -168,7 +168,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_description *descripti
 // trace photon through capillary
 int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y)
 {
-	int i, iesc=0, i_refl=0;
+	int i, iesc=0;
 	double cap_rad0, cap_rad1;
 	polycap_vector3 cap_coord0, cap_coord1;
 	polycap_vector3 *photon_coord, photon_dir;
@@ -190,7 +190,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 	}
 
 	//calculate next intersection point
-	if(i_refl == 0) *ix = 0;
+	if(photon->i_refl == 0) *ix = 0;
 	photon_coord->x = photon->exit_coords.x;
 	photon_coord->y = photon->exit_coords.y;
 	photon_coord->z = photon->exit_coords.z;
@@ -244,7 +244,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 				photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(alfa);
 				photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(alfa);
 				polycap_norm(&photon->exit_direction);
-				i_refl++;
+				photon->i_refl++;
 			}
 		}
 	}

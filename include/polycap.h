@@ -65,7 +65,7 @@ polycap_description* polycap_description_new(
 	double corr_length,
 	int64_t n_cap,
 	double d_source,
-	double d_screen,
+//	double d_screen,
 	double src_x,
 	double src_y,
 	double src_sigx,

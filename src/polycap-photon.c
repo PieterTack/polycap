@@ -36,7 +36,6 @@ polycap_photon* polycap_photon_new(polycap_rng *rng, polycap_vector3 start_coord
 {
 	polycap_photon *photon;
 	int i;
-	unsigned int seed;
 
 	//allocate memory
 	photon = malloc(sizeof(polycap_photon));
@@ -57,18 +56,7 @@ polycap_photon* polycap_photon_new(polycap_rng *rng, polycap_vector3 start_coord
 	}
 
 	//assign *rng pointer
-#ifdef _WIN32
-	rand_s(&seed);
-#else
-	FILE *random_device;
-	if((random_device = fopen("/dev/urandom", "r")) == NULL){
-		printf("Could not open /dev/urandom");
-		exit(2);
-	}
-	fread(&seed, sizeof(unsigned long int), 1, random_device);
-	fclose(random_device);
-#endif
-	photon->rng = polycap_rng_new(seed);
+	photon->rng = rng;
 
 	//fill rest of structure
 	for(i=0; i<photon->n_energies; i++){
@@ -190,7 +178,7 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 		i_capx = round((photon->start_coords.x / description->profile->ext[0]) * n_shells);
 		i_capy = round((photon->start_coords.y / (description->profile->ext[0]*sin(M_PI/3.))) * n_shells);
 		//define some shell size parameters
-		cap_unita[0] = description->profile->ext[0] / (n_shells); //NOTE: different approach needed for monocapillary
+		cap_unita[0] = description->profile->ext[0] / (n_shells);
 		cap_unita[1] = 0.;
 		cap_unitb[0] = cap_unita[0] * cos(M_PI/3.);
 		cap_unitb[1] = cap_unita[0] * sin(M_PI/3.);
@@ -265,27 +253,18 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 	return photon->exit_electric_vector;
 }
 
+//===========================================
+// free a polycap_photon
+void polycap_photon_free(polycap_photon *photon)
+{
+	polycap_rng_free(photon->rng);
+	free(photon->energies);
+	free(photon->weight);
+	free(photon->amu);
+	free(photon->scatf);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	return;
+}
 
 
 

@@ -174,7 +174,7 @@ struct _polycap_description
   double corr_length;
   int64_t n_cap;
   double d_source;
-  double d_screen;
+//  double d_screen;
   double src_x;
   double src_y;
   double src_sigx;
@@ -203,6 +203,7 @@ struct _polycap_photon
   double *weight;
   double *amu;
   double *scatf;
+  int64_t i_refl;
   };
 
 #endif
