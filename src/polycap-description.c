@@ -223,38 +223,40 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 // get the polycap_profile from a polycap_description
 polycap_profile* polycap_description_get_profile(polycap_description *description)
 {
-	polycap_profile *profile;
+	const polycap_profile *profile;
 	int i;
 
-	//allocate profile memory
-	profile = malloc(sizeof(polycap_profile));
-	if(profile == NULL){
-		printf("Could not allocate profile memory.\n");
-		exit(1);
-	}
-	profile->nmax = description->profile->nmax;
-	profile->z = malloc(sizeof(double)*(profile->nmax+1));
-	if(profile->z == NULL){
-		printf("Could not allocate profile->z memory.\n");
-		exit(1);
-	}
-	profile->cap = malloc(sizeof(double)*(profile->nmax+1));
-	if(profile->cap == NULL){
-		printf("Could not allocate profile->cap memory.\n");
-		exit(1);
-	}
-	profile->ext = malloc(sizeof(double)*(profile->nmax+1));
-	if(profile->ext == NULL){
-		printf("Could not allocate profile->ext memory.\n");
-		exit(1);
-	}
+	profile = description->profile;
 
-	// copy description->profile values to profile
-	for(i=0;i<=profile->nmax;i++){
-		profile->z[i] = description->profile->z[i];
-		profile->cap[i] = description->profile->cap[i];
-		profile->ext[i] = description->profile->ext[i];
-	}
+//	//allocate profile memory
+//	profile = malloc(sizeof(polycap_profile));
+//	if(profile == NULL){
+//		printf("Could not allocate profile memory.\n");
+//		exit(1);
+//	}
+//	profile->nmax = description->profile->nmax;
+//	profile->z = malloc(sizeof(double)*(profile->nmax+1));
+//	if(profile->z == NULL){
+//		printf("Could not allocate profile->z memory.\n");
+//		exit(1);
+//	}
+//	profile->cap = malloc(sizeof(double)*(profile->nmax+1));
+//	if(profile->cap == NULL){
+//		printf("Could not allocate profile->cap memory.\n");
+//		exit(1);
+//	}
+//	profile->ext = malloc(sizeof(double)*(profile->nmax+1));
+//	if(profile->ext == NULL){
+//		printf("Could not allocate profile->ext memory.\n");
+//		exit(1);
+//	}
+//
+//	// copy description->profile values to profile
+//	for(i=0;i<=profile->nmax;i++){
+//		profile->z[i] = description->profile->z[i];
+//		profile->cap[i] = description->profile->cap[i];
+//		profile->ext[i] = description->profile->ext[i];
+//	}
 
 	return profile;
 
@@ -425,6 +427,11 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 
 	printf("Average number of reflections: %f\n",(double)sum_irefl/5000.);
 
+	*efficiencies = malloc(sizeof(double) * n_energies);
+	if(*efficiencies == NULL){
+		printf("Could not allocate *efficiencies memory.\n");
+		exit(1);
+	}
 	for(i=0; i<n_energies; i++){
 		*efficiencies[i] = (sum_weights[i] / sum_istart) * description->open_area;
 	}
@@ -440,10 +447,7 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 void polycap_description_free(polycap_description *description)
 {
 
-	free(description->profile->z);
-	free(description->profile->cap);
-	free(description->profile->ext);
-	free(description->profile);
+	polycap_profile_free(description->profile);
 	free(description->iz);
 	free(description->wi);
 	free(description);

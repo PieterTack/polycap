@@ -257,7 +257,6 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 // free a polycap_photon
 void polycap_photon_free(polycap_photon *photon)
 {
-	polycap_rng_free(photon->rng);
 	free(photon->energies);
 	free(photon->weight);
 	free(photon->amu);
