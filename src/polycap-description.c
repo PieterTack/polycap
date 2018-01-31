@@ -221,45 +221,9 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 
 //===========================================
 // get the polycap_profile from a polycap_description
-polycap_profile* polycap_description_get_profile(polycap_description *description)
+const polycap_profile* polycap_description_get_profile(polycap_description *description)
 {
-	const polycap_profile *profile;
-	int i;
-
-	profile = description->profile;
-
-//	//allocate profile memory
-//	profile = malloc(sizeof(polycap_profile));
-//	if(profile == NULL){
-//		printf("Could not allocate profile memory.\n");
-//		exit(1);
-//	}
-//	profile->nmax = description->profile->nmax;
-//	profile->z = malloc(sizeof(double)*(profile->nmax+1));
-//	if(profile->z == NULL){
-//		printf("Could not allocate profile->z memory.\n");
-//		exit(1);
-//	}
-//	profile->cap = malloc(sizeof(double)*(profile->nmax+1));
-//	if(profile->cap == NULL){
-//		printf("Could not allocate profile->cap memory.\n");
-//		exit(1);
-//	}
-//	profile->ext = malloc(sizeof(double)*(profile->nmax+1));
-//	if(profile->ext == NULL){
-//		printf("Could not allocate profile->ext memory.\n");
-//		exit(1);
-//	}
-//
-//	// copy description->profile values to profile
-//	for(i=0;i<=profile->nmax;i++){
-//		profile->z[i] = description->profile->z[i];
-//		profile->cap[i] = description->profile->cap[i];
-//		profile->ext[i] = description->profile->ext[i];
-//	}
-
-	return profile;
-
+	return description->profile;
 }
 
 //===========================================
@@ -267,11 +231,11 @@ polycap_profile* polycap_description_get_profile(polycap_description *descriptio
 //   NOTE:
 // -Does not make photon image arrays (yet)
 // -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
+// -Polarised dependant reflectivity and change in electric field vector
 int polycap_description_get_transmission_efficiencies(polycap_description *description, size_t n_energies, double *energies, double **efficiencies)
 {
-//why return an integer? Something like 0 for succes, -1 for fail, ...?
 	int thread_cnt, thread_max, i, j;
-	int icount = 5000; //simulate 5000 photons hitting the detector
+	int icount = 50; //simulate 5000 photons hitting the detector
 	int64_t sum_istart=0, sum_irefl=0;
 	double *sum_weights;
 
@@ -288,12 +252,12 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 		exit(1);
 	}
 	for(i=0; i<n_energies; i++) sum_weights[i] = 0.;
-
-
+printf("Here1\n");
+printf("%f keV - %f keV\n",energies[0],energies[n_energies-1]);
 //OpenMP loop
 #pragma omp parallel \
 	default(shared) \
-	private(icount, i, j) \
+	private(i, j) \
 	firstprivate(description, n_energies, energies) \
 	num_threads(thread_cnt)
 {
@@ -308,7 +272,7 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 	double src_start_x, src_start_y;
 	double pc_rad, pc_x, pc_y; //pc radius and coordinates to direct photon to
 	polycap_photon *photon;
-	int iesc, k;
+	int iesc=-1, k;
 	int64_t istart=0; //amount of started photons
 	double *weights;
 
@@ -333,71 +297,78 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 #endif
 	rng = polycap_rng_new(seed);
 
+printf("%f keV - %f keV\n",energies[0],energies[n_energies-1]);
+printf("Here2, Thread%d\n",thread_id);
 
 	#pragma omp for nowait
 	for(j=0; j < icount; j++){
-		// Obtain photon start coordinates
-		n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
-		if(n_shells == 0.){ //monocapillary case
-			r = polycap_rng_uniform(rng);
-			start_coords.x = (2.*r-1) * description->profile->cap[0];
-			r = polycap_rng_uniform(rng);
-			start_coords.y = (2.*r-1) * description->profile->cap[0];
-			start_coords.z = 0.;
-		} else { // polycapillary case
-			// select random coordinates, check whether they are inside polycap boundary
-			boundary_check = -1;
-			do{
+		do{
+			// Obtain photon start coordinates
+			n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
+			if(n_shells == 0.){ //monocapillary case
 				r = polycap_rng_uniform(rng);
-				start_coords.x = (2.*r-1) * description->profile->ext[0];
+				start_coords.x = (2.*r-1) * description->profile->cap[0];
 				r = polycap_rng_uniform(rng);
-				start_coords.y = (2.*r-1) * description->profile->ext[0];
+				start_coords.y = (2.*r-1) * description->profile->cap[0];
 				start_coords.z = 0.;
-				boundary_check = polycap_photon_within_pc_boundary(description->profile->ext[0], start_coords);
-			} while(boundary_check == -1);
-		}
-	
-		// Obtain point from source as photon origin, determining photon start_direction
-		r = polycap_rng_uniform(rng);
-		src_rad_x = description->src_x * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution (originally src_x * r/sqrt(r) )
-		r = polycap_rng_uniform(rng);
-		src_rad_y = description->src_y * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution
-		r = polycap_rng_uniform(rng);
-		phi = 2.0*M_PI*fabs(r);
-		src_start_x = src_rad_x * cos(phi) + description->src_shiftx;
-		src_start_y = src_rad_y * sin(phi) + description->src_shifty;
-		if((description->src_sigx * description->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
+			} else { // polycapillary case
+				// select random coordinates, check whether they are inside polycap boundary
+				boundary_check = -1;
+				do{
+					r = polycap_rng_uniform(rng);
+					start_coords.x = (2.*r-1) * description->profile->ext[0];
+					r = polycap_rng_uniform(rng);
+					start_coords.y = (2.*r-1) * description->profile->ext[0];
+					start_coords.z = 0.;
+					boundary_check = polycap_photon_within_pc_boundary(description->profile->ext[0], start_coords);
+				} while(boundary_check == -1);
+			}
+
+printf("Here3\n");
+			// Obtain point from source as photon origin, determining photon start_direction
 			r = polycap_rng_uniform(rng);
-			pc_rad = description->profile->ext[0] * sqrt(fabs(r));
+			src_rad_x = description->src_x * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution (originally src_x * r/sqrt(r) )
+			r = polycap_rng_uniform(rng);
+			src_rad_y = description->src_y * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution
 			r = polycap_rng_uniform(rng);
 			phi = 2.0*M_PI*fabs(r);
-			pc_x = pc_rad * cos(phi) + start_coords.x;
-			pc_y = pc_rad * sin(phi) + start_coords.y;
-			start_direction.x = pc_x - src_start_x;
-			start_direction.y = pc_y - src_start_y;
-			start_direction.z = description->d_source;
-		} else { //non-uniform distribution, direction vector is within +- sigx
-			r = polycap_rng_uniform(rng);
-			start_direction.x = description->src_sigx * (1.-2.*fabs(r));
-			r = polycap_rng_uniform(rng);
-			start_direction.y = description->src_sigy * (1.-2.*fabs(r));
-			start_direction.z = 1.;
-		}
-		polycap_norm(&start_direction);
+			src_start_x = src_rad_x * cos(phi) + description->src_shiftx;
+			src_start_y = src_rad_y * sin(phi) + description->src_shifty;
+			if((description->src_sigx * description->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
+				r = polycap_rng_uniform(rng);
+				pc_rad = description->profile->ext[0] * sqrt(fabs(r));
+				r = polycap_rng_uniform(rng);
+				phi = 2.0*M_PI*fabs(r);
+				pc_x = pc_rad * cos(phi) + start_coords.x;
+				pc_y = pc_rad * sin(phi) + start_coords.y;
+				start_direction.x = pc_x - src_start_x;
+				start_direction.y = pc_y - src_start_y;
+				start_direction.z = description->d_source;
+			} else { //non-uniform distribution, direction vector is within +- sigx
+				r = polycap_rng_uniform(rng);
+				start_direction.x = description->src_sigx * (1.-2.*fabs(r));
+				r = polycap_rng_uniform(rng);
+				start_direction.y = description->src_sigy * (1.-2.*fabs(r));
+				start_direction.z = 1.;
+			}
+			polycap_norm(&start_direction);
+printf("Here4; start(x,y,z):%f, %f, %f\n",start_direction.x,start_direction.y,start_direction.z);
 
-		// Create photon structure
-		photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies);
+			// Create photon structure
+			photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies);
 
-		// Launch photon
-		istart++; //Here all photons that started, also enter the polycapillary
-		photon->i_refl = 0; //set reflections to 0
-		iesc = polycap_photon_launch(photon, description);
+printf("Here5\n");
+			// Launch photon
+			istart++; //Here all photons that started, also enter the polycapillary
+			photon->i_refl = 0; //set reflections to 0
+			iesc = polycap_photon_launch(photon, description);
 			//if iesc == -1 here a new photon should be simulated/started.
 			//	essentially do j-1 as this will have same effect
-		if(iesc == -1) j--;
+		} while(iesc == -1);
 
 		//COUNT function here... If required...
 
+printf("Here6\n");
 		if(thread_id == 0 && (double)i/((double)icount/(double)thread_cnt/10.) >= 1.){
 			printf("%d%%\t%" PRId64 "\t%f\n",((j*100)/(icount/thread_cnt)),photon->i_refl,photon->exit_coords.z);
 			i=0;
@@ -410,6 +381,7 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 		{
 		sum_irefl += photon->i_refl;
 		}
+printf("Here7\n");
 
 		//free photon structure (new one created for each for loop instance)
 		polycap_photon_free(photon);
@@ -424,18 +396,21 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 	polycap_rng_free(rng);
 	free(weights);
 } //#pragma omp parallel
+printf("Here8\n");
 
-	printf("Average number of reflections: %f\n",(double)sum_irefl/5000.);
+	printf("Average number of reflections: %f\n",(double)sum_irefl/icount);
 
 	*efficiencies = malloc(sizeof(double) * n_energies);
 	if(*efficiencies == NULL){
 		printf("Could not allocate *efficiencies memory.\n");
 		exit(1);
 	}
+printf("Here9\n");
 	for(i=0; i<n_energies; i++){
 		*efficiencies[i] = (sum_weights[i] / sum_istart) * description->open_area;
 	}
 
+printf("Here10\n");
 
 	//free alloc'ed memory
 	free(sum_weights);
