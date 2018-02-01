@@ -252,13 +252,12 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 		exit(1);
 	}
 	for(i=0; i<n_energies; i++) sum_weights[i] = 0.;
+
 printf("Here1\n");
-printf("%f keV - %f keV\n",energies[0],energies[n_energies-1]);
 //OpenMP loop
 #pragma omp parallel \
 	default(shared) \
 	private(i, j) \
-	firstprivate(description, n_energies, energies) \
 	num_threads(thread_cnt)
 {
 	int thread_id = omp_get_thread_num();
@@ -297,7 +296,6 @@ printf("%f keV - %f keV\n",energies[0],energies[n_energies-1]);
 #endif
 	rng = polycap_rng_new(seed);
 
-printf("%f keV - %f keV\n",energies[0],energies[n_energies-1]);
 printf("Here2, Thread%d\n",thread_id);
 
 	#pragma omp for nowait
@@ -406,8 +404,9 @@ printf("Here8\n");
 		exit(1);
 	}
 printf("Here9\n");
+//for(i=0; i<n_energies; i++) printf("weights %f istart %f open_area %f\n",sum_weights[i],(double)sum_istart,description->open_area);
 	for(i=0; i<n_energies; i++){
-		*efficiencies[i] = (sum_weights[i] / sum_istart) * description->open_area;
+		*efficiencies[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;
 	}
 
 printf("Here10\n");

@@ -21,7 +21,6 @@ int main(int argc, char *argv[])
 	// Read input file and define description structure
 	description = polycap_description_new_from_file(argv[1]);
 
-
 	// Define energies	
 	energies = malloc(sizeof(double)*n_energies);
 	if(energies == NULL){
@@ -29,7 +28,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	for(i=0; i<n_energies; i++){
-		energies[i] = 1+0.1*i;
+		energies[i] = 1.+0.1*i;
 	}
 
 	// Perform calculations	

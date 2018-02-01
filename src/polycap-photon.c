@@ -17,10 +17,10 @@ void polycap_photon_scatf(polycap_photon *photon, polycap_description *descripti
 	int i, j;
 	double totmu, scatf;
 
-	for(i=0; i<=photon->n_energies; i++){
+	for(i=0; i<photon->n_energies; i++){
 		totmu = 0;
 		scatf = 0;
-		for(j=0; j<=description->nelem; j++){
+		for(j=0; j<description->nelem; j++){
 			totmu = totmu + CS_Total(description->iz[j],photon->energies[i]) * description->wi[j];
 			scatf = scatf + (description->iz[j] + Fi(description->iz[j],photon->energies[i]) ) * (description->wi[j] / AtomicWeight(description->iz[j]) );
 		}
@@ -149,7 +149,8 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 	int i_capx, i_capy; //indices of selected capillary
 	double capx_0, capy_0; //coordinates of selected capillary at polycap entrance
 	double *cap_x, *cap_y; //arrays containing selected capillary central axis coordinates
-	int *ix; //index to remember from which part of capillary last interaction was calculated
+	int ix_val = 0;
+	int *ix = &ix_val; //index to remember from which part of capillary last interaction was calculated
 	
 	//check if photon->start_coord are within hexagonal polycap boundaries
 	photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords);
@@ -204,7 +205,6 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 		cap_x[i] = description->profile->ext[i] * capx_0 / description->profile->ext[0];
 		cap_y[i] = description->profile->ext[i] * capy_0 / description->profile->ext[0];
 	}
-
 	//calculate initial photon weight based on capillary channel effective solid angle.
 	//Mathematically, this is the cos of the angle between photon propagation and polycapillary-to-photonsource axis
 	weight = polycap_scalar(photon->start_direction,central_axis);

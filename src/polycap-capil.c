@@ -3,6 +3,10 @@
 #include <math.h>
 #include <complex.h> //complex numbers required for Fresnel equation
 
+#define NSPOT 1000  /* The number of bins in the grid for the spot*/
+#define BINSIZE 20.e-4 /* cm */
+#define EPSILON 1.0e-30
+
 void polycap_norm(polycap_vector3 *vect);
 double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2);
 //===========================================
