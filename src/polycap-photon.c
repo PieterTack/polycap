@@ -225,6 +225,9 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 		}
 	}
 
+
+	free(cap_x);
+	free(cap_y);
 	if(iesc == -2){
 		return -1; //return -1 if photon did not reach end of capillary
 	} else {
@@ -261,6 +264,7 @@ void polycap_photon_free(polycap_photon *photon)
 	free(photon->weight);
 	free(photon->amu);
 	free(photon->scatf);
+	free(photon);
 
 	return;
 }

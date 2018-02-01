@@ -209,7 +209,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 		cap_coord1.x = cap_x[i];
 		cap_coord1.y = cap_y[i];
 		cap_coord1.z = description->profile->z[i];
-		cap_rad0 = description->profile->cap[i];
+		cap_rad1 = description->profile->cap[i];
 		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, photon_coord, photon_dir, surface_norm, &alfa);
 		if(iesc == 0){
 			*ix = i-1;
@@ -244,15 +244,18 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 				w1 = photon->weight[0];
 //				calc->absorb[*ix] = calc->absorb[*ix] + w0 - w1;
 
-				photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(alfa);
-				photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(alfa);
-				photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(alfa);
+				photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(alfa) * surface_norm->x;
+				photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(alfa) * surface_norm->y;
+				photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(alfa) * surface_norm->z;
 				polycap_norm(&photon->exit_direction);
 				photon->i_refl++;
 			}
 		}
 	}
 
+
+	free(photon_coord);
+	free(surface_norm);
 	return iesc;
 }
 

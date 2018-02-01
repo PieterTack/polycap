@@ -122,6 +122,9 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 		external_shape_file = polycap_read_input_line(fptr);
 		// generate polycap profile from files
 		description->profile = polycap_profile_new_from_file(single_cap_profile_file, central_axis_file, external_shape_file);
+		free(external_shape_file);
+		free(central_axis_file);
+		free(single_cap_profile_file);
 	}
 	fscanf(fptr,"%" PRId64, &description->n_cap);
 	i=fgetc(fptr); //reads in \n from last line still
@@ -134,6 +137,7 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 	// Calculate open area
 	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
 
+	free(out);
 	return description;
 }
 
@@ -212,6 +216,7 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 		description->profile->cap[i] = profile->cap[i];
 		description->profile->ext[i] = profile->ext[i];
 	}
+	//NOTE: user should free old profile memory him/herself
 
 	// Calculate open area
 	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
