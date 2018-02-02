@@ -69,6 +69,7 @@ polycap_photon* polycap_photon_new(polycap_rng *rng, polycap_vector3 start_coord
 	photon->exit_direction = start_direction;
 	photon->start_electric_vector = start_electric_vector;
 	photon->exit_electric_vector = start_electric_vector;
+	photon->d_travel = 0;
 
 	//calculate amu and scatf for each energy
 	photon->amu = malloc(sizeof(double)*photon->n_energies);
@@ -174,9 +175,7 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 	if(n_shells == 0.){ //monocapillary case
 		capx_0 = 0;
 		capy_0 = 0;
-printf("mono\n");
 	} else {    // proper polycapillary case
-printf("poly\n");
 		//obtain selected capillary indices
 		i_capx = round((photon->start_coords.x / description->profile->ext[0]) * n_shells);
 		i_capy = round((photon->start_coords.y / (description->profile->ext[0]*sin(M_PI/3.))) * n_shells);

@@ -205,6 +205,7 @@ struct _polycap_photon
   double *amu;
   double *scatf;
   int64_t i_refl;
+  double d_travel;
   };
 
 #endif

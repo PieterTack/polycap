@@ -146,7 +146,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_description *descripti
 		//reflectivity according to Fresnel expression
 		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i]);
 
-		w_leak = (1.-rtot) * photon->weight[i] * exp(-1.*d_esc * photon->amu[i]);
+//		w_leak = (1.-rtot) * photon->weight[i] * exp(-1.*d_esc * photon->amu[i]);
 //		leak[i] = leak[i] + w_leak;
 		if(i == 0){ //NOTE: essentially do this for each energy to obtain photon flux image for each energy
 			xp = photon->exit_coords.x + d_esc * photon->exit_direction.x;
@@ -179,7 +179,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 	double alfa; //angle between capillary normal at interaction point and photon direction before interaction
 	polycap_vector3 photon_coord_rel; //relative coordinates of new interaction point compared to previous interaction
 	double d_travel; //distance between interactions
-	double w0, w1; //photon weights
+//	double w0, w1; //photon weights
 
 	photon_coord = malloc(sizeof(polycap_vector3));
 	if(photon_coord == NULL){
@@ -224,7 +224,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 		photon_coord_rel.y = photon_coord->y - photon->exit_coords.y;
 		photon_coord_rel.z = photon_coord->z - photon->exit_coords.z;
 		d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));
-		//NOTE: store this somewhere in photon for potential later use...
+		photon->d_travel += d_travel;
 
 		//store new interaction coordiantes in apprpriate array
 		photon->exit_coords.x = photon_coord_rel.x;
@@ -236,12 +236,12 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 			iesc = -1;
 		} else {
 			alfa = M_PI_2 - alfa;
-			w0 = photon->weight[0];
+//			w0 = photon->weight[0];
 			
 			iesc = polycap_capil_reflect(photon, description, alfa);
 
 			if(iesc != -2){
-				w1 = photon->weight[0];
+//				w1 = photon->weight[0];
 //				calc->absorb[*ix] = calc->absorb[*ix] + w0 - w1;
 
 				photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(alfa) * surface_norm->x;
