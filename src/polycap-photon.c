@@ -174,7 +174,9 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 	if(n_shells == 0.){ //monocapillary case
 		capx_0 = 0;
 		capy_0 = 0;
+printf("mono\n");
 	} else {    // proper polycapillary case
+printf("poly\n");
 		//obtain selected capillary indices
 		i_capx = round((photon->start_coords.x / description->profile->ext[0]) * n_shells);
 		i_capy = round((photon->start_coords.y / (description->profile->ext[0]*sin(M_PI/3.))) * n_shells);
@@ -217,6 +219,7 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 	//which means it essentially reflected once every known capillary coordinate
 	for(i=0; i<=description->profile->nmax; i++){ 
 		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y);
+printf("iesc %d, ix %d\n",iesc,*ix);
 		if(iesc != 0){ //as long as iesc = 0 photon is still reflecting in capillary
 		//iesc == -2, which means this photon has reached its final point (weight[0] <1e-4)
 			//in old program a new photon is simulated at this point

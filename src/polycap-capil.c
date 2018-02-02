@@ -52,7 +52,6 @@ int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1
 	a0 = polycap_scalar(bb, bb) - (cap_rad1 - cap_rad0)*(cap_rad1 - cap_rad0);
 	b0 = 2.* ( polycap_scalar(aa, bb) - cap_rad0 * (cap_rad1 - cap_rad0) );
 	c0 = polycap_scalar(aa, aa) - cap_rad0 * cap_rad0;
-
 	if(fabs(a0) < EPSILON){
 		solution1 = -c0/b0;
 		solution2 = -1000.;
@@ -211,6 +210,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 		cap_coord1.z = description->profile->z[i];
 		cap_rad1 = description->profile->cap[i];
 		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, photon_coord, photon_dir, surface_norm, &alfa);
+//printf("\tcapil trace iesc %d, ix %d\n",iesc,*ix);
 		if(iesc == 0){
 			*ix = i-1;
 			break;

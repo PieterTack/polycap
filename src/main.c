@@ -35,9 +35,9 @@ int main(int argc, char *argv[])
 	printf("Starting calculations...\n");
 	i = polycap_description_get_transmission_efficiencies(description, n_energies, energies, &efficiencies);
 
-	for(i=0; i<n_energies; i++){
-		printf("%f keV: %f%%; ",energies[i],efficiencies[i]);
-	}
+//	for(i=0; i<n_energies; i++){
+//		printf("%f keV: %f%%; ",energies[i],efficiencies[i]);
+//	}
 
 	free(energies);
 	free(efficiencies);

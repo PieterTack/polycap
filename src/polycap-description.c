@@ -1,5 +1,11 @@
 #include "polycap-private.h"
 #include <string.h>
+#ifdef _WIN32
+  #ifndef _CRT_RAND_S
+  // needs to be define before including stdlib.h
+  #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
+  #endif
+#endif
 #include <stdlib.h>
 #include <inttypes.h>
 #include <math.h>
@@ -327,7 +333,6 @@ printf("Here2, Thread%d\n",thread_id);
 				} while(boundary_check == -1);
 			}
 
-printf("Here3\n");
 			// Obtain point from source as photon origin, determining photon start_direction
 			r = polycap_rng_uniform(rng);
 			src_rad_x = description->src_x * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution (originally src_x * r/sqrt(r) )
@@ -355,12 +360,10 @@ printf("Here3\n");
 				start_direction.z = 1.;
 			}
 			polycap_norm(&start_direction);
-printf("Here4; start(x,y,z):%f, %f, %f\n",start_direction.x,start_direction.y,start_direction.z);
 
 			// Create photon structure
 			photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies);
 
-printf("Here5\n");
 			// Launch photon
 			istart++; //Here all photons that started, also enter the polycapillary
 			photon->i_refl = 0; //set reflections to 0
@@ -371,7 +374,6 @@ printf("Here5\n");
 
 		//COUNT function here... If required...
 
-printf("Here6\n");
 		if(thread_id == 0 && (double)i/((double)icount/(double)thread_cnt/10.) >= 1.){
 			printf("%d%%\t%" PRId64 "\t%f\n",((j*100)/(icount/thread_cnt)),photon->i_refl,photon->exit_coords.z);
 			i=0;
@@ -384,7 +386,7 @@ printf("Here6\n");
 		{
 		sum_irefl += photon->i_refl;
 		}
-printf("Here7\n");
+printf("Here8\n");
 
 		//free photon structure (new one created for each for loop instance)
 		polycap_photon_free(photon);
@@ -399,7 +401,6 @@ printf("Here7\n");
 	polycap_rng_free(rng);
 	free(weights);
 } //#pragma omp parallel
-printf("Here8\n");
 
 	printf("Average number of reflections: %f\n",(double)sum_irefl/icount);
 
@@ -410,8 +411,15 @@ printf("Here8\n");
 	}
 printf("Here9\n");
 //for(i=0; i<n_energies; i++) printf("weights %f istart %f open_area %f\n",sum_weights[i],(double)sum_istart,description->open_area);
+	double *efficiencies_temp;
+	efficiencies_temp = malloc(sizeof(double) * n_energies);
+	if(efficiencies_temp == NULL){
+		printf("Could not allocate efficiencies_temp memory.\n");
+		exit(1);
+	}
+	*efficiencies = efficiencies_temp; //DO NOT FREE efficiencies_temp
 	for(i=0; i<n_energies; i++){
-		*efficiencies[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;
+		efficiencies_temp[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;
 	}
 
 printf("Here10\n");
