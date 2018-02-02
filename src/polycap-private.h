@@ -1,6 +1,7 @@
 #ifndef POLYCAP_PRIVATE_H
 #define POLYCAP_PRIVATE_H
 
+#define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
 #include "config.h"
 #include "polycap.h"
 #include <stdint.h>
