@@ -133,7 +133,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_description *descripti
 	double d_esc;  //distance in capillary at which photon escaped divided by propagation vector in z direction
 	double cons1, r_rough;
 	double complex rtot; //reflectivity
-	double w_leak; //leak weight
+//	double w_leak; //leak weight
 	double xp, yp; //position on screen where photon will end up if unobstructed
 	int ind_x, ind_y; //indices of screen where photon will hit screen
 
