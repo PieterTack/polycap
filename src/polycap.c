@@ -287,7 +287,7 @@ int segment(double s0[3], double s1[3], double rad0, double rad1, double rh1[3],
 	{
 	int iesc_local = 0;
 	double drs[3], ds[3]; //coordinates of previous photon interaction and current point capillary axis, with previous point capillary axis set as origin [0,0,0]
-	double vds; //cosine of angle between vectors v and ds (photon propagation and capillary wall segment)
+	double vds; //cosine of angle between vectors v and ds (photon propagation and capillary central axis)
 	double a, b;
 	double aa[3], bb[3];
 	double a0, b0, c0;

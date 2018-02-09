@@ -146,7 +146,6 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 	double weight;
 	int i, photon_pos_check, iesc=0;
 	double n_shells; //amount of capillary shells in polycapillary
-	double cap_unita[2], cap_unitb[2]; //coordinates of hexagonal capillary corner on axis and other corner with respect to centre position as 0,0
 	int i_capx, i_capy; //indices of selected capillary
 	double capx_0, capy_0; //coordinates of selected capillary at polycap entrance
 	double *cap_x, *cap_y; //arrays containing selected capillary central axis coordinates
@@ -179,14 +178,9 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 		//obtain selected capillary indices
 		i_capx = round((photon->start_coords.x / description->profile->ext[0]) * n_shells);
 		i_capy = round((photon->start_coords.y / (description->profile->ext[0]*sin(M_PI/3.))) * n_shells);
-		//define some shell size parameters
-		cap_unita[0] = description->profile->ext[0] / (n_shells);
-		cap_unita[1] = 0.;
-		cap_unitb[0] = cap_unita[0] * cos(M_PI/3.);
-		cap_unitb[1] = cap_unita[0] * sin(M_PI/3.);
 		//convert indexed capillary centre to coordinates
-		capx_0 = i_capx * cap_unita[0] + i_capy * cap_unitb[0];
-		capy_0 = i_capx * cap_unita[1] + i_capy * cap_unitb[1];
+		capx_0 = i_capx * description->profile->ext[0] / (n_shells);
+		capy_0 = i_capy * (description->profile->ext[0] / (n_shells))*sin(M_PI/3.);
 	}
 
 	//define selected capillary axis X and Y coordinates
@@ -216,9 +210,8 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 	
 	//polycap_capil_trace should be ran description->profile->nmax at most,
 	//which means it essentially reflected once every known capillary coordinate
-	for(i=0; i<=description->profile->nmax; i++){ 
+	for(i=0; i<=description->profile->nmax; i++){
 		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y);
-printf("iesc %d, ix %d\n",iesc,*ix);
 		if(iesc != 0){ //as long as iesc = 0 photon is still reflecting in capillary
 		//iesc == -2, which means this photon has reached its final point (weight[0] <1e-4)
 			//in old program a new photon is simulated at this point

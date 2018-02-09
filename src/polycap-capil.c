@@ -15,7 +15,7 @@ int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1
 {
 	double disc, solution1, solution2, sol_final; //discriminant and solutions of formed quadratic equation
 	polycap_vector3 photon_coord_rel, cap_coord1_rel; //coordinates of previous photon interaction and current point capillary axis, with previous point capillary axis set as origin [0,0,0]
-	double phot_wall_scalar; //cosine of angle between photon propagation and capillary wall segment
+	double phot_axs_scalar; //cosine of angle between photon propagation and capillary central axis
 	double a, b;
 	polycap_vector3 aa, bb;
 	double a0, b0, c0;
@@ -33,13 +33,13 @@ int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1
 	cap_coord1_rel.x = cap_coord1.x - cap_coord0.x;
 	cap_coord1_rel.y = cap_coord1.y - cap_coord0.y;
 	cap_coord1_rel.z = cap_coord1.z - cap_coord0.z;
-	phot_wall_scalar = polycap_scalar(photon_dir, cap_coord1_rel); //cos(angle)/(|v1|*|v2|)
-	if(fabs(phot_wall_scalar) < EPSILON){
+	phot_axs_scalar = polycap_scalar(photon_dir, cap_coord1_rel); //cos(angle)/(|v1|*|v2|)
+	if(fabs(phot_axs_scalar) < EPSILON){
 		return -2; //selects new section of capillary to check interaction for
 	}
 
-	a = -1.*polycap_scalar(photon_coord_rel, cap_coord1_rel) / phot_wall_scalar;
-	b = polycap_scalar(cap_coord1_rel, cap_coord1_rel) / phot_wall_scalar;
+	a = -1*polycap_scalar(photon_coord_rel, cap_coord1_rel) / phot_axs_scalar;
+	b = polycap_scalar(cap_coord1_rel, cap_coord1_rel) / phot_axs_scalar;
 
 	aa.x = photon_coord->x + a*photon_dir.x - cap_coord0.x;	
 	aa.y = photon_coord->y + a*photon_dir.y - cap_coord0.y;	
@@ -58,7 +58,7 @@ int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1
 	} else {
 		disc = b0*b0 - 4.*a0*c0;
 		if(disc < 0.){
-			return -2; //no solution so select new section of capillary
+			return -3; //no solution so select new section of capillary
 		}
 		disc = sqrt(disc);
 		solution1 = (-b0+disc)/(2.*a0);
@@ -67,18 +67,18 @@ int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1
 	if(solution1 > EPSILON && solution1 <= 1.) sol_final = solution1;
 	if(solution2 > EPSILON && solution2 <= 1.) sol_final = solution2;
 	if(sol_final == -1000){
-		return -2;
+		return -4;
 	}
 
 	d_travel = a + sol_final*b;
 	if(d_travel < 1.e-10){
-		return -2;
+		return -5;
 	}
 
 	//location of next intersection point
-	photon_coord->x = d_travel * photon_dir.x;
-	photon_coord->y = d_travel * photon_dir.y;
-	photon_coord->z = d_travel * photon_dir.z;
+	photon_coord->x = photon_coord->x + d_travel * photon_dir.x;
+	photon_coord->y = photon_coord->y + d_travel * photon_dir.y;
+	photon_coord->z = photon_coord->z + d_travel * photon_dir.z;
 
 	//new point along capillary axis at intersection distance
 	s.x = cap_coord0.x + sol_final * cap_coord1_rel.x;
@@ -105,7 +105,7 @@ int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1
 
 	*alfa = acos(polycap_scalar(*surface_norm,photon_dir)); //angle between surface normal and photon direction
 	if(cos(*alfa) < 0.0){
-		return -2;
+		return -6;
 	}
 
 	return 0;
@@ -210,7 +210,6 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 		cap_coord1.z = description->profile->z[i];
 		cap_rad1 = description->profile->cap[i];
 		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, photon_coord, photon_dir, surface_norm, &alfa);
-//printf("\tcapil trace iesc %d, ix %d\n",iesc,*ix);
 		if(iesc == 0){
 			*ix = i-1;
 			break;
@@ -227,10 +226,9 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 		photon->d_travel += d_travel;
 
 		//store new interaction coordiantes in apprpriate array
-		photon->exit_coords.x = photon_coord_rel.x;
-		photon->exit_coords.y = photon_coord_rel.y;
-		photon->exit_coords.z = photon_coord_rel.z;
-
+		photon->exit_coords.x = photon_coord->x;
+		photon->exit_coords.y = photon_coord->y;
+		photon->exit_coords.z = photon_coord->z;
 		if(fabs(cos(alfa)) >1.0){
 			printf("COS(alfa) > 1\n");
 			iesc = -1;

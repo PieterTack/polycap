@@ -94,7 +94,6 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 	fscanf(fptr,"%lf", &description->sig_rough);
 	fscanf(fptr,"%lf %lf", &description->sig_wave, &description->corr_length);
 	fscanf(fptr,"%lf", &description->d_source);
-//	fscanf(fptr,"%lf", &description->d_screen);
 	fscanf(fptr,"%lf %lf", &description->src_x, &description->src_y);
 	fscanf(fptr,"%lf %lf", &description->src_sigx, &description->src_sigy);
 	fscanf(fptr,"%lf %lf", &description->src_shiftx, &description->src_shifty);
@@ -177,7 +176,6 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 	description->corr_length = corr_length;
 	description->n_cap = n_cap;
 	description->d_source = d_source;
-//	description->d_screen = d_screen;
 	description->src_x = src_x;
 	description->src_y = src_y;
 	description->src_sigx = src_sigx;
@@ -242,11 +240,11 @@ const polycap_profile* polycap_description_get_profile(polycap_description *desc
 //   NOTE:
 // -Does not make photon image arrays (yet)
 // -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
-// -Polarised dependant reflectivity and change in electric field vector
+// -Polarised dependant reflectivity and change in electric field vector missing
 int polycap_description_get_transmission_efficiencies(polycap_description *description, size_t n_energies, double *energies, double **efficiencies)
 {
 	int thread_cnt, thread_max, i, j;
-	int icount = 50; //simulate 5000 photons hitting the detector
+	int icount = 5000; //simulate 5000 photons hitting the detector
 	int64_t sum_istart=0, sum_irefl=0;
 	double *sum_weights;
 
@@ -264,7 +262,6 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 	}
 	for(i=0; i<n_energies; i++) sum_weights[i] = 0.;
 
-printf("Here1\n");
 //OpenMP loop
 #pragma omp parallel \
 	default(shared) \
@@ -307,8 +304,7 @@ printf("Here1\n");
 #endif
 	rng = polycap_rng_new(seed);
 
-printf("Here2, Thread%d\n",thread_id);
-
+	i=0; //counter to monitor calculation proceeding
 	#pragma omp for nowait
 	for(j=0; j < icount; j++){
 		do{
@@ -386,7 +382,6 @@ printf("Here2, Thread%d\n",thread_id);
 		{
 		sum_irefl += photon->i_refl;
 		}
-printf("Here8\n");
 
 		//free photon structure (new one created for each for loop instance)
 		polycap_photon_free(photon);
@@ -409,8 +404,6 @@ printf("Here8\n");
 		printf("Could not allocate *efficiencies memory.\n");
 		exit(1);
 	}
-printf("Here9\n");
-//for(i=0; i<n_energies; i++) printf("weights %f istart %f open_area %f\n",sum_weights[i],(double)sum_istart,description->open_area);
 	double *efficiencies_temp;
 	efficiencies_temp = malloc(sizeof(double) * n_energies);
 	if(efficiencies_temp == NULL){
@@ -422,7 +415,6 @@ printf("Here9\n");
 		efficiencies_temp[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;
 	}
 
-printf("Here10\n");
 
 	//free alloc'ed memory
 	free(sum_weights);
