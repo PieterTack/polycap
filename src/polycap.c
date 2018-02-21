@@ -331,7 +331,7 @@ int segment(double s0[3], double s1[3], double rad0, double rad1, double rh1[3],
 	b0 = (double)2.*(scalar(aa,bb)-rad0*(rad1-rad0));
 	c0 = scalar(aa,aa) - rad0*rad0;
 
-	if(fabs(a0) <= EPSILON){ //equation actually more like y = bx + c
+	if(fabs(a0) <= EPSILON){ //equation actually more like y = 0 = bx + c
 		ck1 = -c0/b0;
 		ck2 = -1000;
 		}

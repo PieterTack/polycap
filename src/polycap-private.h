@@ -174,6 +174,16 @@ struct _polycap_description
   double sig_wave;
   double corr_length;
   int64_t n_cap;
+  double open_area;
+  unsigned int nelem;
+  int *iz;
+  double *wi;
+  double density;
+  struct _polycap_profile *profile;
+  };
+
+struct _polycap_source
+  {
   double d_source;
   double src_x;
   double src_y;
@@ -181,12 +191,6 @@ struct _polycap_description
   double src_sigy;
   double src_shiftx;
   double src_shifty;
-  double open_area;
-  unsigned int nelem;
-  int *iz;
-  double *wi;
-  double density;
-  struct _polycap_profile *profile;
   };
 
 struct _polycap_photon

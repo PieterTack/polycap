@@ -68,11 +68,12 @@ void polycap_description_check_weight(size_t nelem, double wi[])
 }
 //===========================================
 // load polycap_description from Laszlo's file.
-polycap_description* polycap_description_new_from_file(const char *filename)
+polycap_description* polycap_description_new_from_file(const char *filename, polycap_source **source)
 {
 	FILE *fptr;
 	int i;
-	polycap_description *description;	
+	polycap_description *description;
+	polycap_source *source_temp;
 	double e_start, e_final, delta_e;
 	int type, nphotons;
 	double length, rad_ext[2], rad_int[2], focal_dist[2];
@@ -81,6 +82,17 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 	description = malloc(sizeof(polycap_description));
 	if(description == NULL){
 		printf("Could not allocate description memory.\n");
+		exit(1);
+	}
+
+	*source = malloc(sizeof(polycap_source));
+	if(*source == NULL){
+		printf("Could not allocate *source memory.\n");
+		exit(1);
+	}
+	source_temp = malloc(sizeof(polycap_source));
+	if(source_temp == NULL){
+		printf("Could not allocate source_temp memory.\n");
 		exit(1);
 	}
 
@@ -93,10 +105,10 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 
 	fscanf(fptr,"%lf", &description->sig_rough);
 	fscanf(fptr,"%lf %lf", &description->sig_wave, &description->corr_length);
-	fscanf(fptr,"%lf", &description->d_source);
-	fscanf(fptr,"%lf %lf", &description->src_x, &description->src_y);
-	fscanf(fptr,"%lf %lf", &description->src_sigx, &description->src_sigy);
-	fscanf(fptr,"%lf %lf", &description->src_shiftx, &description->src_shifty);
+	fscanf(fptr,"%lf", &source_temp->d_source);
+	fscanf(fptr,"%lf %lf", &source_temp->src_x, &source_temp->src_y);
+	fscanf(fptr,"%lf %lf", &source_temp->src_sigx, &source_temp->src_sigy);
+	fscanf(fptr,"%lf %lf", &source_temp->src_shiftx, &source_temp->src_shifty);
 	fscanf(fptr,"%u", &description->nelem);
 	description->iz = malloc(sizeof(int)*description->nelem);
 	if(description->iz == NULL){
@@ -142,13 +154,15 @@ polycap_description* polycap_description_new_from_file(const char *filename)
 	// Calculate open area
 	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
 
+	*source = source_temp; //DO NOT FREE source_temp
+
 	free(out);
 	return description;
 }
 
 //===========================================
 // get a new polycap_description by providing all its properties
-polycap_description* polycap_description_new(double sig_rough, double sig_wave, double corr_length, int64_t n_cap, double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, unsigned int nelem, int iz[], double wi[], double density, polycap_profile *profile)
+polycap_description* polycap_description_new(double sig_rough, double sig_wave, double corr_length, int64_t n_cap, unsigned int nelem, int iz[], double wi[], double density, polycap_profile *profile)
 {
 	int i;
 	polycap_description *description;
@@ -175,13 +189,6 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 	description->sig_wave = sig_wave;
 	description->corr_length = corr_length;
 	description->n_cap = n_cap;
-	description->d_source = d_source;
-	description->src_x = src_x;
-	description->src_y = src_y;
-	description->src_sigx = src_sigx;
-	description->src_sigy = src_sigy;
-	description->src_shiftx = src_shiftx;
-	description->src_shifty = src_shifty;
 	description->nelem = nelem;
 	description->density = density;
 	for(i=0; i<description->nelem; i++){
@@ -241,7 +248,7 @@ const polycap_profile* polycap_description_get_profile(polycap_description *desc
 // -Does not make photon image arrays (yet)
 // -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
 // -Polarised dependant reflectivity and change in electric field vector missing
-int polycap_description_get_transmission_efficiencies(polycap_description *description, size_t n_energies, double *energies, double **efficiencies)
+int polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies, double **efficiencies)
 {
 	int thread_cnt, thread_max, i, j;
 	int icount = 5000; //simulate 5000 photons hitting the detector
@@ -331,14 +338,14 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 
 			// Obtain point from source as photon origin, determining photon start_direction
 			r = polycap_rng_uniform(rng);
-			src_rad_x = description->src_x * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution (originally src_x * r/sqrt(r) )
+			src_rad_x = source->src_x * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution (originally src_x * r/sqrt(r) )
 			r = polycap_rng_uniform(rng);
-			src_rad_y = description->src_y * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution
+			src_rad_y = source->src_y * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution
 			r = polycap_rng_uniform(rng);
 			phi = 2.0*M_PI*fabs(r);
-			src_start_x = src_rad_x * cos(phi) + description->src_shiftx;
-			src_start_y = src_rad_y * sin(phi) + description->src_shifty;
-			if((description->src_sigx * description->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
+			src_start_x = src_rad_x * cos(phi) + source->src_shiftx;
+			src_start_y = src_rad_y * sin(phi) + source->src_shifty;
+			if((source->src_sigx * source->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
 				r = polycap_rng_uniform(rng);
 				pc_rad = description->profile->ext[0] * sqrt(fabs(r));
 				r = polycap_rng_uniform(rng);
@@ -347,12 +354,12 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 				pc_y = pc_rad * sin(phi) + start_coords.y;
 				start_direction.x = pc_x - src_start_x;
 				start_direction.y = pc_y - src_start_y;
-				start_direction.z = description->d_source;
+				start_direction.z = source->d_source;
 			} else { //non-uniform distribution, direction vector is within +- sigx
 				r = polycap_rng_uniform(rng);
-				start_direction.x = description->src_sigx * (1.-2.*fabs(r));
+				start_direction.x = source->src_sigx * (1.-2.*fabs(r));
 				r = polycap_rng_uniform(rng);
-				start_direction.y = description->src_sigy * (1.-2.*fabs(r));
+				start_direction.y = source->src_sigy * (1.-2.*fabs(r));
 				start_direction.z = 1.;
 			}
 			polycap_norm(&start_direction);
