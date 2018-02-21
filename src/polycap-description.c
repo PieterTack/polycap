@@ -85,11 +85,6 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 		exit(1);
 	}
 
-	*source = malloc(sizeof(polycap_source));
-	if(*source == NULL){
-		printf("Could not allocate *source memory.\n");
-		exit(1);
-	}
 	source_temp = malloc(sizeof(polycap_source));
 	if(source_temp == NULL){
 		printf("Could not allocate source_temp memory.\n");

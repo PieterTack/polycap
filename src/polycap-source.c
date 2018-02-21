@@ -1,4 +1,5 @@
 #include "polycap-private.h"
+#include <stdlib.h>
 
 //===========================================
 // get a new polycap_source by providing all its properties 
