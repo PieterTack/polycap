@@ -13,6 +13,7 @@
 
 int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord);
 void polycap_norm(polycap_vector3 *vect);
+void polycap_out(size_t n_energies, double *energies, double *efficiencies);
 //===========================================
 char *polycap_read_input_line(FILE *fptr)
 {
@@ -416,6 +417,9 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 	for(i=0; i<n_energies; i++){
 		efficiencies_temp[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;
 	}
+
+	//Write output
+	polycap_out(n_energies, energies, *efficiencies);
 
 
 	//free alloc'ed memory
