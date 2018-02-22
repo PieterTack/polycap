@@ -11,6 +11,7 @@ cd $APPVEYOR_BUILD_FOLDER
 autoreconf -fi
 export CPPFLAGS="-I/usr/local/include -I$HOME/install/include"
 export CFLAGS="-Wall -Werror"
+export LIBS="-L$HOME/lib -lhdf5"
 ./configure --prefix=$HOME/install
 make
 make check
