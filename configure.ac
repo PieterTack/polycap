@@ -50,8 +50,6 @@ PKG_CHECK_MODULES([easyRNG],[easyRNG >= 1.1],
 	USELESS_ASSIGNMENT=1
 	])
 
-LIBS="-L/usr/lib64 -lhdf5"
-
 AC_LANG_PUSH(C)
 AC_OPENMP
 AC_LANG_POP(C)
