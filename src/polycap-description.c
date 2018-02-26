@@ -263,6 +263,50 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	}
 	for(i=0; i<n_energies; i++) sum_weights[i] = 0.;
 
+	// Assign polycap_transmission_efficiencies memory
+	efficiencies = malloc(sizeof(polycap_transmission_efficiencies));
+	if(efficiencies == NULL){
+		printf("Could not allocate efficiencies memory.\n");
+		exit(1);
+	}
+	efficiencies->energies = malloc(sizeof(double)*n_energies);
+	if(efficiencies->energies == NULL){
+		printf("Could not allocate efficiencies->energies memory.\n");
+		exit(1);
+	}
+	efficiencies->efficiencies = malloc(sizeof(double)*n_energies);
+	if(efficiencies->efficiencies == NULL){
+		printf("Could not allocate efficiencies->efficiencies memory.\n");
+		exit(1);
+	}
+
+	//Assign image coordinate array (initial) memory
+	efficiencies->images = malloc(sizeof(struct _polycap_images));
+	if(efficiencies->images == NULL){
+		printf("Could not allocate efficiencies->images memory.\n");
+		exit(1);
+	}
+	efficiencies->images->pc_start_coords[0] = malloc(sizeof(double));
+	if(efficiencies->images->pc_start_coords[0] == NULL){
+		printf("Could not allocate efficiencies->images->pc_start_coords[0] memory.\n");
+		exit(1);
+	}
+	efficiencies->images->pc_start_coords[1] = malloc(sizeof(double));
+	if(efficiencies->images->pc_start_coords[1] == NULL){
+		printf("Could not allocate efficiencies->images->pc_start_coords[1] memory.\n");
+		exit(1);
+	}
+	efficiencies->images->pc_exit_coords[0] = malloc(sizeof(double)*icount);
+	if(efficiencies->images->pc_exit_coords[0] == NULL){
+		printf("Could not allocate efficiencies->images->pc_exit_coords[0] memory.\n");
+		exit(1);
+	}
+	efficiencies->images->pc_exit_coords[1] = malloc(sizeof(double)*icount);
+	if(efficiencies->images->pc_exit_coords[1] == NULL){
+		printf("Could not allocate efficiencies->images->pc_exit_coords[1] memory.\n");
+		exit(1);
+	}
+
 //OpenMP loop
 #pragma omp parallel \
 	default(shared) \
@@ -274,7 +318,6 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	unsigned int seed;
 	polycap_photon *photon;
 	int iesc=-1, k;
-	int64_t istart=0; //amount of started photons
 	double *weights;
 
 	weights = malloc(sizeof(double)*n_energies);
@@ -306,7 +349,14 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 			photon = polycap_source_get_photon(source, description, rng, n_energies, energies);
 
 			// Launch photon
-			istart++; //Here all photons that started, also enter the polycapillary
+			#pragma omp critical
+			{
+			sum_istart ++;
+			efficiencies->images->pc_start_coords[0] = realloc(efficiencies->images->pc_start_coords[0], sizeof(double)*sum_istart);
+			efficiencies->images->pc_start_coords[1] = realloc(efficiencies->images->pc_start_coords[1], sizeof(double)*sum_istart);
+			efficiencies->images->pc_start_coords[0][sum_istart-1] = photon->start_coords.x;
+			efficiencies->images->pc_start_coords[1][sum_istart-1] = photon->start_coords.y;
+			}
 			photon->i_refl = 0; //set reflections to 0
 			iesc = polycap_photon_launch(photon, description);
 			//if iesc == -1 here a new photon should be simulated/started.
@@ -328,6 +378,8 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 		sum_irefl += photon->i_refl;
 		}
 
+		efficiencies->images->pc_exit_coords[0][j] = photon->exit_coords.x;
+		efficiencies->images->pc_exit_coords[1][j] = photon->exit_coords.y;
 		//free photon structure (new one created for each for loop instance)
 		polycap_photon_free(photon);
 
@@ -335,7 +387,6 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 
 	#pragma omp critical
 	{
-	sum_istart += istart;
 	for(i=0; i<n_energies; i++) sum_weights[i] += weights[i];
 	}
 	polycap_rng_free(rng);
@@ -344,24 +395,9 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 
 	printf("Average number of reflections: %f\n",(double)sum_irefl/icount);
 
-	// Assign polycap_transmission_efficiencies memory
-	efficiencies = malloc(sizeof(polycap_transmission_efficiencies));
-	if(efficiencies == NULL){
-		printf("Could not allocate efficiencies memory.\n");
-		exit(1);
-	}
-	efficiencies->energies = malloc(sizeof(double)*n_energies);
-	if(efficiencies->energies == NULL){
-		printf("Could not allocate efficiencies->energies memory.\n");
-		exit(1);
-	}
-	efficiencies->efficiencies = malloc(sizeof(double)*n_energies);
-	if(efficiencies->efficiencies == NULL){
-		printf("Could not allocate efficiencies->efficiencies memory.\n");
-		exit(1);
-	}
-
+	// Complete output structure
 	efficiencies->n_energies = n_energies;
+	efficiencies->images->i_start = sum_istart;
 	for(i=0; i<n_energies; i++){
 		efficiencies->energies[i] = energies[i];
 		efficiencies->efficiencies[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;

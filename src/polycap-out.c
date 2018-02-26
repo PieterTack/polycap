@@ -10,7 +10,7 @@ void polycap_transmission_efficiencies_write_hdf5(const char *filename, polycap_
 {
 	hid_t file, dataset;
 	hid_t dataspace; //handles
-	hsize_t n_energies_temp;
+	hsize_t n_energies_temp, dim[2];
 	herr_t status;
 
 
@@ -66,6 +66,59 @@ void polycap_transmission_efficiencies_write_hdf5(const char *filename, polycap_
 		printf("Error: H5D close finished on error.\n");
 		exit(6);
 	}
+
+	//Write simulated polycap start coordinates
+	//Define temporary dataset dimension
+	dim[0] = 2;
+	dim[1] = efficiencies->images->i_start;
+	//Describe size of the array and make fixed data space
+	dataspace = H5Screate_simple(2, dim, NULL); //RANK = 2 due to 2D dataset
+	//Create new dataset within the HDF5 file with default creation properties
+	dataset = H5Dcreate2(file, "PC Start Coordinates", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	//Write data to the dataset with default transfer properties
+	status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, efficiencies->images->pc_start_coords);
+	if(status < 0){
+		printf("Error: H5D write finished on error.\n");
+		exit(4);
+	}
+	//Close release sources
+	status = H5Sclose(dataspace);
+	if(status < 0){
+		printf("Error: H5S close finished on error.\n");
+		exit(5);
+	}
+	status = H5Dclose(dataset);
+	if(status < 0){
+		printf("Error: H5D close finished on error.\n");
+		exit(6);
+	}
+	
+	//Write simulated polycap exit coordinates
+	//Define temporary dataset dimension
+	dim[0] = 2;
+	dim[1] = 5000;
+	//Describe size of the array and make fixed data space
+	dataspace = H5Screate_simple(2, dim, NULL); //RANK = 2 due to 2D dataset
+	//Create new dataset within the HDF5 file with default creation properties
+	dataset = H5Dcreate2(file, "PC Exit Coordinates", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	//Write data to the dataset with default transfer properties
+	status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, efficiencies->images->pc_exit_coords);
+	if(status < 0){
+		printf("Error: H5D write finished on error.\n");
+		exit(4);
+	}
+	//Close release sources
+	status = H5Sclose(dataspace);
+	if(status < 0){
+		printf("Error: H5S close finished on error.\n");
+		exit(5);
+	}
+	status = H5Dclose(dataset);
+	if(status < 0){
+		printf("Error: H5D close finished on error.\n");
+		exit(6);
+	}
+	
 
 	//Close file
 	H5Fclose(file);

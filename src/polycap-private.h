@@ -216,6 +216,14 @@ struct _polycap_transmission_efficiencies
   size_t n_energies;
   double *energies;
   double *efficiencies;
+  struct _polycap_images *images;
+  };
+
+struct _polycap_images
+  {
+  int64_t i_start;
+  double *pc_start_coords[2];
+  double *pc_exit_coords[2];
   };
 
 #endif
