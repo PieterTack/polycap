@@ -67,6 +67,15 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 	}
 	polycap_norm(&start_direction);
 
+	// Provide random electric vector
+	r = polycap_rng_uniform(rng);
+	start_electric_vector.x = (1.-2.*fabs(r));
+	r = polycap_rng_uniform(rng);
+	start_electric_vector.y = (1.-2.*fabs(r));
+	r = polycap_rng_uniform(rng);
+	start_electric_vector.z = (1.-2.*fabs(r));
+	polycap_norm(&start_electric_vector);
+
 	// Create photon structure
 	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies);
 
