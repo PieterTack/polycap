@@ -25,13 +25,15 @@ struct _polycap_source;
 struct _polycap_profile;
 struct _polycap_photon;
 struct _polycap_rng; // our rng struct, which will be mapped to either gsl_rng or easy_rng
+struct _polycap_transmission_efficiencies;
 
-typedef enum   _polycap_profile_type polycap_profile_type;
-typedef struct _polycap_description  polycap_description;
-typedef struct _polycap_source       polycap_source;
-typedef struct _polycap_profile      polycap_profile;
-typedef struct _polycap_photon       polycap_photon;
-typedef struct _polycap_rng          polycap_rng;
+typedef enum   _polycap_profile_type                polycap_profile_type;
+typedef struct _polycap_description                 polycap_description;
+typedef struct _polycap_source                      polycap_source;
+typedef struct _polycap_profile                     polycap_profile;
+typedef struct _polycap_photon                      polycap_photon;
+typedef struct _polycap_rng                         polycap_rng;
+typedef struct _polycap_transmission_efficiencies   polycap_transmission_efficiencies;
 
 typedef struct {
 	double x;
@@ -86,13 +88,16 @@ polycap_source* polycap_source_new(
 const polycap_profile* polycap_description_get_profile(polycap_description *description);
 
 // for a given array of energies, and a full polycap_description, get the transmission efficiencies. efficiencies will be allocated by us, and needs to be freed with polycap_free
-int polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies, double **efficiencies);
+polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies);
 
 // free a polycap_description struct
 void polycap_description_free(polycap_description *description);
 
 // free a polycap_source struct
 void polycap_source_free(polycap_source *source);
+
+// free a polycap_transmission_efficiencies struct
+void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *efficiencies);
 
 // get a new rng
 polycap_rng* polycap_rng_new(unsigned long int seed);
@@ -101,6 +106,9 @@ polycap_rng* polycap_rng_new(unsigned long int seed);
 void polycap_rng_free(polycap_rng *rng);
 
 // exposing more rng functions may be useful..
+
+// construct a new random polycap_photon 
+polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_description *description, polycap_rng *rng, size_t n_energies, double *energies);
 
 // construct a new polycap_photon with its initial position, direction, electric field vector and energy
 polycap_photon* polycap_photon_new(
@@ -125,6 +133,9 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
 
 // free a polycap_photon
 void polycap_photon_free(polycap_photon *photon);
+
+// write polycap_transmission_efficiencies data to hdf5 file
+void polycap_transmission_efficiencies_write_hdf5(const char *filename, polycap_transmission_efficiencies *efficiencies);
 
 // wrapper around free(), necessary to avoid trouble on Windows with its multiple runtimes...
 void polycap_free(void *);

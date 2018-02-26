@@ -211,5 +211,12 @@ struct _polycap_photon
   double d_travel;
   };
 
+struct _polycap_transmission_efficiencies
+  {
+  size_t n_energies;
+  double *energies;
+  double *efficiencies;
+  };
+
 #endif
 

@@ -7,10 +7,11 @@ int main(int argc, char *argv[])
 {	
 	polycap_description *description;
 	polycap_source *source;
+	polycap_transmission_efficiencies *efficiencies;
 	int i;
 	size_t n_energies = 291;
 	double *energies;
-	double *efficiencies;
+	const char filename[] = "polycap_out.h5";
 
 	// Check whether input file argument was supplied
 	if(argc <= 1){
@@ -33,14 +34,17 @@ int main(int argc, char *argv[])
 
 	// Perform calculations	
 	printf("Starting calculations...\n");
-	i = polycap_description_get_transmission_efficiencies(description, source, n_energies, energies, &efficiencies);
+	efficiencies = polycap_description_get_transmission_efficiencies(description, source, n_energies, energies);
+
+	//Write output
+	polycap_transmission_efficiencies_write_hdf5(filename, efficiencies);
 
 //	for(i=0; i<n_energies; i++){
-//		printf("%f keV: %f%%; ",energies[i],efficiencies[i]);
+//		printf("%f keV: %f%%; ",energies[i],efficiencies->efficiencies[i]);
 //	}
 
 	free(energies);
-	free(efficiencies);
+	polycap_transmission_efficiencies_free(efficiencies);
 	polycap_description_free(description);
 	polycap_source_free(source);
 	return 0;

@@ -11,9 +11,6 @@
 #include <math.h>
 #include <omp.h> /* openmp header */
 
-int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord);
-void polycap_norm(polycap_vector3 *vect);
-void polycap_out(size_t n_energies, double *energies, double *efficiencies);
 //===========================================
 char *polycap_read_input_line(FILE *fptr)
 {
@@ -244,12 +241,13 @@ const polycap_profile* polycap_description_get_profile(polycap_description *desc
 // -Does not make photon image arrays (yet)
 // -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
 // -Polarised dependant reflectivity and change in electric field vector missing
-int polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies, double **efficiencies)
+polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies)
 {
 	int thread_cnt, thread_max, i, j;
 	int icount = 5000; //simulate 5000 photons hitting the detector
 	int64_t sum_istart=0, sum_irefl=0;
 	double *sum_weights;
+	polycap_transmission_efficiencies *efficiencies;
 
 	// Check maximal amount of threads and let user choose the amount of threads to use
 	thread_max = omp_get_max_threads();
@@ -274,13 +272,6 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 	int thread_id = omp_get_thread_num();
 	polycap_rng *rng;
 	unsigned int seed;
-	polycap_vector3 start_coords, start_direction, start_electric_vector;
-	double r; //random number
-	double n_shells; //amount of capillary shells in polycapillary
-	int boundary_check;
-	double src_rad_x, src_rad_y, phi; //distance from source centre in x and y direction and angle phi from x axis
-	double src_start_x, src_start_y;
-	double pc_rad, pc_x, pc_y; //pc radius and coordinates to direct photon to
 	polycap_photon *photon;
 	int iesc=-1, k;
 	int64_t istart=0; //amount of started photons
@@ -311,57 +302,8 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 	#pragma omp for nowait
 	for(j=0; j < icount; j++){
 		do{
-			// Obtain photon start coordinates
-			n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
-			if(n_shells == 0.){ //monocapillary case
-				r = polycap_rng_uniform(rng);
-				start_coords.x = (2.*r-1) * description->profile->cap[0];
-				r = polycap_rng_uniform(rng);
-				start_coords.y = (2.*r-1) * description->profile->cap[0];
-				start_coords.z = 0.;
-			} else { // polycapillary case
-				// select random coordinates, check whether they are inside polycap boundary
-				boundary_check = -1;
-				do{
-					r = polycap_rng_uniform(rng);
-					start_coords.x = (2.*r-1) * description->profile->ext[0];
-					r = polycap_rng_uniform(rng);
-					start_coords.y = (2.*r-1) * description->profile->ext[0];
-					start_coords.z = 0.;
-					boundary_check = polycap_photon_within_pc_boundary(description->profile->ext[0], start_coords);
-				} while(boundary_check == -1);
-			}
-
-			// Obtain point from source as photon origin, determining photon start_direction
-			r = polycap_rng_uniform(rng);
-			src_rad_x = source->src_x * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution (originally src_x * r/sqrt(r) )
-			r = polycap_rng_uniform(rng);
-			src_rad_y = source->src_y * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution
-			r = polycap_rng_uniform(rng);
-			phi = 2.0*M_PI*fabs(r);
-			src_start_x = src_rad_x * cos(phi) + source->src_shiftx;
-			src_start_y = src_rad_y * sin(phi) + source->src_shifty;
-			if((source->src_sigx * source->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
-				r = polycap_rng_uniform(rng);
-				pc_rad = description->profile->ext[0] * sqrt(fabs(r));
-				r = polycap_rng_uniform(rng);
-				phi = 2.0*M_PI*fabs(r);
-				pc_x = pc_rad * cos(phi) + start_coords.x;
-				pc_y = pc_rad * sin(phi) + start_coords.y;
-				start_direction.x = pc_x - src_start_x;
-				start_direction.y = pc_y - src_start_y;
-				start_direction.z = source->d_source;
-			} else { //non-uniform distribution, direction vector is within +- sigx
-				r = polycap_rng_uniform(rng);
-				start_direction.x = source->src_sigx * (1.-2.*fabs(r));
-				r = polycap_rng_uniform(rng);
-				start_direction.y = source->src_sigy * (1.-2.*fabs(r));
-				start_direction.z = 1.;
-			}
-			polycap_norm(&start_direction);
-
 			// Create photon structure
-			photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies);
+			photon = polycap_source_get_photon(source, description, rng, n_energies, energies);
 
 			// Launch photon
 			istart++; //Here all photons that started, also enter the polycapillary
@@ -402,29 +344,33 @@ int polycap_description_get_transmission_efficiencies(polycap_description *descr
 
 	printf("Average number of reflections: %f\n",(double)sum_irefl/icount);
 
-	*efficiencies = malloc(sizeof(double) * n_energies);
-	if(*efficiencies == NULL){
-		printf("Could not allocate *efficiencies memory.\n");
+	// Assign polycap_transmission_efficiencies memory
+	efficiencies = malloc(sizeof(polycap_transmission_efficiencies));
+	if(efficiencies == NULL){
+		printf("Could not allocate efficiencies memory.\n");
 		exit(1);
 	}
-	double *efficiencies_temp;
-	efficiencies_temp = malloc(sizeof(double) * n_energies);
-	if(efficiencies_temp == NULL){
-		printf("Could not allocate efficiencies_temp memory.\n");
+	efficiencies->energies = malloc(sizeof(double)*n_energies);
+	if(efficiencies->energies == NULL){
+		printf("Could not allocate efficiencies->energies memory.\n");
 		exit(1);
 	}
-	*efficiencies = efficiencies_temp; //DO NOT FREE efficiencies_temp
-	for(i=0; i<n_energies; i++){
-		efficiencies_temp[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;
+	efficiencies->efficiencies = malloc(sizeof(double)*n_energies);
+	if(efficiencies->efficiencies == NULL){
+		printf("Could not allocate efficiencies->efficiencies memory.\n");
+		exit(1);
 	}
 
-	//Write output
-	polycap_out(n_energies, energies, *efficiencies);
+	efficiencies->n_energies = n_energies;
+	for(i=0; i<n_energies; i++){
+		efficiencies->energies[i] = energies[i];
+		efficiencies->efficiencies[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;
+	}
 
 
 	//free alloc'ed memory
 	free(sum_weights);
-	return 0;
+	return efficiencies;
 }
 
 //===========================================
