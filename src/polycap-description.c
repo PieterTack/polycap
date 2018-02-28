@@ -244,7 +244,7 @@ const polycap_profile* polycap_description_get_profile(polycap_description *desc
 polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies)
 {
 	int thread_cnt, thread_max, i, j;
-	int icount = 50; //simulate 5000 photons hitting the detector
+	int icount = 5000; //simulate 5000 photons hitting the detector
 	int64_t sum_istart=0, sum_irefl=0;
 	double *sum_weights;
 	polycap_transmission_efficiencies *efficiencies;
