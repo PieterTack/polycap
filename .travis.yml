@@ -4,8 +4,6 @@ env:
   global:
     - CXXFLAGS="-Wall -Werror"
     - CFLAGS="-Wall -Werror"
-    - LIBS="-L/usr/lib64 -L/usr/local/lib -lhdf5"
-    - CPPFLAGS="-I/usr/include -I/usr/local/include"
     - LD_LIBRARY_PATH='/usr/local/lib'
     - PKG_CONFIG_PATH='/usr/local/lib/pkgconfig'
 
