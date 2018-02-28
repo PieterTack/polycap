@@ -244,7 +244,7 @@ const polycap_profile* polycap_description_get_profile(polycap_description *desc
 polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies)
 {
 	int thread_cnt, thread_max, i, j;
-	int icount = 5000; //simulate 5000 photons hitting the detector
+	int icount = 50; //simulate 5000 photons hitting the detector
 	int64_t sum_istart=0, sum_irefl=0;
 	double *sum_weights;
 	polycap_transmission_efficiencies *efficiencies;
@@ -351,7 +351,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 			// Launch photon
 			#pragma omp critical
 			{
-			sum_istart ++;
+			sum_istart++;
 			efficiencies->images->pc_start_coords[0] = realloc(efficiencies->images->pc_start_coords[0], sizeof(double)*sum_istart);
 			efficiencies->images->pc_start_coords[1] = realloc(efficiencies->images->pc_start_coords[1], sizeof(double)*sum_istart);
 			efficiencies->images->pc_start_coords[0][sum_istart-1] = photon->start_coords.x;
@@ -398,6 +398,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	// Complete output structure
 	efficiencies->n_energies = n_energies;
 	efficiencies->images->i_start = sum_istart;
+	efficiencies->images->i_exit = icount;
 	for(i=0; i<n_energies; i++){
 		efficiencies->energies[i] = energies[i];
 		efficiencies->efficiencies[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;

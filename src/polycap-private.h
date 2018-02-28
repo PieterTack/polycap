@@ -222,6 +222,7 @@ struct _polycap_transmission_efficiencies
 struct _polycap_images
   {
   int64_t i_start;
+  int64_t i_exit;
   double *pc_start_coords[2];
   double *pc_exit_coords[2];
   };
