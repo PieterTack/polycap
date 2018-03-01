@@ -108,7 +108,7 @@ void polycap_rng_free(polycap_rng *rng);
 // exposing more rng functions may be useful..
 
 // construct a new random polycap_photon 
-polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_description *description, polycap_rng *rng, size_t n_energies, double *energies);
+polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_description *description, polycap_rng *rng, size_t n_energies, double *energies, polycap_vector3 *src_start_coords);
 
 // construct a new polycap_photon with its initial position, direction, electric field vector and energy
 polycap_photon* polycap_photon_new(

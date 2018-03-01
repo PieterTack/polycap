@@ -160,6 +160,10 @@ struct polycap_result
 
 //================================
 
+#include "hdf5.h"
+// Write data set in HDF5 file
+void polycap_h5_write_dataset(hid_t file, int rank, hsize_t *dim, char *dataset_name, double *data, char *unitname);
+
 struct _polycap_profile
   {
   int nmax;
@@ -223,8 +227,12 @@ struct _polycap_images
   {
   int64_t i_start;
   int64_t i_exit;
+  double *src_start_coords[2];
   double *pc_start_coords[2];
+  double *pc_start_dir[2];
   double *pc_exit_coords[2];
+  double *pc_exit_dir[2];
+  double *exit_coord_weights;
   };
 
 #endif

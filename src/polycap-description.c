@@ -296,6 +296,26 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 		printf("Could not allocate efficiencies->images->pc_start_coords[1] memory.\n");
 		exit(1);
 	}
+	efficiencies->images->src_start_coords[0] = malloc(sizeof(double));
+	if(efficiencies->images->src_start_coords[0] == NULL){
+		printf("Could not allocate efficiencies->images->src_start_coords[0] memory.\n");
+		exit(1);
+	}
+	efficiencies->images->src_start_coords[1] = malloc(sizeof(double));
+	if(efficiencies->images->src_start_coords[1] == NULL){
+		printf("Could not allocate efficiencies->images->src_start_coords[1] memory.\n");
+		exit(1);
+	}
+	efficiencies->images->pc_start_dir[0] = malloc(sizeof(double));
+	if(efficiencies->images->pc_start_dir[0] == NULL){
+		printf("Could not allocate efficiencies->images->pc_start_dir[0] memory.\n");
+		exit(1);
+	}
+	efficiencies->images->pc_start_dir[1] = malloc(sizeof(double));
+	if(efficiencies->images->pc_start_dir[1] == NULL){
+		printf("Could not allocate efficiencies->images->pc_start_dir[1] memory.\n");
+		exit(1);
+	}
 	efficiencies->images->pc_exit_coords[0] = malloc(sizeof(double)*icount);
 	if(efficiencies->images->pc_exit_coords[0] == NULL){
 		printf("Could not allocate efficiencies->images->pc_exit_coords[0] memory.\n");
@@ -304,6 +324,21 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	efficiencies->images->pc_exit_coords[1] = malloc(sizeof(double)*icount);
 	if(efficiencies->images->pc_exit_coords[1] == NULL){
 		printf("Could not allocate efficiencies->images->pc_exit_coords[1] memory.\n");
+		exit(1);
+	}
+	efficiencies->images->pc_exit_dir[0] = malloc(sizeof(double)*icount);
+	if(efficiencies->images->pc_exit_dir[0] == NULL){
+		printf("Could not allocate efficiencies->images->pc_exit_dir[0] memory.\n");
+		exit(1);
+	}
+	efficiencies->images->pc_exit_dir[1] = malloc(sizeof(double)*icount);
+	if(efficiencies->images->pc_exit_dir[1] == NULL){
+		printf("Could not allocate efficiencies->images->pc_exit_dir[1] memory.\n");
+		exit(1);
+	}
+	efficiencies->images->exit_coord_weights = malloc(sizeof(double)*icount*n_energies);
+	if(efficiencies->images->exit_coord_weights == NULL){
+		printf("Could not allocate efficiencies->images->exit_coord_weights memory.\n");
 		exit(1);
 	}
 
@@ -319,6 +354,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	polycap_photon *photon;
 	int iesc=-1, k;
 	double *weights;
+	polycap_vector3 src_start_coords;
 
 	weights = malloc(sizeof(double)*n_energies);
 	if(weights == NULL){
@@ -346,24 +382,30 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	for(j=0; j < icount; j++){
 		do{
 			// Create photon structure
-			photon = polycap_source_get_photon(source, description, rng, n_energies, energies);
+			photon = polycap_source_get_photon(source, description, rng, n_energies, energies, &src_start_coords);
 
 			// Launch photon
 			#pragma omp critical
 			{
 			sum_istart++;
+			efficiencies->images->src_start_coords[0] = realloc(efficiencies->images->src_start_coords[0], sizeof(double)*sum_istart);
+			efficiencies->images->src_start_coords[1] = realloc(efficiencies->images->src_start_coords[1], sizeof(double)*sum_istart);
+			efficiencies->images->src_start_coords[0][sum_istart-1] = src_start_coords.x;
+			efficiencies->images->src_start_coords[1][sum_istart-1] = src_start_coords.y;
 			efficiencies->images->pc_start_coords[0] = realloc(efficiencies->images->pc_start_coords[0], sizeof(double)*sum_istart);
 			efficiencies->images->pc_start_coords[1] = realloc(efficiencies->images->pc_start_coords[1], sizeof(double)*sum_istart);
 			efficiencies->images->pc_start_coords[0][sum_istart-1] = photon->start_coords.x;
 			efficiencies->images->pc_start_coords[1][sum_istart-1] = photon->start_coords.y;
+			efficiencies->images->pc_start_dir[0] = realloc(efficiencies->images->pc_start_dir[0], sizeof(double)*sum_istart);
+			efficiencies->images->pc_start_dir[1] = realloc(efficiencies->images->pc_start_dir[1], sizeof(double)*sum_istart);
+			efficiencies->images->pc_start_dir[0][sum_istart-1] = photon->start_direction.x;
+			efficiencies->images->pc_start_dir[1][sum_istart-1] = photon->start_direction.y;
 			}
 			photon->i_refl = 0; //set reflections to 0
 			iesc = polycap_photon_launch(photon, description);
 			//if iesc == -1 here a new photon should be simulated/started.
 			//	essentially do j-1 as this will have same effect
 		} while(iesc == -1);
-
-		//COUNT function here... If required...
 
 		if(thread_id == 0 && (double)i/((double)icount/(double)thread_cnt/10.) >= 1.){
 			printf("%d%%\t%" PRId64 "\t%f\n",((j*100)/(icount/thread_cnt)),photon->i_refl,photon->exit_coords.z);
@@ -372,17 +414,22 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 		i++;//counter just to follow % completed
 
 		//save photon->weight in thread unique array
-		for(k=0; k<n_energies; k++) weights[k] += photon->weight[k];
+		for(k=0; k<n_energies; k++){
+			weights[k] += photon->weight[k];
+			efficiencies->images->exit_coord_weights[k+j*n_energies] = photon->weight[k];
+		}
+		//save photon exit coordinates and propagation vector
+		efficiencies->images->pc_exit_coords[0][j] = photon->exit_coords.x;
+		efficiencies->images->pc_exit_coords[1][j] = photon->exit_coords.y;
+		efficiencies->images->pc_exit_dir[0][j] = photon->exit_direction.x;
+		efficiencies->images->pc_exit_dir[1][j] = photon->exit_direction.y;
+
 		#pragma omp critical
 		{
 		sum_irefl += photon->i_refl;
 		}
-
-		efficiencies->images->pc_exit_coords[0][j] = photon->exit_coords.x;
-		efficiencies->images->pc_exit_coords[1][j] = photon->exit_coords.y;
 		//free photon structure (new one created for each for loop instance)
 		polycap_photon_free(photon);
-
 	} //for(j=0; j < icount; j++)
 
 	#pragma omp critical

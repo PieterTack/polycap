@@ -6,7 +6,7 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 void polycap_norm(polycap_vector3 *vect);
 //===========================================
 // Obtain a photon structure from source and polycap description
-polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_description *description, polycap_rng *rng, size_t n_energies, double *energies)
+polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_description *description, polycap_rng *rng, size_t n_energies, double *energies, polycap_vector3 *src_start_coords)
 {
 	double n_shells; //amount of capillary shells in polycapillary
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
@@ -48,6 +48,9 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 	phi = 2.0*M_PI*fabs(r);
 	src_start_x = src_rad_x * cos(phi) + source->src_shiftx;
 	src_start_y = src_rad_y * sin(phi) + source->src_shifty;
+	src_start_coords->x = src_start_x;
+	src_start_coords->y = src_start_y;
+	src_start_coords->z = 0;
 	if((source->src_sigx * source->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
 		r = polycap_rng_uniform(rng);
 		pc_rad = description->profile->ext[0] * sqrt(fabs(r));
