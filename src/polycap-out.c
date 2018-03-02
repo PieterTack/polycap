@@ -153,6 +153,21 @@ void polycap_h5_write_dataset(hid_t file, int rank, hsize_t *dim, char *dataset_
 	H5Awrite(attr_id, attr_type, unitname);
 
 	//Close release sources
+	status = H5Sclose(attr_dataspace_id);
+	if(status < 0){
+		printf("Error: H5S close finished on error.\n");
+		exit(5);
+	}
+	status = H5Tclose(attr_type);
+	if(status < 0){
+		printf("Error: H5T close finished on error.\n");
+		exit(7);
+	}
+	status = H5Aclose(attr_id);
+	if(status < 0){
+		printf("Error: H5A close finished on error.\n");
+		exit(8);
+	}
 	status = H5Dclose(dataset);
 	if(status < 0){
 		printf("Error: H5D close finished on error.\n");

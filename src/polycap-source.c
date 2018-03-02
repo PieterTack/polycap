@@ -12,7 +12,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
 	double r; //random number
 	int boundary_check;
-	double src_rad_x, src_rad_y, phi; //distance from source centre in x and y direction and angle phi from x axis
+	double src_rad, phi; //distance from source centre along angle phi from x axis
 	double src_start_x, src_start_y;
 	double pc_rad, pc_x, pc_y; //pc radius and coordinates to direct photon to
 	polycap_photon *photon;
@@ -41,13 +41,11 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 
 	// Obtain point from source as photon origin, determining photon start_direction
 	r = polycap_rng_uniform(rng);
-	src_rad_x = source->src_x * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution (originally src_x * r/sqrt(r) )
-	r = polycap_rng_uniform(rng);
-	src_rad_y = source->src_y * sqrt(fabs(r)); ////sqrt to simulate source intensity distribution
-	r = polycap_rng_uniform(rng);
 	phi = 2.0*M_PI*fabs(r);
-	src_start_x = src_rad_x * cos(phi) + source->src_shiftx;
-	src_start_y = src_rad_y * sin(phi) + source->src_shifty;
+	r = polycap_rng_uniform(rng);
+	src_rad = sqrt((1./(((tan(phi)*tan(phi))/(source->src_y*source->src_y))+(1./(source->src_x*source->src_x))))+(source->src_y*source->src_y)*(1.-(((1./(((tan(phi)*tan(phi))/(source->src_y*source->src_y))+(1./(source->src_x*source->src_x)))))/(source->src_x*source->src_x)))) * sqrt(fabs(r)); //sqrt(r) to simulate source intensity distribution (originally src_rad * r/sqrt(r) )
+	src_start_x = src_rad * cos(phi) + source->src_shiftx;
+	src_start_y = src_rad * sin(phi) + source->src_shifty;
 	src_start_coords->x = src_start_x;
 	src_start_coords->y = src_start_y;
 	src_start_coords->z = 0;
