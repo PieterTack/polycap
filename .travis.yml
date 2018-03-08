@@ -20,6 +20,8 @@ matrix:
           packages:
             - libgsl0-dev
             - libxrl7-dev
+            - libhdf5-serial-dev
+            - hdf5-tools
     - os: linux
       sudo: required
       dist: trusty
@@ -32,15 +34,17 @@ matrix:
             - libgsl0-dev
             - libeasyrng-dev
             - libxrl7-dev
+            - libhdf5-serial-dev
+            - hdf5-tools
     - os: osx
       sudo: required
-      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm' LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
+      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm' EXTRA_LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
     - os: osx
       sudo: required
       env: CC='/usr/local/bin/gcc-7' HOMEBREW_ARGS='gcc@7'
     - os: osx
       sudo: required
-      env: CC='/usr/local/opt/llvm/bin/clang' CXX='/usr/local/opt/llvm/bin/clang++' HOMEBREW_ARGS='llvm tschoonj/tap/easyrng' LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
+      env: CC='/usr/local/opt/llvm/bin/clang' CXX='/usr/local/opt/llvm/bin/clang++' HOMEBREW_ARGS='llvm tschoonj/tap/easyrng' EXTRA_LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
     - os: osx
       sudo: required
       env: CC='/usr/local/bin/gcc-7' CXX='/usr/local/bin/g++-7' HOMEBREW_ARGS='gcc@7 tschoonj/tap/easyrng'
@@ -53,7 +57,7 @@ before_install:
       brew update || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
-      brew install git autoconf automake libtool curl wget pkg-config gsl || exit 1
+      brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl || exit 1
       brew install $HOMEBREW_ARGS tschoonj/tap/xraylib || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
@@ -61,6 +65,7 @@ before_install:
 
 script:
   - autoreconf -fi || exit 1
+  - export LIBS="$LIBS $EXTRA_LIBS"
   - ./configure || exit 1
   - make || exit 1
   - make check || exit 1

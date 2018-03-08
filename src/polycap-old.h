@@ -1,5 +1,5 @@
-#ifndef POLYCAP_H
-#define POLYCAP_H
+#ifndef POLYCAP_OLD_H
+#define POLYCAP_OLD_H
 
 #ifdef __cplusplus
 extern "C" {

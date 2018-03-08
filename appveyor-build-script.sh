@@ -9,7 +9,6 @@ export PATH=$HOME/install/bin:$PATH
 cd $APPVEYOR_BUILD_FOLDER
 
 autoreconf -fi
-export CPPFLAGS="-I/usr/local/include -I$HOME/install/include"
 export CFLAGS="-Wall -Werror"
 ./configure --prefix=$HOME/install
 make

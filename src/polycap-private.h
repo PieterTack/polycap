@@ -1,7 +1,9 @@
 #ifndef POLYCAP_PRIVATE_H
 #define POLYCAP_PRIVATE_H
 
+#define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
 #include "config.h"
+#include "polycap.h"
 #include <stdint.h>
 
 #define NSPOT 1000  /* The number of bins in the grid for the spot*/
@@ -12,24 +14,38 @@
 #ifdef HAVE_EASYRNG
   #include <easy_rng.h>
   #include <easy_randist.h>
+
+  struct _polycap_rng {
+  	easy_rng *_rng;
+  };
+
   typedef easy_rng_type polycap_rng_type;
-  typedef easy_rng polycap_rng;
-  #define polycap_rng_alloc(T) easy_rng_alloc(T)
-  #define polycap_rng_free(rng) easy_rng_free(rng)
-  #define polycap_rng_set(rng, seed) easy_rng_set(rng, seed)
-  #define polycap_rng_uniform(rng) easy_rng_uniform(rng)
+  #define _polycap_rng_alloc(T) easy_rng_alloc(T)
+  #define _polycap_rng_free(rng) easy_rng_free(rng->_rng)
+  #define _polycap_rng_set(rng, seed) easy_rng_set(rng->_rng, seed)
+  #define _polycap_rng_uniform(rng) easy_rng_uniform(rng->_rng)
   #define polycap_rng_mt19937 easy_rng_mt19937
 #else
   #include <gsl/gsl_rng.h>
   #include <gsl/gsl_randist.h>
+
+  struct _polycap_rng {
+  	gsl_rng *_rng;
+  };
+
   typedef gsl_rng_type polycap_rng_type;
-  typedef gsl_rng polycap_rng;
-  #define polycap_rng_alloc(T) gsl_rng_alloc(T)
-  #define polycap_rng_free(rng) gsl_rng_free(rng)
-  #define polycap_rng_set(rng, seed) gsl_rng_set(rng, seed)
-  #define polycap_rng_uniform(rng) gsl_rng_uniform(rng)
+  #define _polycap_rng_alloc(T) gsl_rng_alloc(T)
+  #define _polycap_rng_free(rng) gsl_rng_free(rng->_rng)
+  #define _polycap_rng_set(rng, seed) gsl_rng_set(rng->_rng, seed)
+  #define _polycap_rng_uniform(rng) gsl_rng_uniform(rng->_rng)
   #define polycap_rng_mt19937 gsl_rng_mt19937
 #endif
+
+polycap_rng * polycap_rng_alloc(const polycap_rng_type * T);
+void polycap_rng_set(const polycap_rng * r, unsigned long int s);
+double polycap_rng_uniform(const polycap_rng * r);
+
+
 // ---------------------------------------------------------------------------------------------------
 // Define structures
 struct inp_file
@@ -140,6 +156,79 @@ struct polycap_result
   int64_t sum_refl, sum_ienter, sum_istart;
   double ave_refl;
   double *absorb_sum, *sum_cnt;
+  };
+
+//================================
+
+struct _polycap_profile
+  {
+  int nmax;
+  double *z;
+  double *cap;
+  double *ext;
+  };
+
+struct _polycap_description
+  {
+  double sig_rough;
+  double sig_wave;
+  double corr_length;
+  int64_t n_cap;
+  double open_area;
+  unsigned int nelem;
+  int *iz;
+  double *wi;
+  double density;
+  struct _polycap_profile *profile;
+  };
+
+struct _polycap_source
+  {
+  double d_source;
+  double src_x;
+  double src_y;
+  double src_sigx;
+  double src_sigy;
+  double src_shiftx;
+  double src_shifty;
+  };
+
+struct _polycap_photon
+  {
+  polycap_rng *rng;
+  polycap_vector3 start_coords;
+  polycap_vector3 start_direction;
+  polycap_vector3 start_electric_vector;
+  polycap_vector3 exit_coords;
+  polycap_vector3 exit_direction;
+  polycap_vector3 exit_electric_vector;
+  size_t n_energies;
+  double *energies;
+  double *weight;
+  double *amu;
+  double *scatf;
+  int64_t i_refl;
+  double d_travel;
+  };
+
+struct _polycap_transmission_efficiencies
+  {
+  size_t n_energies;
+  double *energies;
+  double *efficiencies;
+  struct _polycap_images *images;
+  };
+
+struct _polycap_images
+  {
+  int64_t i_start;
+  int64_t i_exit;
+  double *src_start_coords[2];
+  double *pc_start_coords[2];
+  double *pc_start_dir[2];
+  double *pc_exit_coords[2];
+  double *pc_exit_dir[2];
+  double *exit_coord_weights;
   };
 
 #endif
