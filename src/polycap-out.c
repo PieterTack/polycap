@@ -5,6 +5,62 @@
 #include "hdf5.h"
 
 //===========================================
+// Write data set in HDF5 file
+void polycap_h5_write_dataset(hid_t file, int rank, hsize_t *dim, char *dataset_name, double *data, char *unitname)
+{
+	herr_t status;
+	hid_t dataset;
+	hid_t dataspace, attr_id, attr_type, attr_dataspace_id; //handles
+
+	//Describe size of the array and make fixed data space
+	dataspace = H5Screate_simple(rank, dim, NULL);
+
+	//Create new dataset within the HDF5 file with default creation properties
+	dataset = H5Dcreate2(file, dataset_name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+	//Write data to the dataset with default transfer properties
+	status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+	if(status < 0){
+		printf("Error: H5D write finished on error.\n");
+		exit(4);
+	}
+
+	//Write unit attributes
+	attr_dataspace_id = H5Screate(H5S_SCALAR);
+	attr_type = H5Tcopy(H5T_C_S1);	
+	H5Tset_size(attr_type,(hsize_t)strlen(unitname));
+	attr_id = H5Acreate2(dataset, "Units", attr_type, attr_dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
+	H5Awrite(attr_id, attr_type, unitname);
+
+	//Close release sources
+	status = H5Sclose(attr_dataspace_id);
+	if(status < 0){
+		printf("Error: H5S close finished on error.\n");
+		exit(5);
+	}
+	status = H5Tclose(attr_type);
+	if(status < 0){
+		printf("Error: H5T close finished on error.\n");
+		exit(7);
+	}
+	status = H5Aclose(attr_id);
+	if(status < 0){
+		printf("Error: H5A close finished on error.\n");
+		exit(8);
+	}
+	status = H5Dclose(dataset);
+	if(status < 0){
+		printf("Error: H5D close finished on error.\n");
+		exit(6);
+	}
+	status = H5Sclose(dataspace);
+	if(status < 0){
+		printf("Error: H5S close finished on error.\n");
+		exit(5);
+	}
+
+}
+//===========================================
 // Write efficiencies output in a hdf5 file
 void polycap_transmission_efficiencies_write_hdf5(const char *filename, polycap_transmission_efficiencies *efficiencies)
 {
@@ -123,62 +179,6 @@ void polycap_transmission_efficiencies_write_hdf5(const char *filename, polycap_
 	H5Fclose(file);
 
 	printf("%s was written.\n",filename);
-}
-//===========================================
-// Write data set in HDF5 file
-void polycap_h5_write_dataset(hid_t file, int rank, hsize_t *dim, char *dataset_name, double *data, char *unitname)
-{
-	herr_t status;
-	hid_t dataset;
-	hid_t dataspace, attr_id, attr_type, attr_dataspace_id; //handles
-
-	//Describe size of the array and make fixed data space
-	dataspace = H5Screate_simple(rank, dim, NULL);
-
-	//Create new dataset within the HDF5 file with default creation properties
-	dataset = H5Dcreate2(file, dataset_name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-	//Write data to the dataset with default transfer properties
-	status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-	if(status < 0){
-		printf("Error: H5D write finished on error.\n");
-		exit(4);
-	}
-
-	//Write unit attributes
-	attr_dataspace_id = H5Screate(H5S_SCALAR);
-	attr_type = H5Tcopy(H5T_C_S1);	
-	H5Tset_size(attr_type,(hsize_t)strlen(unitname));
-	attr_id = H5Acreate2(dataset, "Units", attr_type, attr_dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
-	H5Awrite(attr_id, attr_type, unitname);
-
-	//Close release sources
-	status = H5Sclose(attr_dataspace_id);
-	if(status < 0){
-		printf("Error: H5S close finished on error.\n");
-		exit(5);
-	}
-	status = H5Tclose(attr_type);
-	if(status < 0){
-		printf("Error: H5T close finished on error.\n");
-		exit(7);
-	}
-	status = H5Aclose(attr_id);
-	if(status < 0){
-		printf("Error: H5A close finished on error.\n");
-		exit(8);
-	}
-	status = H5Dclose(dataset);
-	if(status < 0){
-		printf("Error: H5D close finished on error.\n");
-		exit(6);
-	}
-	status = H5Sclose(dataspace);
-	if(status < 0){
-		printf("Error: H5S close finished on error.\n");
-		exit(5);
-	}
-
 }
 //===========================================
 void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *efficiencies)
