@@ -151,7 +151,8 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 	double *cap_x, *cap_y; //arrays containing selected capillary central axis coordinates
 	int ix_val = 0;
 	int *ix = &ix_val; //index to remember from which part of capillary last interaction was calculated
-	
+	double d_ph_capcen; //distance between photon start coordinates and selected capillary center
+
 	//check if photon->start_coord are within hexagonal polycap boundaries
 	photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords);
 	if(photon_pos_check == -1) return -1;
@@ -161,6 +162,7 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 
 	//define polycapillary-to-photonsource axis 
 	//!!NOTE:this has to be changed. Now we assume all sources are in a straight line with PC central axis!!
+	//e.g. no PC tilt
 	central_axis.x = 0;
 	central_axis.y = 0;
 	central_axis.z = 1;
@@ -176,12 +178,16 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 		capy_0 = 0;
 	} else {    // proper polycapillary case
 		//obtain selected capillary indices
-		i_capx = round((photon->start_coords.x / description->profile->ext[0]) * n_shells);
-		i_capy = round((photon->start_coords.y / (description->profile->ext[0]*sin(M_PI/3.))) * n_shells);
+		i_capx = round( (photon->start_coords.x-(photon->start_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (description->profile->ext[0] / (n_shells)) );
+		i_capy = round( (photon->start_coords.y)/(description->profile->ext[0]/(n_shells)*sin(M_PI/3.)) );
 		//convert indexed capillary centre to coordinates
-		capx_0 = i_capx * description->profile->ext[0] / (n_shells);
-		capy_0 = i_capy * (description->profile->ext[0] / (n_shells))*sin(M_PI/3.);
+		capx_0 = i_capx * description->profile->ext[0]/(n_shells) + i_capy * description->profile->ext[0]/(n_shells)*cos(M_PI/3.);
+		capy_0 = i_capy * (description->profile->ext[0]/(n_shells))*sin(M_PI/3.);
 	}
+
+	//Check whether photon start coordinate is within capillary (within capillary center at distance < capillary radius)
+	d_ph_capcen = sqrt( (photon->start_coords.x-capx_0)*(photon->start_coords.x-capx_0) + (photon->start_coords.y-capy_0)*(photon->start_coords.y-capy_0) );
+	if(d_ph_capcen > description->profile->cap[0]) return -1; //simulates new photon
 
 	//define selected capillary axis X and Y coordinates
 	//NOTE: Assuming polycap centre coordinates are X=0,Y=0 with respect to photon->start_coords

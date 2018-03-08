@@ -134,8 +134,8 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_description *descripti
 	double cons1, r_rough;
 	double complex rtot; //reflectivity
 //	double w_leak; //leak weight
-	double xp, yp; //position on screen where photon will end up if unobstructed
-	int ind_x, ind_y; //indices of screen where photon will hit screen
+//	double xp, yp; //position on screen where photon will end up if unobstructed
+//	int ind_x, ind_y; //indices of screen where photon will hit screen
 
 	d_esc = (description->profile->z[description->profile->nmax] - photon->exit_coords.z) / photon->exit_direction.z;
 	if(d_esc < 0) d_esc = description->profile->z[description->profile->nmax];
@@ -148,17 +148,17 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_description *descripti
 
 //		w_leak = (1.-rtot) * photon->weight[i] * exp(-1.*d_esc * photon->amu[i]);
 //		leak[i] = leak[i] + w_leak;
-		if(i == 0){ //NOTE: essentially do this for each energy to obtain photon flux image for each energy
-			xp = photon->exit_coords.x + d_esc * photon->exit_direction.x;
-			yp = photon->exit_coords.y + d_esc * photon->exit_direction.y;
-			ind_x = (int)floor(xp/BINSIZE)+NSPOT/2;
-			ind_y = (int)floor(yp/BINSIZE)+NSPOT/2;
-			if(ind_x < NSPOT && ind_x >= 0){
-				if(ind_y < NSPOT && ind_y >= 0){
+//		if(i == 0){ //NOTE: essentially do this for each energy to obtain photon flux image for each energy
+//			xp = photon->exit_coords.x + d_esc * photon->exit_direction.x;
+//			yp = photon->exit_coords.y + d_esc * photon->exit_direction.y;
+//			ind_x = (int)floor(xp/BINSIZE)+NSPOT/2;
+//			ind_y = (int)floor(yp/BINSIZE)+NSPOT/2;
+//			if(ind_x < NSPOT && ind_x >= 0){
+//				if(ind_y < NSPOT && ind_y >= 0){
 //					lspot[ind_x][ind_y] = lspot[ind_x][ind_y] + wleak;
-				}
-			}
-		}
+//				}
+//			}
+//		}
 		photon->weight[i] = photon->weight[i] * rtot * r_rough;
 	}
 

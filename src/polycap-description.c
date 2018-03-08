@@ -11,6 +11,7 @@
 #include <math.h>
 #include <omp.h> /* openmp header */
 
+int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord);
 //===========================================
 char *polycap_read_input_line(FILE *fptr)
 {
@@ -244,8 +245,8 @@ const polycap_profile* polycap_description_get_profile(polycap_description *desc
 polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies)
 {
 	int thread_cnt, thread_max, i, j;
-	int icount = 5000; //simulate 5000 photons hitting the detector
-	int64_t sum_istart=0, sum_irefl=0;
+	int icount = 50000; //simulate 5000 photons hitting the detector
+	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0;
 	double *sum_weights;
 	polycap_transmission_efficiencies *efficiencies;
 
@@ -385,30 +386,35 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 			photon = polycap_source_get_photon(source, description, rng, n_energies, energies, &src_start_coords);
 
 			// Launch photon
-			#pragma omp critical
-			{
-			sum_istart++;
-			efficiencies->images->src_start_coords[0] = realloc(efficiencies->images->src_start_coords[0], sizeof(double)*sum_istart);
-			efficiencies->images->src_start_coords[1] = realloc(efficiencies->images->src_start_coords[1], sizeof(double)*sum_istart);
-			efficiencies->images->src_start_coords[0][sum_istart-1] = src_start_coords.x;
-			efficiencies->images->src_start_coords[1][sum_istart-1] = src_start_coords.y;
-			efficiencies->images->pc_start_coords[0] = realloc(efficiencies->images->pc_start_coords[0], sizeof(double)*sum_istart);
-			efficiencies->images->pc_start_coords[1] = realloc(efficiencies->images->pc_start_coords[1], sizeof(double)*sum_istart);
-			efficiencies->images->pc_start_coords[0][sum_istart-1] = photon->start_coords.x;
-			efficiencies->images->pc_start_coords[1][sum_istart-1] = photon->start_coords.y;
-			efficiencies->images->pc_start_dir[0] = realloc(efficiencies->images->pc_start_dir[0], sizeof(double)*sum_istart);
-			efficiencies->images->pc_start_dir[1] = realloc(efficiencies->images->pc_start_dir[1], sizeof(double)*sum_istart);
-			efficiencies->images->pc_start_dir[0][sum_istart-1] = photon->start_direction.x;
-			efficiencies->images->pc_start_dir[1][sum_istart-1] = photon->start_direction.y;
-			}
 			photon->i_refl = 0; //set reflections to 0
 			iesc = polycap_photon_launch(photon, description);
 			//if iesc == -1 here a new photon should be simulated/started.
-			//	essentially do j-1 as this will have same effect
+			//if iesc == 0 check whether photon is in PC exit window
+			if(iesc == 0) iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords);
+			//Register succesfully started photon, as well as save start coordinates and direction
+			#pragma omp critical
+			{
+			if(iesc != -1){
+				sum_istart++;
+				efficiencies->images->src_start_coords[0] = realloc(efficiencies->images->src_start_coords[0], sizeof(double)*sum_istart);
+				efficiencies->images->src_start_coords[1] = realloc(efficiencies->images->src_start_coords[1], sizeof(double)*sum_istart);
+				efficiencies->images->src_start_coords[0][sum_istart-1] = src_start_coords.x;
+				efficiencies->images->src_start_coords[1][sum_istart-1] = src_start_coords.y;
+				efficiencies->images->pc_start_coords[0] = realloc(efficiencies->images->pc_start_coords[0], sizeof(double)*sum_istart);
+				efficiencies->images->pc_start_coords[1] = realloc(efficiencies->images->pc_start_coords[1], sizeof(double)*sum_istart);
+				efficiencies->images->pc_start_coords[0][sum_istart-1] = photon->start_coords.x;
+				efficiencies->images->pc_start_coords[1][sum_istart-1] = photon->start_coords.y;
+				efficiencies->images->pc_start_dir[0] = realloc(efficiencies->images->pc_start_dir[0], sizeof(double)*sum_istart);
+				efficiencies->images->pc_start_dir[1] = realloc(efficiencies->images->pc_start_dir[1], sizeof(double)*sum_istart);
+				efficiencies->images->pc_start_dir[0][sum_istart-1] = photon->start_direction.x;
+				efficiencies->images->pc_start_dir[1][sum_istart-1] = photon->start_direction.y;
+				} else sum_not_entered++;
+			}
+			if(iesc == -1) polycap_photon_free(photon); //Free photon here as a new one will be simulated
 		} while(iesc == -1);
 
 		if(thread_id == 0 && (double)i/((double)icount/(double)thread_cnt/10.) >= 1.){
-			printf("%d%%\t%" PRId64 "\t%f\n",((j*100)/(icount/thread_cnt)),photon->i_refl,photon->exit_coords.z);
+			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(icount/thread_cnt)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
 			i=0;
 		}
 		i++;//counter just to follow % completed
@@ -440,7 +446,8 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	free(weights);
 } //#pragma omp parallel
 
-	printf("Average number of reflections: %f\n",(double)sum_irefl/icount);
+	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/icount,sum_istart);
+	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_istart/(sum_istart+sum_not_entered));
 
 	// Complete output structure
 	efficiencies->n_energies = n_energies;

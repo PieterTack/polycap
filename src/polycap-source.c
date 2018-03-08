@@ -14,7 +14,6 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 	int boundary_check;
 	double src_rad, phi; //distance from source centre along angle phi from x axis
 	double src_start_x, src_start_y;
-	double pc_rad, pc_x, pc_y; //pc radius and coordinates to direct photon to
 	polycap_photon *photon;
 
 
@@ -22,18 +21,18 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
 	if(n_shells == 0.){ //monocapillary case
 		r = polycap_rng_uniform(rng);
-		start_coords.x = (2.*r-1) * description->profile->cap[0];
+		start_coords.x = (2.*r-1.) * description->profile->cap[0];
 		r = polycap_rng_uniform(rng);
-		start_coords.y = (2.*r-1) * description->profile->cap[0];
+		start_coords.y = (2.*r-1.) * description->profile->cap[0];
 		start_coords.z = 0.;
 	} else { // polycapillary case
 		// select random coordinates, check whether they are inside polycap boundary
 		boundary_check = -1;
 		do{
 			r = polycap_rng_uniform(rng);
-			start_coords.x = (2.*r-1) * description->profile->ext[0];
+			start_coords.x = (2.*r-1.) * description->profile->ext[0];
 			r = polycap_rng_uniform(rng);
-			start_coords.y = (2.*r-1) * description->profile->ext[0];
+			start_coords.y = (2.*r-1.) * description->profile->ext[0];
 			start_coords.z = 0.;
 			boundary_check = polycap_photon_within_pc_boundary(description->profile->ext[0], start_coords);
 		} while(boundary_check == -1);
@@ -50,14 +49,8 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 	src_start_coords->y = src_start_y;
 	src_start_coords->z = 0;
 	if((source->src_sigx * source->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
-		r = polycap_rng_uniform(rng);
-		pc_rad = description->profile->ext[0] * sqrt(fabs(r));
-		r = polycap_rng_uniform(rng);
-		phi = 2.0*M_PI*fabs(r);
-		pc_x = pc_rad * cos(phi) + start_coords.x;
-		pc_y = pc_rad * sin(phi) + start_coords.y;
-		start_direction.x = pc_x - src_start_x;
-		start_direction.y = pc_y - src_start_y;
+		start_direction.x = start_coords.x - src_start_x;
+		start_direction.y = start_coords.y - src_start_y;
 		start_direction.z = source->d_source;
 	} else { //non-uniform distribution, direction vector is within +- sigx
 		r = polycap_rng_uniform(rng);
