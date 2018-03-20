@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stddef.h>
 #include <stdint.h>
+#include "polycap-error.h"
 
 //Define constants
 #define HC 1.23984193E-7 //h*c [keV*cm]
