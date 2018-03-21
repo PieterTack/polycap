@@ -8,6 +8,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 #include "polycap-error.h"
+#include "polycap-profile.h"
 
 //Define constants
 #define HC 1.23984193E-7 //h*c [keV*cm]
@@ -15,23 +16,14 @@ extern "C" {
 #define R0 2.8179403227e-13 //classical electron radius [cm]
 #define EPSILON 1.0e-30
 
-enum _polycap_profile_type {
-	POLYCAP_PROFILE_CONICAL,
-	POLYCAP_PROFILE_PARABOLOIDAL,
-	POLYCAP_PROFILE_ELLIPSOIDAL,
-};
-
 struct _polycap_description;
 struct _polycap_source;
-struct _polycap_profile;
 struct _polycap_photon;
 struct _polycap_rng; // our rng struct, which will be mapped to either gsl_rng or easy_rng
 struct _polycap_transmission_efficiencies;
 
-typedef enum   _polycap_profile_type                polycap_profile_type;
 typedef struct _polycap_description                 polycap_description;
 typedef struct _polycap_source                      polycap_source;
-typedef struct _polycap_profile                     polycap_profile;
 typedef struct _polycap_photon                      polycap_photon;
 typedef struct _polycap_rng                         polycap_rng;
 typedef struct _polycap_transmission_efficiencies   polycap_transmission_efficiencies;
@@ -42,23 +34,6 @@ typedef struct {
 	double z;
 } polycap_vector3;
 
-// get a new profile for a given type with properties
-polycap_profile* polycap_profile_new(
-	polycap_profile_type type,
-	double length,
-	double rad_ext[2],
-	double rad_int[2],
-	double focal_dist[2]); // -> def_cap_profile
-
-// get a new profile from Laszlo's ASCII files
-// perhaps it would be a good idea to define a new filetype that would combine these three into a single file? Best to use something like XML for convenience... this could then be polycap_profile_new_from_xml
-polycap_profile* polycap_profile_new_from_file(
-	const char *single_cap_profile_file,
-	const char *central_axis_file,
-	const char *external_shape_file); // read_cap_profile
-
-// free the polycap_profile structure and its associated data
-void polycap_profile_free(polycap_profile *profile);
 
 // load polycap_description from Laszlo's file. This will recursively call the appropriate polycap_profile_new_* routines. Again here a XML variant could be useful...
 polycap_description* polycap_description_new_from_file(const char *filename, polycap_source **source);

@@ -4,6 +4,7 @@
 #include <math.h>
 #include <gsl/gsl_multifit.h>
 #include <stdbool.h>
+#include <errno.h>
 
 //===========================================
 bool polynomialfit(int obs, int degree, 
@@ -48,47 +49,59 @@ bool polynomialfit(int obs, int degree,
 //===========================================
 
 // get a new profile for a given type with properties
-polycap_profile* polycap_profile_new(polycap_profile_type type, double length, double rad_ext[2], double rad_int[2], double focal_dist[2])
+polycap_profile* polycap_profile_new(polycap_profile_type type, double length, double rad_ext[2], double rad_int[2], double focal_dist[2], polycap_error **error)
 {
 	polycap_profile *profile;
 	int i, nmax=999;
 	double pc_x[4], pc_y[4], coeff[3];
 	double slope, b, k, a;
 
+	// argument sanity check
+	if (length <= 0.0) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: length must be greater than 0.0");
+		return NULL;
+	}
+	/* add checks for all other arguments */
+
 	//Make profile of sufficient memory size (999 points along PC shape should be sufficient)
 	profile = malloc(sizeof(polycap_profile));
 	if(profile == NULL){
-		printf("Could not allocate profile memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile -> %s", strerror(errno));
+		return NULL;
 	}
 	profile->nmax = nmax;
 	profile->z = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->z == NULL){
-		printf("Could not allocate profile->z memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile->z -> %s", strerror(errno));
+		free(profile);
+		return NULL;
 	}
 	profile->cap = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->cap == NULL){
-		printf("Could not allocate profile->cap memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile->cap -> %s", strerror(errno));
+		free(profile->z);
+		free(profile);
+		return NULL;
 	}
 	profile->ext = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->ext == NULL){
-		printf("Could not allocate profile->ext memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile->ext -> %s", strerror(errno));
+		free(profile->cap);
+		free(profile->z);
+		free(profile);
+		return NULL;
 	}
 
 	//Define actual capillary and PC shape
 	switch(type){
-		case 0: //conical
+		case POLYCAP_PROFILE_CONICAL:
 			for(i=0;i<=nmax;i++){
 				profile->z[i] = length/nmax*i; //z coordinates, from 0 to length
 				profile->cap[i] = (rad_int[1]-rad_int[0])/length*profile->z[i] + rad_int[0]; //single capillary shape always conical
 				profile->ext[i] = (rad_ext[1]-rad_ext[0])/length*profile->z[i] + rad_ext[0];
 			}
 			break;
-
-		case 1: //paraboloidal
+		case POLYCAP_PROFILE_PARABOLOIDAL:
 			//determine points to be part of polycap external shape, based on focii and external radii
 			pc_x[0] = 0.;
 			pc_y[0] = rad_ext[0];
@@ -110,7 +123,7 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 			}
 			break;
 
-		case 2: //ellipsoidal; side with largest radius has horizontal tangent, other side points towards focal_dist corresponding to smallest external radius
+		case POLYCAP_PROFILE_ELLIPSOIDAL: //side with largest radius has horizontal tangent, other side points towards focal_dist corresponding to smallest external radius
 			if(rad_ext[1] < rad_ext[0]){ //focussing alignment
 				slope = rad_ext[1] / focal_dist[1];
 				b = (-1.*(rad_ext[1]-rad_ext[0])*(rad_ext[1]-rad_ext[0])-slope*length*(rad_ext[1]-rad_ext[0])) / (slope*length+2.*(rad_ext[1]-rad_ext[0]));
@@ -135,29 +148,39 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 			break;
 
 		default:
-			break;
-
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: invalid profile type detected");
+			free(profile->ext);
+			free(profile->cap);
+			free(profile->z);
+			free(profile);
+			return NULL;
 	}
 
 	return profile;
-
 }
+
 //===========================================
 // get a new profile from Laszlo's ASCII files
-polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_file, const char *central_axis_file, const char *external_shape_file)
+polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_file, const char *central_axis_file, const char *external_shape_file, polycap_error **error)
 {
 	polycap_profile *profile;
 	FILE *fptr;
 	int i, n_tmp;
 	double sx, sy;
 
+	// argument sanity check
+	if (single_cap_profile_file == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_file: single_cap_profile_file cannot be NULL");
+		return NULL;
+	}
+
 	//single capillary profile
 	fptr = fopen(single_cap_profile_file,"r");
 	if(fptr == NULL){
-		printf("Could not open %s\n",single_cap_profile_file);
-		exit(2);
-		}
-	fscanf(fptr,"%d",&n_tmp);
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: could not open %s -> %s", single_cap_profile_file, strerror(errno));
+		return NULL;
+	}
+	fscanf(fptr,"%d",&n_tmp); // TODO -> check if these values make sense...
 	
 	//Make profile of sufficient memory size
 	profile = malloc(sizeof(polycap_profile));

@@ -125,14 +125,14 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	if(type == 0 || type == 1 || type == 2){
 		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&length, &rad_ext[0], &rad_ext[1], &rad_int[0], &rad_int[1], &focal_dist[0], &focal_dist[1]);
 		// generate polycap profile
-		description->profile = polycap_profile_new(type, length, rad_ext, rad_int, focal_dist);
+		description->profile = polycap_profile_new(type, length, rad_ext, rad_int, focal_dist, NULL); // TODO: pass error
 	} else {
 		i=fgetc(fptr); //reads in \n from last line still
 		single_cap_profile_file = polycap_read_input_line(fptr);
 		central_axis_file = polycap_read_input_line(fptr);
 		external_shape_file = polycap_read_input_line(fptr);
 		// generate polycap profile from files
-		description->profile = polycap_profile_new_from_file(single_cap_profile_file, central_axis_file, external_shape_file);
+		description->profile = polycap_profile_new_from_file(single_cap_profile_file, central_axis_file, external_shape_file, NULL); // TODO: pass error
 		free(external_shape_file);
 		free(central_axis_file);
 		free(single_cap_profile_file);
