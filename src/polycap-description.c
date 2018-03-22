@@ -75,7 +75,9 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	polycap_source *source_temp;
 	double e_start, e_final, delta_e;
 	int type, nphotons;
-	double length, rad_ext[2], rad_int[2], focal_dist[2];
+	double length, rad_ext_upstream, rad_ext_downstream;
+	double rad_int_upstream, rad_int_downstream;
+	double focal_dist_upstream, focal_dist_downstream;
 	char *single_cap_profile_file, *central_axis_file, *external_shape_file, *out;
 	
 	description = malloc(sizeof(polycap_description));
@@ -123,9 +125,9 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	fscanf(fptr,"%d", &nphotons);
 	fscanf(fptr,"%d", &type);
 	if(type == 0 || type == 1 || type == 2){
-		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&length, &rad_ext[0], &rad_ext[1], &rad_int[0], &rad_int[1], &focal_dist[0], &focal_dist[1]);
+		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&length, &rad_ext_upstream, &rad_ext_downstream, &rad_int_upstream, &rad_int_downstream, &focal_dist_upstream, &focal_dist_downstream);
 		// generate polycap profile
-		description->profile = polycap_profile_new(type, length, rad_ext, rad_int, focal_dist, NULL); // TODO: pass error
+		description->profile = polycap_profile_new(type, length, rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, NULL); // TODO: pass error
 	} else {
 		i=fgetc(fptr); //reads in \n from last line still
 		single_cap_profile_file = polycap_read_input_line(fptr);

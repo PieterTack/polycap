@@ -1,4 +1,5 @@
 #include "polycap-private.h"
+#include "polycap-error.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -12,6 +13,7 @@ int main(int argc, char *argv[])
 	size_t n_energies = 291;
 	double *energies;
 	const char filename[] = "polycap_out.h5";
+	polycap_error *error = NULL;
 
 	// Check whether input file argument was supplied
 	if(argc <= 1){
@@ -25,8 +27,8 @@ int main(int argc, char *argv[])
 	// Define energies	
 	energies = malloc(sizeof(double)*n_energies);
 	if(energies == NULL){
-		printf("Could not allocate energies memory.\n");
-		exit(1);
+		polycap_set_error(&error, POLYCAP_ERROR_MEMORY, "main: could not allocate memory for energies -> %s", strerror(errno));
+		return -1;
 	}
 	for(i=0; i<n_energies; i++){
 		energies[i] = 1.+0.1*i;

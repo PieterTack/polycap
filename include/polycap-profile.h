@@ -15,9 +15,12 @@ typedef struct _polycap_profile                     polycap_profile;
 polycap_profile* polycap_profile_new(
 	polycap_profile_type type,
 	double length,
-	double rad_ext[2],
-	double rad_int[2],
-	double focal_dist[2],
+	double rad_ext_upstream,
+	double rad_ext_downstream,
+	double rad_int_upstream,
+	double rad_int_downstream,
+	double focal_dist_upstream,
+	double focal_dist_downstream,
 	polycap_error **error);
 
 // get a new profile from Laszlo's ASCII files

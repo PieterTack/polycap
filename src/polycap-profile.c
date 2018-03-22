@@ -49,7 +49,7 @@ bool polynomialfit(int obs, int degree,
 //===========================================
 
 // get a new profile for a given type with properties
-polycap_profile* polycap_profile_new(polycap_profile_type type, double length, double rad_ext[2], double rad_int[2], double focal_dist[2], polycap_error **error)
+polycap_profile* polycap_profile_new(polycap_profile_type type, double length, double rad_ext_upstream, double rad_ext_downstream, double rad_int_upstream, double rad_int_downstream, double focal_dist_upstream, double focal_dist_downstream, polycap_error **error)
 {
 	polycap_profile *profile;
 	int i, nmax=999;
@@ -61,20 +61,36 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: length must be greater than 0.0");
 		return NULL;
 	}
-	if (rad_ext[0] <= 0.0 || rad_ext[1] <= 0.0){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_ext must be greater than 0.0");
+	if (rad_ext_upstream <= 0.0 ){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_ext_upstream must be greater than 0.0");
 		return NULL;
 	}
-	if (rad_int[0] <= 0.0 || rad_int[1] <= 0.0){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_int must be greater than 0.0");
+	if (rad_ext_downstream <= 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_ext_downstream must be greater than 0.0");
 		return NULL;
 	}
-	if (rad_int[0] >= rad_ext[0] || rad_int[1] >= rad_ext[1]){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_ext must be greater than rad_int");
+	if (rad_int_upstream <= 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_int_upstream must be greater than 0.0");
 		return NULL;
 	}
-	if (focal_dist[0] <= 0.0 || focal_dist[1] <= 0.0){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: focal_dist must be greater than 0.0");
+	if (rad_int_downstream <= 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_int_downstream must be greater than 0.0");
+		return NULL;
+	}
+	if (rad_int_upstream >= rad_ext_upstream){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_ext_upstream must be greater than rad_int_upstream");
+		return NULL;
+	}
+	if (rad_int_downstream >= rad_ext_downstream){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_ext_downstream must be greater than rad_int_downstream");
+		return NULL;
+	}
+	if (focal_dist_upstream <= 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: focal_dist_upstream must be greater than 0.0");
+		return NULL;
+	}
+	if (focal_dist_downstream <= 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: focal_dist_downstream must be greater than 0.0");
 		return NULL;
 	}
 	/* add checks for all other arguments */
@@ -113,51 +129,51 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 		case POLYCAP_PROFILE_CONICAL:
 			for(i=0;i<=nmax;i++){
 				profile->z[i] = length/nmax*i; //z coordinates, from 0 to length
-				profile->cap[i] = (rad_int[1]-rad_int[0])/length*profile->z[i] + rad_int[0]; //single capillary shape always conical
-				profile->ext[i] = (rad_ext[1]-rad_ext[0])/length*profile->z[i] + rad_ext[0];
+				profile->cap[i] = (rad_int_downstream-rad_int_upstream)/length*profile->z[i] + rad_int_upstream; //single capillary shape always conical
+				profile->ext[i] = (rad_ext_downstream-rad_ext_upstream)/length*profile->z[i] + rad_ext_upstream;
 			}
 			break;
 		case POLYCAP_PROFILE_PARABOLOIDAL:
 			//determine points to be part of polycap external shape, based on focii and external radii
 			pc_x[0] = 0.;
-			pc_y[0] = rad_ext[0];
+			pc_y[0] = rad_ext_upstream;
 			pc_x[3] = length;
-			pc_y[3] = rad_ext[1];
-			if(focal_dist[0] <= length) pc_x[1] = focal_dist[0]/10.;
+			pc_y[3] = rad_ext_downstream;
+			if(focal_dist_upstream <= length) pc_x[1] = focal_dist_upstream/10.;
 				else pc_x[1] = length/10.; 
-			pc_y[1] = (rad_ext[0]-0.)/(0.-(-1.*focal_dist[0])) * (pc_x[1] - 0.) + rad_ext[0]; //extrapolate line between focus point and PC entrance
-			if(focal_dist[1] <= length) pc_x[2] = length-focal_dist[0]/10.;
+			pc_y[1] = (rad_ext_upstream-0.)/(0.-(-1.*focal_dist_upstream)) * (pc_x[1] - 0.) + rad_ext_upstream; //extrapolate line between focus point and PC entrance
+			if(focal_dist_downstream <= length) pc_x[2] = length-focal_dist_downstream/10.;
 				else pc_x[2] = length-length/10.; 
-			pc_y[2] = (rad_ext[1]-0.)/(length-(length+focal_dist[1])) * (pc_x[2] - length) + rad_ext[1]; //extrapolate line between focus point and PC exit
+			pc_y[2] = (rad_ext_downstream-0.)/(length-(length+focal_dist_downstream)) * (pc_x[2] - length) + rad_ext_downstream; //extrapolate line between focus point and PC exit
 			polynomialfit(4, 3, pc_x, pc_y, coeff);
 
 			//calculate shape coordinates
 			for(i=0;i<=nmax;i++){
 				profile->z[i] = length/nmax*i; //z coordinates, from 0 to length
-				profile->cap[i] = (rad_int[1]-rad_int[0])/length*profile->z[i] + rad_int[0]; //single capillary shape always conical
+				profile->cap[i] = (rad_int_downstream-rad_int_upstream)/length*profile->z[i] + rad_int_upstream; //single capillary shape always conical
 				profile->ext[i] = coeff[0]+coeff[1]*profile->z[i]+coeff[2]*profile->z[i]*profile->z[i];
 			}
 			break;
 
 		case POLYCAP_PROFILE_ELLIPSOIDAL: //side with largest radius has horizontal tangent, other side points towards focal_dist corresponding to smallest external radius
-			if(rad_ext[1] < rad_ext[0]){ //focussing alignment
-				slope = rad_ext[1] / focal_dist[1];
-				b = (-1.*(rad_ext[1]-rad_ext[0])*(rad_ext[1]-rad_ext[0])-slope*length*(rad_ext[1]-rad_ext[0])) / (slope*length+2.*(rad_ext[1]-rad_ext[0]));
-				k = rad_ext[0] - b;
-				a = sqrt((b*b*length)/(slope*(rad_ext[1]-k)));
+			if(rad_ext_downstream < rad_ext_upstream){ //focussing alignment
+				slope = rad_ext_downstream / focal_dist_downstream;
+				b = (-1.*(rad_ext_downstream-rad_ext_upstream)*(rad_ext_downstream-rad_ext_upstream)-slope*length*(rad_ext_downstream-rad_ext_upstream)) / (slope*length+2.*(rad_ext_downstream-rad_ext_upstream));
+				k = rad_ext_upstream - b;
+				a = sqrt((b*b*length)/(slope*(rad_ext_downstream-k)));
 				for(i=0;i<=nmax;i++){
 					profile->z[i] = length/nmax*i; //z coordinates, from 0 to length
-					profile->cap[i] = (rad_int[1]-rad_int[0])/length*profile->z[i] + rad_int[0]; //single capillary shape always conical
+					profile->cap[i] = (rad_int_downstream-rad_int_upstream)/length*profile->z[i] + rad_int_upstream; //single capillary shape always conical
 					profile->ext[i] = sqrt(b*b-(b*b*profile->z[i]*profile->z[i])/(a*a))+k;
 				}
 			} else { //confocal (collimating) alignment
-				slope = rad_ext[0] / focal_dist[0];
-				b = (-1.*(rad_ext[0]-rad_ext[1])*(rad_ext[0]-rad_ext[1])-slope*length*(rad_ext[0]-rad_ext[1])) / (slope*length+2.*(rad_ext[0]-rad_ext[1]));
-				k = rad_ext[1] - b;
-				a = sqrt((b*b*length)/(slope*(rad_ext[0]-k)));
+				slope = rad_ext_upstream / focal_dist_upstream;
+				b = (-1.*(rad_ext_upstream-rad_ext_downstream)*(rad_ext_upstream-rad_ext_downstream)-slope*length*(rad_ext_upstream-rad_ext_downstream)) / (slope*length+2.*(rad_ext_upstream-rad_ext_downstream));
+				k = rad_ext_downstream - b;
+				a = sqrt((b*b*length)/(slope*(rad_ext_upstream-k)));
 				for(i=0;i<=nmax;i++){
 					profile->z[i] = length/nmax*i; //z coordinates, from 0 to length
-					profile->cap[i] = (rad_int[1]-rad_int[0])/length*profile->z[i] + rad_int[0]; //single capillary shape always conical
+					profile->cap[i] = (rad_int_downstream-rad_int_upstream)/length*profile->z[i] + rad_int_upstream; //single capillary shape always conical
 					profile->ext[i] = sqrt(b*b-(b*b*profile->z[nmax-i]*profile->z[nmax-i])/(a*a))+k;
 				}
 			}
@@ -196,7 +212,12 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: could not open %s -> %s", single_cap_profile_file, strerror(errno));
 		return NULL;
 	}
-	fscanf(fptr,"%d",&n_tmp); // TODO -> check if these values make sense...
+	fscanf(fptr,"%d",&n_tmp);
+	// check if these values make sense...
+	if (n_tmp <= 100) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_file: n_tmp must be greater than 100");
+		return NULL;
+	}
 	
 	//Make profile of sufficient memory size
 	profile = malloc(sizeof(polycap_profile));
