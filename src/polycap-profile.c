@@ -201,26 +201,26 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 	//Make profile of sufficient memory size
 	profile = malloc(sizeof(polycap_profile));
 	if(profile == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new_from_file: could not allocate memory for profile -> %s", strerror(errno));
 		return NULL;
 	}
 	profile->nmax = n_tmp;
 	profile->z = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->z == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile->z -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new_from_file: could not allocate memory for profile->z -> %s", strerror(errno));
 		free(profile);
 		return NULL;
 	}
 	profile->cap = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->cap == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile->cap -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new_from_file: could not allocate memory for profile->cap -> %s", strerror(errno));
 		free(profile->z);
 		free(profile);
 		return NULL;
 	}
 	profile->ext = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->ext == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile->ext -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new_from_file: could not allocate memory for profile->ext -> %s", strerror(errno));
 		free(profile->cap);
 		free(profile->z);
 		free(profile);
