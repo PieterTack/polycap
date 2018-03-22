@@ -61,6 +61,22 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: length must be greater than 0.0");
 		return NULL;
 	}
+	if (rad_ext[0] <= 0.0 || rad_ext[1] <= 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_ext must be greater than 0.0");
+		return NULL;
+	}
+	if (rad_int[0] <= 0.0 || rad_int[1] <= 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_int must be greater than 0.0");
+		return NULL;
+	}
+	if (rad_int[0] >= rad_ext[0] || rad_int[1] >= rad_ext[1]){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: rad_ext must be greater than rad_int");
+		return NULL;
+	}
+	if (focal_dist[0] <= 0.0 || focal_dist[1] <= 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: focal_dist must be greater than 0.0");
+		return NULL;
+	}
 	/* add checks for all other arguments */
 
 	//Make profile of sufficient memory size (999 points along PC shape should be sufficient)
@@ -185,24 +201,30 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 	//Make profile of sufficient memory size
 	profile = malloc(sizeof(polycap_profile));
 	if(profile == NULL){
-		printf("Could not allocate profile memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile -> %s", strerror(errno));
+		return NULL;
 	}
 	profile->nmax = n_tmp;
 	profile->z = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->z == NULL){
-		printf("Could not allocate profile->z memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile->z -> %s", strerror(errno));
+		free(profile);
+		return NULL;
 	}
 	profile->cap = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->cap == NULL){
-		printf("Could not allocate profile->cap memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile->cap -> %s", strerror(errno));
+		free(profile->z);
+		free(profile);
+		return NULL;
 	}
 	profile->ext = malloc(sizeof(double)*(profile->nmax+1));
 	if(profile->ext == NULL){
-		printf("Could not allocate profile->ext memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new: could not allocate memory for profile->ext -> %s", strerror(errno));
+		free(profile->cap);
+		free(profile->z);
+		free(profile);
+		return NULL;
 	}
 
 	//Continue reading profile data
@@ -214,13 +236,15 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 	//polycapillary central axis
 	fptr = fopen(central_axis_file,"r");
 	if(fptr == NULL){
-		printf("%s file does not exist.\n",central_axis_file);
-		exit(2);
-		}
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: could not open %s -> %s", central_axis_file, strerror(errno));
+		polycap_profile_free(profile);
+		return NULL;
+	}
 	fscanf(fptr,"%d",&n_tmp);
 	if(profile->nmax != n_tmp){
-		printf("Inconsistent *.axs file: number of intervals different.\n");
-		exit(3);
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: Number of intervals inconsistent: %s", central_axis_file);
+		polycap_profile_free(profile);
+		return NULL;
 		}
 	for(i=0; i<=profile->nmax; i++){
 		fscanf(fptr,"%lf %lf %lf",&profile->z[i],&sx,&sy);
@@ -230,13 +254,15 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 	//polycapillary external shape
 	fptr = fopen(external_shape_file,"r");
 	if(fptr == NULL){
-		printf("%s file does not exist.\n",external_shape_file);
-		exit(2);
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: could not open %s -> %s", external_shape_file, strerror(errno));
+		polycap_profile_free(profile);
+		return NULL;
 		}
 	fscanf(fptr,"%d",&n_tmp);
 	if(profile->nmax != n_tmp){
-		printf("Inconsistent *.ext file: number of intervals different.\n");
-		exit(3);
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: Number of intervals inconsistent: %s", external_shape_file);
+		polycap_profile_free(profile);
+		return NULL;
 		}
 	for(i=0; i<=profile->nmax; i++){
 		fscanf(fptr,"%lf %lf",&profile->z[i],&profile->ext[i]);

@@ -6,7 +6,7 @@ void test_profile_new() {
 	// first test some cases that are expected to fail
 	polycap_profile *profile;
 
-	double rad_ext[2] = {1E-5, 1E-4};
+	double rad_ext[2] = {2E-5, 2E-4};
 	double rad_int[2] = {1E-5, 1E-4};
 	double focal_dist[2] = {1.0, 1.0};
 
@@ -23,7 +23,15 @@ void test_profile_new() {
 	// clear the error so it can be reused. This will free the memory and set it back to NULL
 	polycap_clear_error(&error);
 
-	// TODO: write test for case that should work!
+	// test for case that works
+	profile = polycap_profile_new(POLYCAP_PROFILE_CONICAL, 6., rad_ext, rad_int, focal_dist, &error);
+	assert(profile != NULL); //profile should not be NULL
+
+	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 6., rad_ext, rad_int, focal_dist, &error);
+	assert(profile != NULL); //profile should not be NULL
+
+	profile = polycap_profile_new(POLYCAP_PROFILE_PARABOLOIDAL, 6., rad_ext, rad_int, focal_dist, &error);
+	assert(profile != NULL); //profile should not be NULL
 }
 
 void test_profile_new_from_file() {
