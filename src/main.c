@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	// Define energies	
 	energies = malloc(sizeof(double)*n_energies);
 	if(energies == NULL){
-		polycap_set_error(&error, POLYCAP_ERROR_MEMORY, "main: could not allocate memory for energies -> %s", strerror(errno));
+		printf("main: could not allocate memory for energies\n");
 		return -1;
 	}
 	for(i=0; i<n_energies; i++){

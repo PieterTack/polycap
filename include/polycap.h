@@ -9,6 +9,7 @@ extern "C" {
 #include <stdint.h>
 #include "polycap-error.h"
 #include "polycap-profile.h"
+#include "polycap-description.h"
 
 //Define constants
 #define HC 1.23984193E-7 //h*c [keV*cm]
@@ -16,17 +17,11 @@ extern "C" {
 #define R0 2.8179403227e-13 //classical electron radius [cm]
 #define EPSILON 1.0e-30
 
-struct _polycap_description;
-struct _polycap_source;
 struct _polycap_photon;
 struct _polycap_rng; // our rng struct, which will be mapped to either gsl_rng or easy_rng
-struct _polycap_transmission_efficiencies;
 
-typedef struct _polycap_description                 polycap_description;
-typedef struct _polycap_source                      polycap_source;
 typedef struct _polycap_photon                      polycap_photon;
 typedef struct _polycap_rng                         polycap_rng;
-typedef struct _polycap_transmission_efficiencies   polycap_transmission_efficiencies;
 
 typedef struct {
 	double x;
@@ -35,39 +30,6 @@ typedef struct {
 } polycap_vector3;
 
 
-// load polycap_description from Laszlo's file. This will recursively call the appropriate polycap_profile_new_* routines. Again here a XML variant could be useful...
-polycap_description* polycap_description_new_from_file(const char *filename, polycap_source **source);
-
-// get a new polycap_description by providing all its properties... perhaps a simpler variant of this function could be defined that would only set the most important parameters and use defaults for the others??
-polycap_description* polycap_description_new(
-	double sig_rough,
-	double sig_wave,
-	double corr_length,
-	int64_t n_cap,
-	unsigned int nelem,
-	int iz[],
-	double wi[],
-	double density,
-	polycap_profile *profile);
-
-// get a new polycap_source by providing all its properties
-polycap_source* polycap_source_new(
-	double d_source,
-	double src_x,
-	double src_y,
-	double src_sigx,
-	double src_sigy,
-	double src_shiftx,
-	double src_shifty);
-
-// get the polycap_profile from a polycap_description
-const polycap_profile* polycap_description_get_profile(polycap_description *description);
-
-// for a given array of energies, and a full polycap_description, get the transmission efficiencies. efficiencies will be allocated by us, and needs to be freed with polycap_free
-polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies);
-
-// free a polycap_description struct
-void polycap_description_free(polycap_description *description);
 
 // free a polycap_source struct
 void polycap_source_free(polycap_source *source);

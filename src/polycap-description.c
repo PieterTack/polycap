@@ -10,10 +10,11 @@
 #include <inttypes.h>
 #include <math.h>
 #include <omp.h> /* openmp header */
+#include <errno.h>
 
 int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord);
 //===========================================
-char *polycap_read_input_line(FILE *fptr)
+char *polycap_read_input_line(FILE *fptr, polycap_error **error)
 {
 	char *strPtr;
 	unsigned int j = 0;
@@ -24,8 +25,8 @@ char *polycap_read_input_line(FILE *fptr)
 	//assign initial string memory size
 	strPtr = malloc(str_len_max);
 	if(strPtr == NULL){
-		printf("Could not allocate strPtr memory.\n");
-		exit(0);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_read_input_line: could not allocate memory for strPtr -> %s", strerror(errno));
+		return NULL;
         }
 
 	//read in line character by character
@@ -41,7 +42,7 @@ char *polycap_read_input_line(FILE *fptr)
 	return realloc(strPtr, sizeof(char)*j);
 }
 //===========================================
-void polycap_description_check_weight(size_t nelem, double wi[])
+void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error)
 {
 	int i;
 	double sum = 0;
@@ -54,20 +55,24 @@ void polycap_description_check_weight(size_t nelem, double wi[])
 		sum = 0;
 		for(i=0; i<nelem; i++){
 			wi[i] /= 100.0;
+			if(wi[i] < 0.0){
+				polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_check_weight: Polycapillary element weights must be greater than 0.0");
+				return;
+			}
 			sum += wi[i];
 		}
 	}
 	if(sum == 1.){
 		return;
 	} else {
-		printf("Error: Polycapillary element weights do not sum to 1.");
-		exit(4);
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_check_weight: Polycapillary element weights do not sum to 1.");
+		return;
 	}
 
 }
 //===========================================
 // load polycap_description from Laszlo's file.
-polycap_description* polycap_description_new_from_file(const char *filename, polycap_source **source)
+polycap_description* polycap_description_new_from_file(const char *filename, polycap_source **source, polycap_error **error)
 {
 	FILE *fptr;
 	int i;
@@ -82,21 +87,24 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	
 	description = malloc(sizeof(polycap_description));
 	if(description == NULL){
-		printf("Could not allocate description memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new_from_file: could not allocate memory for description -> %s", strerror(errno));
+		return NULL;
 	}
 
 	source_temp = malloc(sizeof(polycap_source));
 	if(source_temp == NULL){
-		printf("Could not allocate source_temp memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new_from_file: could not allocate memory for source_temp -> %s", strerror(errno));
+		free(description);
+		return NULL;
 	}
 
 	//read input file
 	fptr = fopen(filename,"r");
 	if(fptr == NULL){
-		printf("%s file does not exist!\n",filename);
-		exit(2);
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_description_new_from_file: could not open %s -> %s", filename, strerror(errno));
+		free(description);
+		free(source_temp);
+		return NULL;
 	}
 
 	fscanf(fptr,"%lf", &description->sig_rough);
@@ -108,13 +116,18 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	fscanf(fptr,"%u", &description->nelem);
 	description->iz = malloc(sizeof(int)*description->nelem);
 	if(description->iz == NULL){
-		printf("Could not allocate description->iz memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new_from_file: could not allocate memory for description->iz -> %s", strerror(errno));
+		free(description);
+		free(source_temp);
+		return NULL;
 	}
 	description->wi = malloc(sizeof(double)*description->nelem);
 	if(description->wi == NULL){
-		printf("Could not allocate description->wi memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new_from_file: could not allocate memory for description->wi -> %s", strerror(errno));
+		free(description->iz);
+		free(description);
+		free(source_temp);
+		return NULL;
 	}
 	for(i=0; i<description->nelem; i++){
 		fscanf(fptr,"%d %lf", &description->iz[i], &description->wi[i]);
@@ -127,25 +140,25 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	if(type == 0 || type == 1 || type == 2){
 		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&length, &rad_ext_upstream, &rad_ext_downstream, &rad_int_upstream, &rad_int_downstream, &focal_dist_upstream, &focal_dist_downstream);
 		// generate polycap profile
-		description->profile = polycap_profile_new(type, length, rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, NULL); // TODO: pass error
+		description->profile = polycap_profile_new(type, length, rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, error);
 	} else {
 		i=fgetc(fptr); //reads in \n from last line still
-		single_cap_profile_file = polycap_read_input_line(fptr);
-		central_axis_file = polycap_read_input_line(fptr);
-		external_shape_file = polycap_read_input_line(fptr);
+		single_cap_profile_file = polycap_read_input_line(fptr, error);
+		central_axis_file = polycap_read_input_line(fptr, error);
+		external_shape_file = polycap_read_input_line(fptr, error);
 		// generate polycap profile from files
-		description->profile = polycap_profile_new_from_file(single_cap_profile_file, central_axis_file, external_shape_file, NULL); // TODO: pass error
+		description->profile = polycap_profile_new_from_file(single_cap_profile_file, central_axis_file, external_shape_file, error);
 		free(external_shape_file);
 		free(central_axis_file);
 		free(single_cap_profile_file);
 	}
 	fscanf(fptr,"%" PRId64, &description->n_cap);
 	i=fgetc(fptr); //reads in \n from last line still
-	out = polycap_read_input_line(fptr);
+	out = polycap_read_input_line(fptr, error);
 	fclose(fptr);
 
 	// Check whether weights add to 1
-	polycap_description_check_weight(description->nelem, description->wi);
+	polycap_description_check_weight(description->nelem, description->wi, error);
 
 	// Calculate open area
 	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
@@ -158,7 +171,7 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 
 //===========================================
 // get a new polycap_description by providing all its properties
-polycap_description* polycap_description_new(double sig_rough, double sig_wave, double corr_length, int64_t n_cap, unsigned int nelem, int iz[], double wi[], double density, polycap_profile *profile)
+polycap_description* polycap_description_new(double sig_rough, double sig_wave, double corr_length, int64_t n_cap, unsigned int nelem, int iz[], double wi[], double density, polycap_profile *profile, polycap_error **error)
 {
 	int i;
 	polycap_description *description;
@@ -166,18 +179,21 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 	//allocate some memory
 	description = malloc(sizeof(polycap_description));
 	if(description == NULL){
-		printf("Could not allocate description memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new: could not allocate memory for description -> %s", strerror(errno));
+		return NULL;
 	}
 	description->iz = malloc(sizeof(int)*nelem);
 	if(description->iz == NULL){
-		printf("Could not allocate description->iz memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new: could not allocate memory for description->iz -> %s", strerror(errno));
+		free(description);
+		return NULL;
 	}
 	description->wi = malloc(sizeof(double)*nelem);
 	if(description->wi == NULL){
-		printf("Could not allocate description->wi memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new: could not allocate memory for description->wi -> %s", strerror(errno));
+		free(description->iz);
+		free(description);
+		return NULL;
 	}
 
 	//copy data into description structure
@@ -193,28 +209,46 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 	}
 
 	// Check whether weights add to 1
-	polycap_description_check_weight(description->nelem, description->wi);
+	polycap_description_check_weight(description->nelem, description->wi, error);
 
 	//allocate profile memory
 	description->profile = malloc(sizeof(polycap_profile));
 	if(description->profile == NULL){
-		printf("Could not allocate description->profile memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new: could not allocate memory for description->profile -> %s", strerror(errno));
+		free(description->iz);
+		free(description->wi);
+		free(description);
+		return NULL;
 	}
 	description->profile->z = malloc(sizeof(double)*(profile->nmax+1));
 	if(description->profile->z == NULL){
-		printf("Could not allocate description->profile->z memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new: could not allocate memory for description->profile->z -> %s", strerror(errno));
+		free(description->iz);
+		free(description->wi);
+		free(description->profile);
+		free(description);
+		return NULL;
 	}
 	description->profile->cap = malloc(sizeof(double)*(profile->nmax+1));
 	if(description->profile->cap == NULL){
-		printf("Could not allocate description->profile->cap memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new: could not allocate memory for description->profile->cap -> %s", strerror(errno));
+		free(description->iz);
+		free(description->wi);
+		free(description->profile->z);
+		free(description->profile);
+		free(description);
+		return NULL;
 	}
 	description->profile->ext = malloc(sizeof(double)*(profile->nmax+1));
 	if(description->profile->ext == NULL){
-		printf("Could not allocate description->profile->ext memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new: could not allocate memory for description->profile->ext -> %s", strerror(errno));
+		free(description->iz);
+		free(description->wi);
+		free(description->profile->cap);
+		free(description->profile->z);
+		free(description->profile);
+		free(description);
+		return NULL;
 	}
 	
 	// copy description->profile values to profile
@@ -244,7 +278,7 @@ const polycap_profile* polycap_description_get_profile(polycap_description *desc
 // -Does not make photon image arrays (yet)
 // -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
 // -Polarised dependant reflectivity and change in electric field vector missing
-polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies)
+polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies, polycap_error **error)
 {
 	int thread_cnt, thread_max, i, j;
 	int icount = 50000; //simulate 5000 photons hitting the detector
@@ -256,93 +290,217 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	thread_max = omp_get_max_threads();
 	printf("Type in the amount of threads to use (max %d):\n",thread_max);
 	scanf("%d",&thread_cnt);
+	if (thread_cnt <= 0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies: thread_cnt must be greater than 0");
+		return NULL;
+	}
 	printf("%d threads out of %d selected.\n",thread_cnt, thread_max);
 
 	// Prepare arrays to save results
 	sum_weights = malloc(sizeof(double)*n_energies);
 	if(sum_weights == NULL){
-		printf("Could not allocate sum_weights memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for sum_weights -> %s", strerror(errno));
+		return NULL;
 	}
 	for(i=0; i<n_energies; i++) sum_weights[i] = 0.;
 
 	// Assign polycap_transmission_efficiencies memory
 	efficiencies = malloc(sizeof(polycap_transmission_efficiencies));
 	if(efficiencies == NULL){
-		printf("Could not allocate efficiencies memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies -> %s", strerror(errno));
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->energies = malloc(sizeof(double)*n_energies);
 	if(efficiencies->energies == NULL){
-		printf("Could not allocate efficiencies->energies memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->energies -> %s", strerror(errno));
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->efficiencies = malloc(sizeof(double)*n_energies);
 	if(efficiencies->efficiencies == NULL){
-		printf("Could not allocate efficiencies->efficiencies memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->efficiencies -> %s", strerror(errno));
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 
 	//Assign image coordinate array (initial) memory
 	efficiencies->images = malloc(sizeof(struct _polycap_images));
 	if(efficiencies->images == NULL){
-		printf("Could not allocate efficiencies->images memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images -> %s", strerror(errno));
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->pc_start_coords[0] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_coords[0] == NULL){
-		printf("Could not allocate efficiencies->images->pc_start_coords[0] memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[0] -> %s", strerror(errno));
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->pc_start_coords[1] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_coords[1] == NULL){
-		printf("Could not allocate efficiencies->images->pc_start_coords[1] memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[1] -> %s", strerror(errno));
+		free(efficiencies->images->pc_start_coords[0]);
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->src_start_coords[0] = malloc(sizeof(double));
 	if(efficiencies->images->src_start_coords[0] == NULL){
-		printf("Could not allocate efficiencies->images->src_start_coords[0] memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[0] -> %s", strerror(errno));
+		free(efficiencies->images->pc_start_coords[1]);
+		free(efficiencies->images->pc_start_coords[0]);
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->src_start_coords[1] = malloc(sizeof(double));
 	if(efficiencies->images->src_start_coords[1] == NULL){
-		printf("Could not allocate efficiencies->images->src_start_coords[1] memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[1] -> %s", strerror(errno));
+		free(efficiencies->images->src_start_coords[0]);
+		free(efficiencies->images->pc_start_coords[1]);
+		free(efficiencies->images->pc_start_coords[0]);
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->pc_start_dir[0] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_dir[0] == NULL){
-		printf("Could not allocate efficiencies->images->pc_start_dir[0] memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[0] -> %s", strerror(errno));
+		free(efficiencies->images->src_start_coords[1]);
+		free(efficiencies->images->src_start_coords[0]);
+		free(efficiencies->images->pc_start_coords[1]);
+		free(efficiencies->images->pc_start_coords[0]);
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->pc_start_dir[1] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_dir[1] == NULL){
-		printf("Could not allocate efficiencies->images->pc_start_dir[1] memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[1] -> %s", strerror(errno));
+		free(efficiencies->images->pc_start_dir[0]);
+		free(efficiencies->images->src_start_coords[1]);
+		free(efficiencies->images->src_start_coords[0]);
+		free(efficiencies->images->pc_start_coords[1]);
+		free(efficiencies->images->pc_start_coords[0]);
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->pc_exit_coords[0] = malloc(sizeof(double)*icount);
 	if(efficiencies->images->pc_exit_coords[0] == NULL){
-		printf("Could not allocate efficiencies->images->pc_exit_coords[0] memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_coords[0] -> %s", strerror(errno));
+		free(efficiencies->images->pc_start_dir[1]);
+		free(efficiencies->images->pc_start_dir[0]);
+		free(efficiencies->images->src_start_coords[1]);
+		free(efficiencies->images->src_start_coords[0]);
+		free(efficiencies->images->pc_start_coords[1]);
+		free(efficiencies->images->pc_start_coords[0]);
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->pc_exit_coords[1] = malloc(sizeof(double)*icount);
 	if(efficiencies->images->pc_exit_coords[1] == NULL){
-		printf("Could not allocate efficiencies->images->pc_exit_coords[1] memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_coords[1] -> %s", strerror(errno));
+		free(efficiencies->images->pc_exit_coords[0]);
+		free(efficiencies->images->pc_start_dir[1]);
+		free(efficiencies->images->pc_start_dir[0]);
+		free(efficiencies->images->src_start_coords[1]);
+		free(efficiencies->images->src_start_coords[0]);
+		free(efficiencies->images->pc_start_coords[1]);
+		free(efficiencies->images->pc_start_coords[0]);
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->pc_exit_dir[0] = malloc(sizeof(double)*icount);
 	if(efficiencies->images->pc_exit_dir[0] == NULL){
-		printf("Could not allocate efficiencies->images->pc_exit_dir[0] memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[0] -> %s", strerror(errno));
+		free(efficiencies->images->pc_exit_coords[1]);
+		free(efficiencies->images->pc_exit_coords[0]);
+		free(efficiencies->images->pc_start_dir[1]);
+		free(efficiencies->images->pc_start_dir[0]);
+		free(efficiencies->images->src_start_coords[1]);
+		free(efficiencies->images->src_start_coords[0]);
+		free(efficiencies->images->pc_start_coords[1]);
+		free(efficiencies->images->pc_start_coords[0]);
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->pc_exit_dir[1] = malloc(sizeof(double)*icount);
 	if(efficiencies->images->pc_exit_dir[1] == NULL){
-		printf("Could not allocate efficiencies->images->pc_exit_dir[1] memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
+		free(efficiencies->images->pc_exit_dir[0]);
+		free(efficiencies->images->pc_exit_coords[1]);
+		free(efficiencies->images->pc_exit_coords[0]);
+		free(efficiencies->images->pc_start_dir[1]);
+		free(efficiencies->images->pc_start_dir[0]);
+		free(efficiencies->images->src_start_coords[1]);
+		free(efficiencies->images->src_start_coords[0]);
+		free(efficiencies->images->pc_start_coords[1]);
+		free(efficiencies->images->pc_start_coords[0]);
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	efficiencies->images->exit_coord_weights = malloc(sizeof(double)*icount*n_energies);
 	if(efficiencies->images->exit_coord_weights == NULL){
-		printf("Could not allocate efficiencies->images->exit_coord_weights memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
+		free(efficiencies->images->pc_exit_dir[1]);
+		free(efficiencies->images->pc_exit_dir[0]);
+		free(efficiencies->images->pc_exit_coords[1]);
+		free(efficiencies->images->pc_exit_coords[0]);
+		free(efficiencies->images->pc_start_dir[1]);
+		free(efficiencies->images->pc_start_dir[0]);
+		free(efficiencies->images->src_start_coords[1]);
+		free(efficiencies->images->src_start_coords[0]);
+		free(efficiencies->images->pc_start_coords[1]);
+		free(efficiencies->images->pc_start_coords[0]);
+		free(efficiencies->images);
+		free(efficiencies->efficiencies);
+		free(efficiencies->energies);
+		free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 
 //OpenMP loop
@@ -361,8 +519,10 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 
 	weights = malloc(sizeof(double)*n_energies);
 	if(weights == NULL){
-		printf("Could not allocate weights memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for weights -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	for(k=0; k<n_energies; k++) weights[k] = 0.;
 
@@ -372,8 +532,11 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 #else
 	FILE *random_device;
 	if((random_device = fopen("/dev/urandom", "r")) == NULL){
-		printf("Could not open /dev/urandom\n");
-		exit(2);
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: could not open /dev/urandom -> %s", strerror(errno));
+		free(weights);
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
 	}
 	fread(&seed, sizeof(unsigned long int), 1, random_device);
 	fclose(random_device);
