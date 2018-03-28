@@ -464,7 +464,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	rng = polycap_rng_new(seed);
 
 	i=0; //counter to monitor calculation proceeding
-	#pragma omp for nowait
+	#pragma omp for
 	for(j=0; j < icount; j++){
 		do{
 			// Create photon structure
