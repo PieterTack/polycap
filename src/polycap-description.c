@@ -280,7 +280,7 @@ const polycap_profile* polycap_description_get_profile(polycap_description *desc
 // -Polarised dependant reflectivity and change in electric field vector missing
 polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, int max_threads, size_t n_energies, double *energies, polycap_error **error)
 {
-	int thread_cnt, i, j;
+	int i, j;
 	int icount = 50000; //simulate 5000 photons hitting the detector
 	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0;
 	double *sum_weights;
@@ -423,8 +423,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	polycap_photon *photon;
 	int iesc=-1, k;
 	double *weights;
-	polycap_vector3 src_start_coords;
-	polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
+	//polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
 
 	weights = malloc(sizeof(double)*n_energies);
 	if(weights == NULL) {
@@ -498,8 +497,8 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 			if(iesc == -1) polycap_photon_free(photon); //Free photon here as a new one will be simulated
 		} while(iesc == -1);
 
-		if(thread_id == 0 && (double)i/((double)icount/(double)thread_cnt/10.) >= 1.){
-			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(icount/thread_cnt)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
+		if(thread_id == 0 && (double)i/((double)icount/(double)max_threads/10.) >= 1.){
+			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(icount/max_threads)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
 			i=0;
 		}
 		i++;//counter just to follow % completed
