@@ -308,15 +308,14 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	efficiencies->energies = malloc(sizeof(double)*n_energies);
 	if(efficiencies->energies == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->energies -> %s", strerror(errno));
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->efficiencies = malloc(sizeof(double)*n_energies);
 	if(efficiencies->efficiencies == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->efficiencies -> %s", strerror(errno));
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
@@ -325,174 +324,84 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	efficiencies->images = malloc(sizeof(struct _polycap_images));
 	if(efficiencies->images == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images -> %s", strerror(errno));
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_start_coords[0] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_coords[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[0] -> %s", strerror(errno));
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_start_coords[1] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_coords[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[1] -> %s", strerror(errno));
-		free(efficiencies->images->pc_start_coords[0]);
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->src_start_coords[0] = malloc(sizeof(double));
 	if(efficiencies->images->src_start_coords[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[0] -> %s", strerror(errno));
-		free(efficiencies->images->pc_start_coords[1]);
-		free(efficiencies->images->pc_start_coords[0]);
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->src_start_coords[1] = malloc(sizeof(double));
 	if(efficiencies->images->src_start_coords[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[1] -> %s", strerror(errno));
-		free(efficiencies->images->src_start_coords[0]);
-		free(efficiencies->images->pc_start_coords[1]);
-		free(efficiencies->images->pc_start_coords[0]);
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_start_dir[0] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_dir[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[0] -> %s", strerror(errno));
-		free(efficiencies->images->src_start_coords[1]);
-		free(efficiencies->images->src_start_coords[0]);
-		free(efficiencies->images->pc_start_coords[1]);
-		free(efficiencies->images->pc_start_coords[0]);
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_start_dir[1] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_dir[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[1] -> %s", strerror(errno));
-		free(efficiencies->images->pc_start_dir[0]);
-		free(efficiencies->images->src_start_coords[1]);
-		free(efficiencies->images->src_start_coords[0]);
-		free(efficiencies->images->pc_start_coords[1]);
-		free(efficiencies->images->pc_start_coords[0]);
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_exit_coords[0] = malloc(sizeof(double)*icount);
 	if(efficiencies->images->pc_exit_coords[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_coords[0] -> %s", strerror(errno));
-		free(efficiencies->images->pc_start_dir[1]);
-		free(efficiencies->images->pc_start_dir[0]);
-		free(efficiencies->images->src_start_coords[1]);
-		free(efficiencies->images->src_start_coords[0]);
-		free(efficiencies->images->pc_start_coords[1]);
-		free(efficiencies->images->pc_start_coords[0]);
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_exit_coords[1] = malloc(sizeof(double)*icount);
 	if(efficiencies->images->pc_exit_coords[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_coords[1] -> %s", strerror(errno));
-		free(efficiencies->images->pc_exit_coords[0]);
-		free(efficiencies->images->pc_start_dir[1]);
-		free(efficiencies->images->pc_start_dir[0]);
-		free(efficiencies->images->src_start_coords[1]);
-		free(efficiencies->images->src_start_coords[0]);
-		free(efficiencies->images->pc_start_coords[1]);
-		free(efficiencies->images->pc_start_coords[0]);
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_exit_dir[0] = malloc(sizeof(double)*icount);
 	if(efficiencies->images->pc_exit_dir[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[0] -> %s", strerror(errno));
-		free(efficiencies->images->pc_exit_coords[1]);
-		free(efficiencies->images->pc_exit_coords[0]);
-		free(efficiencies->images->pc_start_dir[1]);
-		free(efficiencies->images->pc_start_dir[0]);
-		free(efficiencies->images->src_start_coords[1]);
-		free(efficiencies->images->src_start_coords[0]);
-		free(efficiencies->images->pc_start_coords[1]);
-		free(efficiencies->images->pc_start_coords[0]);
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_exit_dir[1] = malloc(sizeof(double)*icount);
 	if(efficiencies->images->pc_exit_dir[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
-		free(efficiencies->images->pc_exit_dir[0]);
-		free(efficiencies->images->pc_exit_coords[1]);
-		free(efficiencies->images->pc_exit_coords[0]);
-		free(efficiencies->images->pc_start_dir[1]);
-		free(efficiencies->images->pc_start_dir[0]);
-		free(efficiencies->images->src_start_coords[1]);
-		free(efficiencies->images->src_start_coords[0]);
-		free(efficiencies->images->pc_start_coords[1]);
-		free(efficiencies->images->pc_start_coords[0]);
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->exit_coord_weights = malloc(sizeof(double)*icount*n_energies);
 	if(efficiencies->images->exit_coord_weights == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
-		free(efficiencies->images->pc_exit_dir[1]);
-		free(efficiencies->images->pc_exit_dir[0]);
-		free(efficiencies->images->pc_exit_coords[1]);
-		free(efficiencies->images->pc_exit_coords[0]);
-		free(efficiencies->images->pc_start_dir[1]);
-		free(efficiencies->images->pc_start_dir[0]);
-		free(efficiencies->images->src_start_coords[1]);
-		free(efficiencies->images->src_start_coords[0]);
-		free(efficiencies->images->pc_start_coords[1]);
-		free(efficiencies->images->pc_start_coords[0]);
-		free(efficiencies->images);
-		free(efficiencies->efficiencies);
-		free(efficiencies->energies);
-		free(efficiencies);
+		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}

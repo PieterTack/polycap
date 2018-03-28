@@ -183,7 +183,26 @@ void polycap_transmission_efficiencies_write_hdf5(const char *filename, polycap_
 //===========================================
 void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *efficiencies)
 {
-	free(efficiencies->energies);
-	free(efficiencies->efficiencies);
+	if (efficiencies == NULL)
+		return;
+	if (efficiencies->energies)
+		free(efficiencies->energies);
+	if (efficiencies->efficiencies)
+		free(efficiencies->efficiencies);
+	if (efficiencies->images) {
+		if (efficiencies->images->src_start_coords)
+			free(efficiencies->images->src_start_coords);
+		if (efficiencies->images->pc_start_coords)
+			free(efficiencies->images->pc_start_coords);
+		if (efficiencies->images->pc_start_dir)
+			free(efficiencies->images->pc_start_dir);
+		if (efficiencies->images->pc_exit_coords)
+			free(efficiencies->images->pc_exit_coords);
+		if (efficiencies->images->pc_exit_dir)
+			free(efficiencies->images->pc_exit_dir);
+		if (efficiencies->images->exit_coord_weights)
+			free(efficiencies->images->exit_coord_weights);
+		free(efficiencies->images);
+	}
 	free(efficiencies);
 }
