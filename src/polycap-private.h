@@ -202,6 +202,7 @@ struct _polycap_photon
   polycap_vector3 exit_coords;
   polycap_vector3 exit_direction;
   polycap_vector3 exit_electric_vector;
+  polycap_vector3 src_start_coords;
   size_t n_energies;
   double *energies;
   double *weight;

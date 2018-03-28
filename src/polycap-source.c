@@ -6,10 +6,10 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 void polycap_norm(polycap_vector3 *vect);
 //===========================================
 // Obtain a photon structure from source and polycap description
-polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_description *description, polycap_rng *rng, size_t n_energies, double *energies, polycap_vector3 *src_start_coords)
+polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_description *description, polycap_rng *rng, size_t n_energies, double *energies)
 {
 	double n_shells; //amount of capillary shells in polycapillary
-	polycap_vector3 start_coords, start_direction, start_electric_vector;
+	polycap_vector3 start_coords, start_direction, start_electric_vector, src_start_coords;
 	double r; //random number
 	int boundary_check;
 	double src_rad, phi; //distance from source centre along angle phi from x axis
@@ -45,9 +45,9 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 	src_rad = sqrt((1./(((tan(phi)*tan(phi))/(source->src_y*source->src_y))+(1./(source->src_x*source->src_x))))+(source->src_y*source->src_y)*(1.-(((1./(((tan(phi)*tan(phi))/(source->src_y*source->src_y))+(1./(source->src_x*source->src_x)))))/(source->src_x*source->src_x)))) * sqrt(fabs(r)); //sqrt(r) to simulate source intensity distribution (originally src_rad * r/sqrt(r) )
 	src_start_x = src_rad * cos(phi) + source->src_shiftx;
 	src_start_y = src_rad * sin(phi) + source->src_shifty;
-	src_start_coords->x = src_start_x;
-	src_start_coords->y = src_start_y;
-	src_start_coords->z = 0;
+	src_start_coords.x = src_start_x;
+	src_start_coords.y = src_start_y;
+	src_start_coords.z = 0;
 	if((source->src_sigx * source->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
 		start_direction.x = start_coords.x - src_start_x;
 		start_direction.y = start_coords.y - src_start_y;
@@ -72,6 +72,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 
 	// Create photon structure
 	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies);
+	photon->src_start_coords = src_start_coords;
 
 	return photon;
 }

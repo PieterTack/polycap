@@ -468,7 +468,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	for(j=0; j < icount; j++){
 		do{
 			// Create photon structure
-			photon = polycap_source_get_photon(source, description, rng, n_energies, energies, &src_start_coords);
+			photon = polycap_source_get_photon(source, description, rng, n_energies, energies);
 
 			// Launch photon
 			photon->i_refl = 0; //set reflections to 0
@@ -483,8 +483,8 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 				sum_istart++;
 				efficiencies->images->src_start_coords[0] = realloc(efficiencies->images->src_start_coords[0], sizeof(double)*sum_istart);
 				efficiencies->images->src_start_coords[1] = realloc(efficiencies->images->src_start_coords[1], sizeof(double)*sum_istart);
-				efficiencies->images->src_start_coords[0][sum_istart-1] = src_start_coords.x;
-				efficiencies->images->src_start_coords[1][sum_istart-1] = src_start_coords.y;
+				efficiencies->images->src_start_coords[0][sum_istart-1] = photon->src_start_coords.x;
+				efficiencies->images->src_start_coords[1][sum_istart-1] = photon->src_start_coords.y;
 				efficiencies->images->pc_start_coords[0] = realloc(efficiencies->images->pc_start_coords[0], sizeof(double)*sum_istart);
 				efficiencies->images->pc_start_coords[1] = realloc(efficiencies->images->pc_start_coords[1], sizeof(double)*sum_istart);
 				efficiencies->images->pc_start_coords[0][sum_istart-1] = photon->start_coords.x;
