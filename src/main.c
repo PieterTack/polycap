@@ -23,13 +23,17 @@ int main(int argc, char *argv[])
 		}
 
 	// Read input file and define description structure
-	description = polycap_description_new_from_file(argv[1], &source);
+	description = polycap_description_new_from_file(argv[1], &source, &error);
+	if (description == NULL) {
+		fprintf(stderr, "%s\n", error->message);
+		return 1;
+	}
 
 	// Define energies	
 	energies = malloc(sizeof(double)*n_energies);
 	if(energies == NULL){
 		printf("main: could not allocate memory for energies\n");
-		return -1;
+		return 1;
 	}
 	for(i=0; i<n_energies; i++){
 		energies[i] = 1.+0.1*i;
@@ -37,7 +41,11 @@ int main(int argc, char *argv[])
 
 	// Perform calculations	
 	printf("Starting calculations...\n");
-	efficiencies = polycap_description_get_transmission_efficiencies(description, source, n_energies, energies);
+	efficiencies = polycap_description_get_transmission_efficiencies(description, source, n_energies, energies, &error);
+	if (efficiencies == NULL) {
+		fprintf(stderr, "%s\n", error->message);
+		return 1;
+	}
 
 	//Write output
 	polycap_transmission_efficiencies_write_hdf5(filename, efficiencies);

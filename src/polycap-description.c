@@ -503,6 +503,11 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 		return NULL;
 	}
 
+	// use cancelled as global variable to indicate that the OpenMP loop was aborted due to an error
+	bool cancelled = false;	
+
+	putenv("OMP_CANCELLATION=true"); // necessary for cancellation to work!
+
 //OpenMP loop
 #pragma omp parallel \
 	default(shared) \
@@ -516,28 +521,40 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	int iesc=-1, k;
 	double *weights;
 	polycap_vector3 src_start_coords;
+	polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
 
 	weights = malloc(sizeof(double)*n_energies);
-	if(weights == NULL){
+	if(weights == NULL) {
+	#pragma omp critical
+		{
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for weights -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
-		return NULL;
+		cancelled = true;
+		}
+#pragma omp cancel parallel
 	}
-	for(k=0; k<n_energies; k++) weights[k] = 0.;
+
+	for(k=0; k<n_energies; k++)
+		weights[k] = 0.;
 
 	// Create new rng
 #ifdef _WIN32
 	rand_s(&seed);
 #else
-	FILE *random_device;
-	if((random_device = fopen("/dev/urandom", "r")) == NULL){
+	FILE *random_device = fopen("/dev/urandom", "r");
+	if (random_device == NULL){
+#pragma omp critical
+		{
 		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: could not open /dev/urandom -> %s", strerror(errno));
 		free(weights);
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
-		return NULL;
+		cancelled = true;
+		}
+#pragma omp cancel parallel
 	}
+
 	fread(&seed, sizeof(unsigned long int), 1, random_device);
 	fclose(random_device);
 #endif
@@ -610,6 +627,9 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	polycap_rng_free(rng);
 	free(weights);
 } //#pragma omp parallel
+
+	if (cancelled)
+		return NULL;
 
 	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/icount,sum_istart);
 	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_istart/(sum_istart+sum_not_entered));
