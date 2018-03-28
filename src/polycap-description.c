@@ -278,23 +278,17 @@ const polycap_profile* polycap_description_get_profile(polycap_description *desc
 // -Does not make photon image arrays (yet)
 // -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
 // -Polarised dependant reflectivity and change in electric field vector missing
-polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, size_t n_energies, double *energies, polycap_error **error)
+polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, int max_threads, size_t n_energies, double *energies, polycap_error **error)
 {
-	int thread_cnt, thread_max, i, j;
+	int thread_cnt, i, j;
 	int icount = 50000; //simulate 5000 photons hitting the detector
 	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0;
 	double *sum_weights;
 	polycap_transmission_efficiencies *efficiencies;
 
-	// Check maximal amount of threads and let user choose the amount of threads to use
-	thread_max = omp_get_max_threads();
-	printf("Type in the amount of threads to use (max %d):\n",thread_max);
-	scanf("%d",&thread_cnt);
-	if (thread_cnt <= 0){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies: thread_cnt must be greater than 0");
-		return NULL;
-	}
-	printf("%d threads out of %d selected.\n",thread_cnt, thread_max);
+	// check max_threads
+	if (max_threads < 1 || max_threads > omp_get_max_threads())
+		max_threads = omp_get_max_threads();
 
 	// Prepare arrays to save results
 	sum_weights = malloc(sizeof(double)*n_energies);
@@ -512,7 +506,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 #pragma omp parallel \
 	default(shared) \
 	private(i, j) \
-	num_threads(thread_cnt)
+	num_threads(max_threads)
 {
 	int thread_id = omp_get_thread_num();
 	polycap_rng *rng;
