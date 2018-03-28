@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord);
-void polycap_norm(polycap_vector3 *vect);
 //===========================================
 // Obtain a photon structure from source and polycap description
 polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_description *description, polycap_rng *rng, size_t n_energies, double *energies)
@@ -102,8 +100,7 @@ polycap_source* polycap_source_new(double d_source, double src_x, double src_y, 
 // free a polycap_source struct
 void polycap_source_free(polycap_source *source)
 {
-	free(source);
-
-	return;
+	if (source)
+		free(source);
 }
 

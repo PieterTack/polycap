@@ -10,7 +10,6 @@
 #include <math.h>
 #include <xraylib.h>
 
-int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y);
 //===========================================
 void polycap_photon_scatf(polycap_photon *photon, polycap_description *description)
 {
@@ -38,7 +37,7 @@ polycap_photon* polycap_photon_new(polycap_rng *rng, polycap_vector3 start_coord
 	int i;
 
 	//allocate memory
-	photon = malloc(sizeof(polycap_photon));
+	photon = calloc(1, sizeof(polycap_photon));
 	if(photon == NULL){
 		printf("Could not allocate photon memory.\n");
 		exit(1);
@@ -261,13 +260,17 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 // free a polycap_photon
 void polycap_photon_free(polycap_photon *photon)
 {
-	free(photon->energies);
-	free(photon->weight);
-	free(photon->amu);
-	free(photon->scatf);
+	if (photon == NULL)
+		return;
+	if (photon->energies)
+		free(photon->energies);
+	if (photon->weight)
+		free(photon->weight);
+	if (photon->amu)
+		free(photon->amu);
+	if (photon->scatf)
+		free(photon->scatf);
 	free(photon);
-
-	return;
 }
 
 

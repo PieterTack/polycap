@@ -7,8 +7,6 @@
 #define BINSIZE 20.e-4 /* cm */
 #define EPSILON 1.0e-30
 
-void polycap_norm(polycap_vector3 *vect);
-double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2);
 //===========================================
 // calculates the intersection point coordinates of the photon trajectory and a given linear segment of the capillary wall
 int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa)

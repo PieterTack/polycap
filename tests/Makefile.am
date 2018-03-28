@@ -2,6 +2,7 @@ AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include
 
 check_PROGRAMS = error profile
 TESTS = $(check_PROGRAMS)
+TESTS_ENVIRONMENT = OMP_CANCELLATION=true
 
 error_SOURCES = error.c
 error_LDADD = ../src/libpolycap.la

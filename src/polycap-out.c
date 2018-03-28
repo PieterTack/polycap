@@ -190,16 +190,26 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 	if (efficiencies->efficiencies)
 		free(efficiencies->efficiencies);
 	if (efficiencies->images) {
-		if (efficiencies->images->src_start_coords)
-			free(efficiencies->images->src_start_coords);
-		if (efficiencies->images->pc_start_coords)
-			free(efficiencies->images->pc_start_coords);
-		if (efficiencies->images->pc_start_dir)
-			free(efficiencies->images->pc_start_dir);
-		if (efficiencies->images->pc_exit_coords)
-			free(efficiencies->images->pc_exit_coords);
-		if (efficiencies->images->pc_exit_dir)
-			free(efficiencies->images->pc_exit_dir);
+		if (efficiencies->images->src_start_coords[0])
+			free(efficiencies->images->src_start_coords[0]);
+		if (efficiencies->images->src_start_coords[1])
+			free(efficiencies->images->src_start_coords[1]);
+		if (efficiencies->images->pc_start_coords[0])
+			free(efficiencies->images->pc_start_coords[0]);
+		if (efficiencies->images->pc_start_coords[1])
+			free(efficiencies->images->pc_start_coords[1]);
+		if (efficiencies->images->pc_start_dir[0])
+			free(efficiencies->images->pc_start_dir[0]);
+		if (efficiencies->images->pc_start_dir[1])
+			free(efficiencies->images->pc_start_dir[1]);
+		if (efficiencies->images->pc_exit_coords[0])
+			free(efficiencies->images->pc_exit_coords[0]);
+		if (efficiencies->images->pc_exit_coords[1])
+			free(efficiencies->images->pc_exit_coords[1]);
+		if (efficiencies->images->pc_exit_dir[0])
+			free(efficiencies->images->pc_exit_dir[0]);
+		if (efficiencies->images->pc_exit_dir[1])
+			free(efficiencies->images->pc_exit_dir[1]);
 		if (efficiencies->images->exit_coord_weights)
 			free(efficiencies->images->exit_coord_weights);
 		free(efficiencies->images);

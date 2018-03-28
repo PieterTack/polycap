@@ -296,9 +296,14 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 // free the polycap_profile structure and its associated data
 void polycap_profile_free(polycap_profile *profile)
 {
-	free(profile->z);
-	free(profile->cap);
-	free(profile->ext);
+	if (profile == NULL)
+		return;
+	if (profile->z)
+		free(profile->z);
+	if (profile->cap)
+		free(profile->cap);
+	if (profile->ext)
+		free(profile->ext);
 	free(profile);
 }
 

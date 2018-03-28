@@ -12,7 +12,6 @@
 #include <omp.h> /* openmp header */
 #include <errno.h>
 
-int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord);
 //===========================================
 char *polycap_read_input_line(FILE *fptr, polycap_error **error)
 {
@@ -85,16 +84,16 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	double focal_dist_upstream, focal_dist_downstream;
 	char *single_cap_profile_file, *central_axis_file, *external_shape_file, *out;
 	
-	description = malloc(sizeof(polycap_description));
+	description = calloc(1, sizeof(polycap_description));
 	if(description == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new_from_file: could not allocate memory for description -> %s", strerror(errno));
 		return NULL;
 	}
 
-	source_temp = malloc(sizeof(polycap_source));
+	source_temp = calloc(1, sizeof(polycap_source));
 	if(source_temp == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new_from_file: could not allocate memory for source_temp -> %s", strerror(errno));
-		free(description);
+		polycap_description_free(description);
 		return NULL;
 	}
 
@@ -102,8 +101,8 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	fptr = fopen(filename,"r");
 	if(fptr == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_description_new_from_file: could not open %s -> %s", filename, strerror(errno));
-		free(description);
-		free(source_temp);
+		polycap_description_free(description);
+		polycap_source_free(source_temp);
 		return NULL;
 	}
 
@@ -117,16 +116,15 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	description->iz = malloc(sizeof(int)*description->nelem);
 	if(description->iz == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new_from_file: could not allocate memory for description->iz -> %s", strerror(errno));
-		free(description);
-		free(source_temp);
+		polycap_description_free(description);
+		polycap_source_free(source_temp);
 		return NULL;
 	}
 	description->wi = malloc(sizeof(double)*description->nelem);
 	if(description->wi == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new_from_file: could not allocate memory for description->wi -> %s", strerror(errno));
-		free(description->iz);
-		free(description);
-		free(source_temp);
+		polycap_description_free(description);
+		polycap_source_free(source_temp);
 		return NULL;
 	}
 	for(i=0; i<description->nelem; i++){
@@ -141,6 +139,11 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&length, &rad_ext_upstream, &rad_ext_downstream, &rad_int_upstream, &rad_int_downstream, &focal_dist_upstream, &focal_dist_downstream);
 		// generate polycap profile
 		description->profile = polycap_profile_new(type, length, rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, error);
+		if (description->profile == NULL) {
+			polycap_description_free(description);
+			polycap_source_free(source_temp);
+			return NULL;
+		}
 	} else {
 		i=fgetc(fptr); //reads in \n from last line still
 		single_cap_profile_file = polycap_read_input_line(fptr, error);
@@ -148,6 +151,11 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 		external_shape_file = polycap_read_input_line(fptr, error);
 		// generate polycap profile from files
 		description->profile = polycap_profile_new_from_file(single_cap_profile_file, central_axis_file, external_shape_file, error);
+		if (description->profile == NULL) {
+			polycap_description_free(description);
+			polycap_source_free(source_temp);
+			return NULL;
+		}
 		free(external_shape_file);
 		free(central_axis_file);
 		free(single_cap_profile_file);
@@ -177,7 +185,7 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 	polycap_description *description;
 
 	//allocate some memory
-	description = malloc(sizeof(polycap_description));
+	description = calloc(1, sizeof(polycap_description));
 	if(description == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new: could not allocate memory for description -> %s", strerror(errno));
 		return NULL;
@@ -212,7 +220,7 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 	polycap_description_check_weight(description->nelem, description->wi, error);
 
 	//allocate profile memory
-	description->profile = malloc(sizeof(polycap_profile));
+	description->profile = calloc(1, sizeof(polycap_profile));
 	if(description->profile == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new: could not allocate memory for description->profile -> %s", strerror(errno));
 		free(description->iz);
@@ -299,7 +307,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	for(i=0; i<n_energies; i++) sum_weights[i] = 0.;
 
 	// Assign polycap_transmission_efficiencies memory
-	efficiencies = malloc(sizeof(polycap_transmission_efficiencies));
+	efficiencies = calloc(1, sizeof(polycap_transmission_efficiencies));
 	if(efficiencies == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies -> %s", strerror(errno));
 		free(sum_weights);
@@ -321,7 +329,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	}
 
 	//Assign image coordinate array (initial) memory
-	efficiencies->images = malloc(sizeof(struct _polycap_images));
+	efficiencies->images = calloc(1, sizeof(struct _polycap_images));
 	if(efficiencies->images == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
@@ -409,7 +417,14 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	// use cancelled as global variable to indicate that the OpenMP loop was aborted due to an error
 	bool cancelled = false;	
 
-	putenv("OMP_CANCELLATION=true"); // necessary for cancellation to work!
+	if (!omp_get_cancellation()) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_OPENMP, "polycap_transmission_efficiencies: OpenMP cancellation support is not available");
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
+
+
 
 //OpenMP loop
 #pragma omp parallel \
@@ -555,13 +570,14 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 // free a polycap_description struct
 void polycap_description_free(polycap_description *description)
 {
-
+	if (description == NULL)
+		return;
 	polycap_profile_free(description->profile);
-	free(description->iz);
-	free(description->wi);
+	if (description->iz)
+		free(description->iz);
+	if (description->wi)
+		free(description->wi);
 	free(description);
-
-	return;
 }
 
 

@@ -232,5 +232,9 @@ struct _polycap_images
   double *exit_coord_weights;
   };
 
+int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord);
+void polycap_norm(polycap_vector3 *vect);
+double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2);
+int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y);
 #endif
 
