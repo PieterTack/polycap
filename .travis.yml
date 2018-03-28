@@ -17,11 +17,14 @@ matrix:
           sources:
             - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable'
               key_url: 'http://xmi-apt.tomschoonjans.eu/xmi.packages.key'
+            - ubuntu-toolchain-r-test
           packages:
             - libgsl0-dev
             - libxrl7-dev
             - libhdf5-serial-dev
             - hdf5-tools
+            - gcc-7
+      env: CC='gcc-7'
     - os: linux
       sudo: required
       dist: trusty
@@ -30,12 +33,15 @@ matrix:
           sources:
             - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable'
               key_url: 'http://xmi-apt.tomschoonjans.eu/xmi.packages.key'
+            - ubuntu-toolchain-r-test
           packages:
             - libgsl0-dev
             - libeasyrng-dev
             - libxrl7-dev
             - libhdf5-serial-dev
             - hdf5-tools
+            - gcc-7
+      env: CC='gcc-7'
     - os: osx
       sudo: required
       env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm' EXTRA_LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
