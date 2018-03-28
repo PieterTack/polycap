@@ -62,7 +62,7 @@ void polycap_h5_write_dataset(hid_t file, int rank, hsize_t *dim, char *dataset_
 }
 //===========================================
 // Write efficiencies output in a hdf5 file
-void polycap_transmission_efficiencies_write_hdf5(const char *filename, polycap_transmission_efficiencies *efficiencies)
+void polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficiencies *efficiencies, const char *filename)
 {
 	hid_t file;
 	hsize_t n_energies_temp, dim[2];

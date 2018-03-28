@@ -73,7 +73,7 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
 void polycap_photon_free(polycap_photon *photon);
 
 // write polycap_transmission_efficiencies data to hdf5 file
-void polycap_transmission_efficiencies_write_hdf5(const char *filename, polycap_transmission_efficiencies *efficiencies);
+void polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficiencies *efficiencies, const char *filename);
 
 // wrapper around free(), necessary to avoid trouble on Windows with its multiple runtimes...
 void polycap_free(void *);
