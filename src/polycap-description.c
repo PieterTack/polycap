@@ -95,8 +95,8 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: filename cannot be NULL");
 		return NULL;	
 	}
-	if (*source == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: *source cannot be NULL");
+	if (source == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: source cannot be NULL");
 		return NULL;
 	}
 	
