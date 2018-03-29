@@ -205,6 +205,14 @@ polycap_profile* polycap_profile_new_from_file(const char *single_cap_profile_fi
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_file: single_cap_profile_file cannot be NULL");
 		return NULL;
 	}
+	if (central_axis_file == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_file: central_axis_file cannot be NULL");
+		return NULL;
+	}
+	if (external_shape_file == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_file: external_shape_file cannot be NULL");
+		return NULL;
+	}
 
 	//single capillary profile
 	fptr = fopen(single_cap_profile_file,"r");

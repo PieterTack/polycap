@@ -21,6 +21,12 @@ char *polycap_read_input_line(FILE *fptr, polycap_error **error)
 	unsigned int str_len_max = 128;
 	unsigned int str_current_size = 128;
 
+	// Argument sanity check
+	if(fptr == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: fptr cannot be NULL");
+		return NULL;
+	}
+
 	//assign initial string memory size
 	strPtr = malloc(str_len_max);
 	if(strPtr == NULL){
@@ -83,6 +89,16 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	double rad_int_upstream, rad_int_downstream;
 	double focal_dist_upstream, focal_dist_downstream;
 	char *single_cap_profile_file, *central_axis_file, *external_shape_file, *out;
+
+	//argument sanity check
+	if (filename == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: filename cannot be NULL");
+		return NULL;	
+	}
+	if (*source == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: *source cannot be NULL");
+		return NULL;
+	}
 	
 	description = calloc(1, sizeof(polycap_description));
 	if(description == NULL){
@@ -171,6 +187,111 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 	// Calculate open area
 	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
 
+	//Perform source_temp and description argument sanity check
+	if (source_temp->d_source < 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: source_temp->d_source must be greater than 0.0");
+		free(external_shape_file);
+		free(central_axis_file);
+		free(single_cap_profile_file);
+		free(out);
+		polycap_description_free(description);
+		free(source_temp);
+		return NULL;
+	}
+	if (source_temp->src_x < 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: source_temp->src_x must be greater than 0.0");
+		free(external_shape_file);
+		free(central_axis_file);
+		free(single_cap_profile_file);
+		free(out);
+		polycap_description_free(description);
+		free(source_temp);
+		return NULL;
+	}
+	if (source_temp->src_y < 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: source_temp->src_y must be greater than 0.0");
+		free(external_shape_file);
+		free(central_axis_file);
+		free(single_cap_profile_file);
+		free(out);
+		polycap_description_free(description);
+		free(source_temp);
+		return NULL;
+	}
+	if (source_temp->src_sigx < 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: source_temp->src_sigx must be greater than 0.0");
+		free(external_shape_file);
+		free(central_axis_file);
+		free(single_cap_profile_file);
+		free(out);
+		polycap_description_free(description);
+		free(source_temp);
+		return NULL;
+	}
+	if (source_temp->src_sigy < 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: source_temp->src_sigy must be greater than 0.0");
+		free(external_shape_file);
+		free(central_axis_file);
+		free(single_cap_profile_file);
+		free(out);
+		polycap_description_free(description);
+		free(source_temp);
+		return NULL;
+	}
+	if (description->n_cap < 1){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: description->n_cap must be greater than 1");
+		free(external_shape_file);
+		free(central_axis_file);
+		free(single_cap_profile_file);
+		free(out);
+		polycap_description_free(description);
+		free(source_temp);
+		return NULL;
+	}
+	if (description->open_area < 0 || description->open_area > 1){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: description->open_area must be greater than 0 and smaller than 1");
+		free(external_shape_file);
+		free(central_axis_file);
+		free(single_cap_profile_file);
+		free(out);
+		polycap_description_free(description);
+		free(source_temp);
+		return NULL;
+	}
+	if (description->nelem < 1){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: description->nelem must be 1 or greater");
+		free(external_shape_file);
+		free(central_axis_file);
+		free(single_cap_profile_file);
+		free(out);
+		polycap_description_free(description);
+		free(source_temp);
+		return NULL;
+	}
+	for(i=0; i<description->nelem; i++){
+		if (description->iz[i] < 0 || description->iz[i] > 111){
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: description->iz[i] must be greater than 0 and smaller than 111");
+			free(external_shape_file);
+			free(central_axis_file);
+			free(single_cap_profile_file);
+			free(out);
+			polycap_description_free(description);
+			free(source_temp);
+			return NULL;
+		}
+	}
+	if (description->density < 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: description->density must be greater than 0.0");
+		free(external_shape_file);
+		free(central_axis_file);
+		free(single_cap_profile_file);
+		free(out);
+		polycap_description_free(description);
+		free(source_temp);
+		return NULL;
+	}
+
+
 	*source = source_temp; //DO NOT FREE source_temp
 
 	free(out);
@@ -183,6 +304,26 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 {
 	int i;
 	polycap_description *description;
+
+	//Perform source_temp and description argument sanity check
+	if (n_cap < 1){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: n_cap must be greater than 1");
+		return NULL;
+	}
+	if (nelem < 1){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: nelem must be 1 or greater");
+		return NULL;
+	}
+	for(i=0; i<nelem; i++){
+		if (iz[i] < 0 || iz[i] > 111){
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: iz[i] must be greater than 0 and smaller than 111");
+			return NULL;
+		}
+	}
+	if (density < 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: density must be greater than 0.0");
+		return NULL;
+	}
 
 	//allocate some memory
 	description = calloc(1, sizeof(polycap_description));
