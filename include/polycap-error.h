@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  *  This file is mostly copy-pasted from GLib's polycap_error methods...
  */ 
@@ -58,5 +62,9 @@ void polycap_set_error_literal(polycap_error **err, enum polycap_error_code code
 void polycap_propagate_error(polycap_error **dest, polycap_error *src);
 
 void polycap_clear_error(polycap_error **err);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,4 +1,12 @@
+
+#ifndef POLYCAP_PROFILE_H
+#define POLYCAP_PROFILE_H
+
 #include "polycap-error.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum _polycap_profile_type {
 	POLYCAP_PROFILE_CONICAL,
@@ -33,3 +41,9 @@ polycap_profile* polycap_profile_new_from_file(
 
 // free the polycap_profile structure and its associated data
 void polycap_profile_free(polycap_profile *profile);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

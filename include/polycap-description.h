@@ -1,11 +1,19 @@
+#ifndef POLYCAP_DESCRIPTION_H
+#define POLYCAP_DESCRIPTION_H
+
 #include "polycap-error.h"
+#include "polycap-profile.h"
+#include "polycap-transmission-efficiencies.h"
+#include <stdint.h>
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct _polycap_description;
-struct _polycap_transmission_efficiencies;
 struct _polycap_source;
-
 typedef struct _polycap_description                 polycap_description;
-typedef struct _polycap_transmission_efficiencies   polycap_transmission_efficiencies;
 typedef struct _polycap_source                      polycap_source;
 
 // load polycap_description from Laszlo's file. This will recursively call the appropriate polycap_profile_new_* routines. Again here a XML variant could be useful...
@@ -33,13 +41,8 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 // free a polycap_description struct
 void polycap_description_free(polycap_description *description);
 
-// get a new polycap_source by providing all its properties
-polycap_source* polycap_source_new(
-	double d_source,
-	double src_x,
-	double src_y,
-	double src_sigx,
-	double src_sigy,
-	double src_shiftx,
-	double src_shifty);
+#ifdef __cplusplus
+}
+#endif
 
+#endif
