@@ -16,5 +16,5 @@ profile_LDFLAGS = @OPENMP_CFLAGS@
 
 description_SOURCES = description.c
 description_LDADD = ../src/libpolycap.la
-description_CFLAGS = @OPENMP_CFLAGS@
+description_CFLAGS = @OPENMP_CFLAGS@ @easyRNG_CFLAGS@
 description_LDFLAGS = @OPENMP_CFLAGS@

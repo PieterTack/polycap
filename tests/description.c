@@ -1,7 +1,7 @@
 #include <polycap-private.h>
 #include <polycap-description.h>
 #include <assert.h>
-#include <stddef.h>
+#include <stdlib.h>
 
 void test_polycap_read_input_line() {
 
