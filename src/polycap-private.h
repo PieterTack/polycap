@@ -236,5 +236,7 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 void polycap_norm(polycap_vector3 *vect);
 double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2);
 int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y);
+char *polycap_read_input_line(FILE *fptr, polycap_error **error);
+void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error);
 #endif
 

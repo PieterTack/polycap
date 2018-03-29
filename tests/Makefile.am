@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include
 
-check_PROGRAMS = error profile
+check_PROGRAMS = error profile description
 TESTS = $(check_PROGRAMS)
 TESTS_ENVIRONMENT = OMP_CANCELLATION=true
 
@@ -13,3 +13,8 @@ profile_SOURCES = profile.c
 profile_LDADD = ../src/libpolycap.la
 profile_CFLAGS = @OPENMP_CFLAGS@
 profile_LDFLAGS = @OPENMP_CFLAGS@
+
+description_SOURCES = description.c
+description_LDADD = ../src/libpolycap.la
+description_CFLAGS = @OPENMP_CFLAGS@
+description_LDFLAGS = @OPENMP_CFLAGS@

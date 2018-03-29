@@ -23,7 +23,7 @@ bool polynomialfit(int obs, int degree,
 		   double *dx, double *dy, double *store);
 
 // ---------------------------------------------------------------------------------------------------
-char *polycap_read_input_line(FILE *fptr);
+//char *polycap_read_input_line(FILE *fptr);
 //{
 //	char *strPtr;
 //	unsigned int j = 0;
@@ -52,63 +52,63 @@ char *polycap_read_input_line(FILE *fptr);
 //}
 // ---------------------------------------------------------------------------------------------------
 // Read in input file
-struct inp_file* read_cap_data(char *filename, struct cap_profile **profile, struct polycap_source **source)
-	{
-	FILE *fptr;
-	int i;
-	struct inp_file *cap = malloc(sizeof(struct inp_file));
-	struct cap_profile *my_profile = malloc(sizeof(struct cap_profile));
-	struct polycap_source *my_source = malloc(sizeof(struct polycap_source));
-
-	fptr = fopen(filename,"r");
-	if(fptr == NULL){
-		printf("%s file does not exist!\n",filename);
-		exit(0);
-	}
-	fscanf(fptr,"%lf", &my_profile->sig_rough);
-	fscanf(fptr,"%lf %lf", &cap->sig_wave, &cap->corr_length); //currently dummies
-	fscanf(fptr,"%lf", &my_source->d_source);
-	fscanf(fptr,"%lf", &my_source->d_screen);
-	fscanf(fptr,"%lf %lf", &my_source->src_x, &my_source->src_y);
-	fscanf(fptr,"%lf %lf", &my_source->src_sigx, &my_source->src_sigy);
-	fscanf(fptr,"%lf %lf", &my_source->src_shiftx, &my_source->src_shifty);
-	fscanf(fptr,"%d", &my_profile->nelem);
-	my_profile->iz = malloc(my_profile->nelem*sizeof(my_profile->iz[0]));
-	if(my_profile->iz == NULL){
-		printf("Could not allocate profile.iz memory.\n");
-		exit(0);
-	}
-	my_profile->wi = malloc(my_profile->nelem*sizeof(my_profile->wi[0]));
-	if(my_profile->wi == NULL){
-		printf("Could not allocate profile.wi memory.\n");
-		exit(0);
-	}
-	for(i=0; i<my_profile->nelem; i++){
-		fscanf(fptr,"%d %lf", &my_profile->iz[i], &my_profile->wi[i]);
-		my_profile->wi[i] /= 100.0;
-	}
-	fscanf(fptr,"%lf", &my_profile->density);
-	fscanf(fptr,"%lf %lf %lf", &my_source->e_start, &my_source->e_final, &my_source->delta_e);
-	fscanf(fptr,"%d", &my_source->ndet);
-	fscanf(fptr,"%d", &cap->shape);
-	if(cap->shape == 0 || cap->shape == 1 || cap->shape == 2){
-		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&cap->length,&cap->rad_ext[0],&cap->rad_ext[1],&cap->rad_int[0],&cap->rad_int[1],&cap->focal_dist[0],&cap->focal_dist[1]);
-	} else { //additional files to describe (poly)capillary profile were supplied
-		i=fgetc(fptr); //reads in \n from last line still
-		cap->prf = polycap_read_input_line(fptr);
-		cap->axs = polycap_read_input_line(fptr);
-		cap->ext = polycap_read_input_line(fptr);
-	}
-	fscanf(fptr,"%lf", &my_profile->n_chan);
-	i=fgetc(fptr); //reads in \n from last line still
-	cap->out = polycap_read_input_line(fptr);
-	fclose(fptr);
-
-	*profile = my_profile;
-	*source = my_source;
-
-	return cap;
-	}
+//struct inp_file* read_cap_data(char *filename, struct cap_profile **profile, struct polycap_source **source)
+//	{
+//	FILE *fptr;
+//	int i;
+//	struct inp_file *cap = malloc(sizeof(struct inp_file));
+//	struct cap_profile *my_profile = malloc(sizeof(struct cap_profile));
+//	struct polycap_source *my_source = malloc(sizeof(struct polycap_source));
+//
+//	fptr = fopen(filename,"r");
+//	if(fptr == NULL){
+//		printf("%s file does not exist!\n",filename);
+//		exit(0);
+//	}
+//	fscanf(fptr,"%lf", &my_profile->sig_rough);
+//	fscanf(fptr,"%lf %lf", &cap->sig_wave, &cap->corr_length); //currently dummies
+//	fscanf(fptr,"%lf", &my_source->d_source);
+//	fscanf(fptr,"%lf", &my_source->d_screen);
+//	fscanf(fptr,"%lf %lf", &my_source->src_x, &my_source->src_y);
+//	fscanf(fptr,"%lf %lf", &my_source->src_sigx, &my_source->src_sigy);
+//	fscanf(fptr,"%lf %lf", &my_source->src_shiftx, &my_source->src_shifty);
+//	fscanf(fptr,"%d", &my_profile->nelem);
+//	my_profile->iz = malloc(my_profile->nelem*sizeof(my_profile->iz[0]));
+//	if(my_profile->iz == NULL){
+//		printf("Could not allocate profile.iz memory.\n");
+//		exit(0);
+//	}
+//	my_profile->wi = malloc(my_profile->nelem*sizeof(my_profile->wi[0]));
+//	if(my_profile->wi == NULL){
+//		printf("Could not allocate profile.wi memory.\n");
+//		exit(0);
+//	}
+//	for(i=0; i<my_profile->nelem; i++){
+//		fscanf(fptr,"%d %lf", &my_profile->iz[i], &my_profile->wi[i]);
+//		my_profile->wi[i] /= 100.0;
+//	}
+//	fscanf(fptr,"%lf", &my_profile->density);
+//	fscanf(fptr,"%lf %lf %lf", &my_source->e_start, &my_source->e_final, &my_source->delta_e);
+//	fscanf(fptr,"%d", &my_source->ndet);
+//	fscanf(fptr,"%d", &cap->shape);
+//	if(cap->shape == 0 || cap->shape == 1 || cap->shape == 2){
+//		fscanf(fptr,"%lf %lf %lf %lf %lf %lf %lf",&cap->length,&cap->rad_ext[0],&cap->rad_ext[1],&cap->rad_int[0],&cap->rad_int[1],&cap->focal_dist[0],&cap->focal_dist[1]);
+//	} else { //additional files to describe (poly)capillary profile were supplied
+//		i=fgetc(fptr); //reads in \n from last line still
+//		cap->prf = polycap_read_input_line(fptr);
+//		cap->axs = polycap_read_input_line(fptr);
+//		cap->ext = polycap_read_input_line(fptr);
+//	}
+//	fscanf(fptr,"%lf", &my_profile->n_chan);
+//	i=fgetc(fptr); //reads in \n from last line still
+//	cap->out = polycap_read_input_line(fptr);
+//	fclose(fptr);
+//
+//	*profile = my_profile;
+//	*source = my_source;
+//
+//	return cap;
+//	}
 // ---------------------------------------------------------------------------------------------------
 // Read in polycapillary profile data
 void read_cap_profile(struct inp_file *cap, struct cap_profile *profile)

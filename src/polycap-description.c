@@ -315,7 +315,7 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 		return NULL;
 	}
 	for(i=0; i<nelem; i++){
-		if (iz[i] < 0 || iz[i] > 111){
+		if (iz[i] < 1 || iz[i] > 111){
 			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: iz[i] must be greater than 0 and smaller than 111");
 			return NULL;
 		}
