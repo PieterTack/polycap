@@ -144,12 +144,6 @@ void test_polycap_description_get_transmission_efficiencies() {
 
 	//This should work
 	polycap_clear_error(&error);
-//	if (!omp_get_cancellation()) {
-//		polycap_set_error_literal(error, POLYCAP_ERROR_OPENMP, "polycap_transmission_efficiencies: OpenMP cancellation support is not available");
-//		polycap_profile_free(profile);
-//		polycap_source_free(source);
-//		return NULL;
-//	}
 	efficiencies = polycap_description_get_transmission_efficiencies(description, source, 1, 1, &energies, 5, &error);
 	assert(efficiencies != NULL);
 

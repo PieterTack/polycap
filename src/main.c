@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 	polycap_transmission_efficiencies *efficiencies;
 	int i;
 	size_t n_energies = 291;
-	int64_t n_photons = 50000;
+	int n_photons = 50000;
 	double *energies;
 	const char filename[] = "polycap_out.h5";
 	polycap_error *error = NULL;

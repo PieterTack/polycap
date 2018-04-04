@@ -427,7 +427,7 @@ const polycap_profile* polycap_description_get_profile(polycap_description *desc
 // -Does not make photon image arrays (yet)
 // -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
 // -Polarised dependant reflectivity and change in electric field vector missing
-polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, int max_threads, size_t n_energies, double *energies, int64_t n_photons, polycap_error **error)
+polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, int max_threads, size_t n_energies, double *energies, int n_photons, polycap_error **error)
 {
 	int i, j;
 	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0;
@@ -577,15 +577,15 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 		return NULL;
 	}
 
-	// use cancelled as global variable to indicate that the OpenMP loop was aborted due to an error
-	bool cancelled = false;	
+//	// use cancelled as global variable to indicate that the OpenMP loop was aborted due to an error
+//	bool cancelled = false;	
 
-	if (!omp_get_cancellation()) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_OPENMP, "polycap_transmission_efficiencies: OpenMP cancellation support is not available");
-		polycap_transmission_efficiencies_free(efficiencies);
-		free(sum_weights);
-		return NULL;
-	}
+//	if (!omp_get_cancellation()) {
+//		polycap_set_error_literal(error, POLYCAP_ERROR_OPENMP, "polycap_transmission_efficiencies: OpenMP cancellation support is not available");
+//		polycap_transmission_efficiencies_free(efficiencies);
+//		free(sum_weights);
+//		return NULL;
+//	}
 
 
 
@@ -604,16 +604,16 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	//polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
 
 	weights = malloc(sizeof(double)*n_energies);
-	if(weights == NULL) {
-	#pragma omp critical
-		{
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for weights -> %s", strerror(errno));
-		polycap_transmission_efficiencies_free(efficiencies);
-		free(sum_weights);
-		cancelled = true;
-		}
-#pragma omp cancel parallel
-	}
+//	if(weights == NULL) {
+//	#pragma omp critical
+//		{
+//		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for weights -> %s", strerror(errno));
+//		polycap_transmission_efficiencies_free(efficiencies);
+//		free(sum_weights);
+//		cancelled = true;
+//		}
+//#pragma omp cancel parallel
+//	}
 
 	for(k=0; k<n_energies; k++)
 		weights[k] = 0.;
@@ -623,17 +623,17 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	rand_s(&seed);
 #else
 	FILE *random_device = fopen("/dev/urandom", "r");
-	if (random_device == NULL){
-#pragma omp critical
-		{
-		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: could not open /dev/urandom -> %s", strerror(errno));
-		free(weights);
-		polycap_transmission_efficiencies_free(efficiencies);
-		free(sum_weights);
-		cancelled = true;
-		}
-#pragma omp cancel parallel
-	}
+//	if (random_device == NULL){
+//#pragma omp critical
+//		{
+//		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: could not open /dev/urandom -> %s", strerror(errno));
+//		free(weights);
+//		polycap_transmission_efficiencies_free(efficiencies);
+//		free(sum_weights);
+//		cancelled = true;
+//		}
+//#pragma omp cancel parallel
+//	}
 
 	fread(&seed, sizeof(unsigned long int), 1, random_device);
 	fclose(random_device);
@@ -677,7 +677,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 		} while(iesc == -1);
 
 		if(thread_id == 0 && (double)i/((double)n_photons/(double)max_threads/10.) >= 1.){
-			printf("%ld%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(n_photons/max_threads)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
+			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(n_photons/max_threads)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
 			i=0;
 		}
 		i++;//counter just to follow % completed
@@ -709,8 +709,8 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	free(weights);
 } //#pragma omp parallel
 
-	if (cancelled)
-		return NULL;
+//	if (cancelled)
+//		return NULL;
 
 	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_istart);
 	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_istart/(sum_istart+sum_not_entered));
