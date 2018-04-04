@@ -36,7 +36,7 @@ polycap_description* polycap_description_new(
 const polycap_profile* polycap_description_get_profile(polycap_description *description);
 
 // for a given array of energies, and a full polycap_description, get the transmission efficiencies. efficiencies will be allocated by us, and needs to be freed with polycap_free
-polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, int max_threads, size_t n_energies, double *energies, polycap_error **error);
+polycap_transmission_efficiencies* polycap_description_get_transmission_efficiencies(polycap_description *description, polycap_source *source, int max_threads, size_t n_energies, double *energies, int64_t n_photons, polycap_error **error);
 
 // free a polycap_description struct
 void polycap_description_free(polycap_description *description);

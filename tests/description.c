@@ -55,6 +55,12 @@ void test_polycap_description_new_from_file() {
 	description = polycap_description_new_from_file("this-file-does-not-exist", &source, &error);
 	assert(description == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_IO));
+
+	//test with example file
+	//TODO: fix the file path name so it won't fail on other computers... (e.g. where is this example file stored?)
+	polycap_clear_error(&error);
+	description = polycap_description_new_from_file("/home/ptack/poly_raytrace/example/ellip_l9.inp", &source, &error);
+	assert(description != NULL);
 }
 
 
@@ -62,22 +68,20 @@ void test_polycap_description_new() {
 
 	int iz[2]={8,14};
 	double wi[2]={53.0,47.0};
-	polycap_profile *profile = malloc(sizeof(polycap_profile));
+	polycap_profile *profile;
 	polycap_error *error = NULL;
 	polycap_description *description;
+	double rad_ext_upstream = 0.2065;
+	double rad_ext_downstream = 0.0585;
+	double rad_int_upstream = 3.5E-4;
+	double rad_int_downstream = 9.9153E-5;
+	double focal_dist_upstream = 1000.0;
+	double focal_dist_downstream = 0.5;
 
-	profile->nmax = 1;
-	profile->z = malloc(sizeof(double)*2);
-	profile->cap = malloc(sizeof(double)*2);
-	profile->ext = malloc(sizeof(double)*2);
-	profile->z[0] = 0;
-	profile->z[1] = 1;
-	profile->cap[0] = 0;
-	profile->cap[1] = 1;
-	profile->ext[0] = 0;
-	profile->ext[1] = 1;
+	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 
 	//some cases that don't work
+	polycap_clear_error(&error);
 	description = polycap_description_new(0.0, 0.0, 0.0, 0, 2, iz, wi, 2.23, profile, &error);
 	assert(description == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
@@ -113,12 +117,53 @@ void test_polycap_description_new() {
 	polycap_profile_free(profile);
 }
 
+void test_polycap_description_get_transmission_efficiencies() {
+	polycap_error *error = NULL;
+	polycap_transmission_efficiencies *efficiencies;
+	polycap_profile *profile;
+	polycap_description *description;
+	polycap_source *source;
+	int iz[2]={8,14};
+	double wi[2]={53.0,47.0};
+	double energies = 10.0;
+	double rad_ext_upstream = 0.2065;
+	double rad_ext_downstream = 0.0585;
+	double rad_int_upstream = 3.5E-4;
+	double rad_int_downstream = 9.9153E-5;
+	double focal_dist_upstream = 1000.0;
+	double focal_dist_downstream = 0.5;
+
+	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
+	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
+	source = polycap_source_new(2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0);
+
+	//Something that shouldn't work
+	efficiencies = polycap_description_get_transmission_efficiencies(NULL, NULL, -1, -1, NULL, -1, &error);
+	assert(efficiencies == NULL);
+	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
+
+	//This should work
+	polycap_clear_error(&error);
+//	if (!omp_get_cancellation()) {
+//		polycap_set_error_literal(error, POLYCAP_ERROR_OPENMP, "polycap_transmission_efficiencies: OpenMP cancellation support is not available");
+//		polycap_profile_free(profile);
+//		polycap_source_free(source);
+//		return NULL;
+//	}
+	efficiencies = polycap_description_get_transmission_efficiencies(description, source, 1, 1, &energies, 5, &error);
+	assert(efficiencies != NULL);
+
+	polycap_profile_free(profile);
+	polycap_source_free(source);
+}
+
 int main(int argc, char *argv[]) {
 
 	test_polycap_read_input_line();
 	test_polycap_description_check_weight();
 	test_polycap_description_new_from_file();
 	test_polycap_description_new();
+	test_polycap_description_get_transmission_efficiencies();
 
 	return 0;
 }

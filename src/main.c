@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
 	polycap_transmission_efficiencies *efficiencies;
 	int i;
 	size_t n_energies = 291;
+	int64_t n_photons = 50000;
 	double *energies;
 	const char filename[] = "polycap_out.h5";
 	polycap_error *error = NULL;
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
 	// Perform calculations	
 	printf("Starting calculations...\n");
 	// TODO: add a command-line option to override the number of threads
-	efficiencies = polycap_description_get_transmission_efficiencies(description, source, -1, n_energies, energies, &error);
+	efficiencies = polycap_description_get_transmission_efficiencies(description, source, -1, n_energies, energies, n_photons, &error);
 	if (efficiencies == NULL) {
 		fprintf(stderr, "%s\n", error->message);
 		return 1;
