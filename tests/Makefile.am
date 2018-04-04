@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include
+AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include -DEXAMPLE_DIR=\"$(top_srcdir)/example/\"
 
 check_PROGRAMS = error profile description
 TESTS = $(check_PROGRAMS)
