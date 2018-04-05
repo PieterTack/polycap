@@ -22,6 +22,7 @@ int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1
 	double au, ads; //distance between capillary axis and interaction point (au), distance between cap_coords
 	double tga, sga, cga, gam; //tan(gamma), sin(ga) and cos(ga) and gamma where gamma is angle between capillary wall and axis
 
+	*alfa = 0.0; //angle between surface normal and photon direction, set to 0 for now in case of premature return
 	sol_final = -1000;
 
 	photon_coord_rel.x = photon_coord->x - cap_coord0.x;

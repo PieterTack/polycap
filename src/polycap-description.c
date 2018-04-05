@@ -369,6 +369,7 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 		free(description);
 		return NULL;
 	}
+	description->profile->nmax = profile->nmax;
 	description->profile->z = malloc(sizeof(double)*(profile->nmax+1));
 	if(description->profile->z == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_description_new: could not allocate memory for description->profile->z -> %s", strerror(errno));
@@ -646,7 +647,6 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 		do{
 			// Create photon structure
 			photon = polycap_source_get_photon(source, description, rng, n_energies, energies);
-
 			// Launch photon
 			photon->i_refl = 0; //set reflections to 0
 			iesc = polycap_photon_launch(photon, description);
