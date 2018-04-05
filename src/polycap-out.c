@@ -216,3 +216,30 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 	}
 	free(efficiencies);
 }
+
+bool polycap_transmission_efficiencies_get_data(polycap_transmission_efficiencies *efficiencies, size_t *n_energies, double **energies_arr, double **efficiencies_arr, polycap_error **error) {
+	if (efficiencies == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies_get_data: efficiencies cannot be NULL");
+		return false;
+	}
+
+	if (n_energies)
+		*n_energies = efficiencies->n_energies;
+
+	if (energies_arr) {
+		*energies_arr = malloc(sizeof(double) * efficiencies->n_energies);
+		memcpy(*energies_arr, efficiencies->energies, sizeof(double) * efficiencies->n_energies);
+	}
+
+	if (efficiencies_arr) {
+		*efficiencies_arr = malloc(sizeof(double) * efficiencies->n_energies);
+		memcpy(*efficiencies_arr, efficiencies->efficiencies, sizeof(double) * efficiencies->n_energies);
+	}
+
+	return true;
+}
+
+void polycap_free(void *data) {
+	if (data)
+		free(data);
+}
