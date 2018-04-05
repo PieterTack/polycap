@@ -126,34 +126,33 @@ void test_polycap_description_new() {
 	polycap_clear_error(&error);
 	assert(description2 != NULL);
 	//check description parameters
-	assert( fabs(description->sig_rough - description2->sig_rough) < 1e-5);
-	assert( fabs(description->sig_wave - description2->sig_wave) < 1e-5);
-	assert( fabs(description->corr_length - description2->corr_length) < 1e-5);
-	assert( fabs(description->n_cap - description2->n_cap) < 1e-5);
-	assert( fabs(description->open_area - description2->open_area) < 1e-5);
-	assert( fabs(description->nelem - description2->nelem) < 1e-5);
+	assert(fabs(description->sig_rough - description2->sig_rough) < 1e-5);
+	assert(fabs(description->sig_wave - description2->sig_wave) < 1e-5);
+	assert(fabs(description->corr_length - description2->corr_length) < 1e-5);
+	assert(description->n_cap == description2->n_cap);
+	assert(fabs(description->open_area - description2->open_area) < 1e-5);
+	assert(description->nelem == description2->nelem);
 	for(i=0;i<description->nelem;i++){
-		assert( fabs(description->iz[i] - description2->iz[i]) < 1e-5);
-		assert( fabs(description->wi[i] - description2->wi[i]) < 1e-5);
+		assert(description->iz[i] == description2->iz[i]);
+		assert(fabs(description->wi[i] - description2->wi[i]) < 1e-5);
 	}	
-	assert( fabs(description->density - description2->density) < 1e-5);
+	assert(fabs(description->density - description2->density) < 1e-5);
 	//check source parameters
-	assert( fabs(source->d_source - source2->d_source) < 1e-5);
-	assert( fabs(source->src_x - source2->src_x) < 1e-5);
-	assert( fabs(source->src_y - source2->src_y) < 1e-5);
-	assert( fabs(source->src_sigx - source2->src_sigx) < 1e-5);
-	assert( fabs(source->src_sigy - source2->src_sigy) < 1e-5);
-	assert( fabs(source->src_shiftx - source2->src_shiftx) < 1e-5);
-	assert( fabs(source->src_shifty - source2->src_shifty) < 1e-5);
+	assert(fabs(source->d_source - source2->d_source) < 1e-5);
+	assert(fabs(source->src_x - source2->src_x) < 1e-5);
+	assert(fabs(source->src_y - source2->src_y) < 1e-5);
+	assert(fabs(source->src_sigx - source2->src_sigx) < 1e-5);
+	assert(fabs(source->src_sigy - source2->src_sigy) < 1e-5);
+	assert(fabs(source->src_shiftx - source2->src_shiftx) < 1e-5);
+	assert(fabs(source->src_shifty - source2->src_shifty) < 1e-5);
 	//check profile parameters
-printf("%d, %d, %d\n",description->profile->nmax, description2->profile->nmax, profile->nmax);
-	assert( fabs(description->profile->nmax - description2->profile->nmax) < 1e-5);
-	assert( fabs(description->profile->z[0] - description2->profile->z[0]) < 1e-5);
-	assert( fabs(description->profile->z[description->profile->nmax] - description2->profile->z[description->profile->nmax]) < 1e-5);
-	assert( fabs(description->profile->cap[0] - description2->profile->cap[0]) < 1e-5);
-	assert( fabs(description->profile->cap[description->profile->nmax] - description2->profile->cap[description->profile->nmax]) < 1e-5);
-	assert( fabs(description->profile->ext[0] - description2->profile->ext[0]) < 1e-5);
-	assert( fabs(description->profile->ext[description->profile->nmax] - description2->profile->ext[description->profile->nmax]) < 1e-5);
+	assert(description->profile->nmax == description2->profile->nmax);
+	assert(fabs(description->profile->z[0] - description2->profile->z[0]) < 1e-5);
+	assert(fabs(description->profile->z[description->profile->nmax] - description2->profile->z[description->profile->nmax]) < 1e-5);
+	assert(fabs(description->profile->cap[0] - description2->profile->cap[0]) < 1e-5);
+	assert(fabs(description->profile->cap[description->profile->nmax] - description2->profile->cap[description->profile->nmax]) < 1e-5);
+	assert(fabs(description->profile->ext[0] - description2->profile->ext[0]) < 1e-5);
+	assert(fabs(description->profile->ext[description->profile->nmax] - description2->profile->ext[description->profile->nmax]) < 1e-5);
 	
 
 	polycap_profile_free(profile);
