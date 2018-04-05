@@ -116,6 +116,7 @@ AC_CONFIG_FILES([ 	Makefile
 		 	include/Makefile
 			src/Makefile
 			tests/Makefile
+			example/Makefile
 		])
 AC_CONFIG_HEADERS([config.h])
 
