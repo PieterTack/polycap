@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include -DEXAMPLE_DIR=\"$(top_srcdir)/example/\"
 
-check_PROGRAMS = error profile description
+check_PROGRAMS = error profile description capil
 TESTS = $(check_PROGRAMS)
 TESTS_ENVIRONMENT = OMP_CANCELLATION=true
 
@@ -18,3 +18,8 @@ description_SOURCES = description.c
 description_LDADD = ../src/libpolycap.la
 description_CFLAGS = @OPENMP_CFLAGS@ @easyRNG_CFLAGS@
 description_LDFLAGS = @OPENMP_CFLAGS@
+
+capil_SOURCES = capil.c
+capil_LDADD = ../src/libpolycap.la
+capil_CFLAGS = @OPENMP_CFLAGS@
+capil_LDFLAGS = @OPENMP_CFLAGS@

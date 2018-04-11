@@ -165,7 +165,7 @@ double polycap_refl(double e, double theta, double density, double scatf, double
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: theta must be greater than 0");
 		return -1;
 	}
-	if (density < 0.){
+	if (density <= 0.){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: density must be greater than 0");
 		return -1;
 	}
