@@ -1,6 +1,6 @@
 AC_INIT([polycap],[0.1],[Pieter.Tack@UGent.be])
 AC_PREREQ([2.60])
-AC_CONFIG_SRCDIR([src/polycap.c])
+AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CANONICAL_HOST

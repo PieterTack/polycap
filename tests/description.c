@@ -153,7 +153,6 @@ void test_polycap_description_new() {
 	assert(fabs(description->profile->cap[description->profile->nmax] - description2->profile->cap[description->profile->nmax]) < 1e-5);
 	assert(fabs(description->profile->ext[0] - description2->profile->ext[0]) < 1e-5);
 	assert(fabs(description->profile->ext[description->profile->nmax] - description2->profile->ext[description->profile->nmax]) < 1e-5);
-	
 
 	polycap_profile_free(profile);
 }
