@@ -649,7 +649,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 			photon = polycap_source_get_photon(source, description, rng, n_energies, energies);
 			// Launch photon
 			photon->i_refl = 0; //set reflections to 0
-			iesc = polycap_photon_launch(photon, description);
+			iesc = polycap_photon_launch(photon, description, error);
 			//if iesc == -1 here a new photon should be simulated/started.
 			//if iesc == 0 check whether photon is in PC exit window
 			if(iesc == 0) iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords);
