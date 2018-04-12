@@ -1,4 +1,5 @@
 #include "polycap-private.h"
+#include <polycap-source.h>
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
@@ -32,8 +33,11 @@ void test_polycap_source_get_photon() {
 	rng = polycap_rng_new(seed);
 	source = polycap_source_new(0.05,0.1,0.1,0.2,0.2,0.3,0.3,&error);
 	assert(source != NULL);
+printf("*Here\n");
 	polycap_clear_error(&error);
+printf("*Here2\n");
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
+printf("*Here3\n");
 	assert(profile != NULL);
 	polycap_clear_error(&error);
 	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
@@ -51,6 +55,9 @@ void test_polycap_source_get_photon() {
 	assert(photon != NULL);
 	assert(photon->n_energies == 1);
 	assert(fabs(photon->energies[0] - 10.) < 1.e-5);
+	assert(fabs(photon->src_start_coords.x) < 0.1);
+	assert(fabs(photon->src_start_coords.y) < 0.1);
+	assert(photon->src_start_coords.z == 0.);
 
 	polycap_profile_free(profile);
 	polycap_description_free(description);

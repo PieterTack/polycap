@@ -1,4 +1,5 @@
 #include "polycap-private.h"
+#include <polycap-photon.h>
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>

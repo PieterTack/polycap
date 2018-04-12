@@ -1,4 +1,4 @@
-#include <polycap-private.h>
+#include "polycap-private.h"
 #include <polycap-description.h>
 #include <assert.h>
 #include <stdlib.h>
