@@ -1,6 +1,7 @@
-#include <polycap-private.h>
+#include "polycap-private.h"
 #include <math.h>
 #include <assert.h>
+#include <stdlib.h>
 
 void test_polycap_capil_segment() {
 	polycap_error *error = NULL;

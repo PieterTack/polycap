@@ -21,5 +21,5 @@ description_LDFLAGS = @OPENMP_CFLAGS@
 
 capil_SOURCES = capil.c
 capil_LDADD = ../src/libpolycap.la
-capil_CFLAGS = @OPENMP_CFLAGS@
+capil_CFLAGS = @OPENMP_CFLAGS@ @easyRNG_CFLAGS@
 capil_LDFLAGS = @OPENMP_CFLAGS@
