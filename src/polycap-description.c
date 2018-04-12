@@ -269,7 +269,7 @@ polycap_description* polycap_description_new_from_file(const char *filename, pol
 		return NULL;
 	}
 	for(i=0; i<description->nelem; i++){
-		if (description->iz[i] < 0 || description->iz[i] > 111){
+		if (description->iz[i] < 1 || description->iz[i] > 111){
 			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new_from_file: description->iz[i] must be greater than 0 and smaller than 111");
 			free(external_shape_file);
 			free(central_axis_file);
@@ -652,7 +652,12 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 			iesc = polycap_photon_launch(photon, description, error);
 			//if iesc == -1 here a new photon should be simulated/started.
 			//if iesc == 0 check whether photon is in PC exit window
-			if(iesc == 0) iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords);
+			if(iesc == 0) {
+				iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, error);
+				if(iesc == 0){
+					iesc = -1;
+				} else iesc = 0;
+			}
 			//Register succesfully started photon, as well as save start coordinates and direction
 			//TODO: reduce or remove this critical block
 			#pragma omp critical

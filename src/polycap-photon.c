@@ -11,10 +11,48 @@
 #include <xraylib.h>
 
 //===========================================
-void polycap_photon_scatf(polycap_photon *photon, polycap_description *description)
+void polycap_photon_scatf(polycap_photon *photon, polycap_description *description, polycap_error **error)
 {
 	int i, j;
 	double totmu, scatf;
+
+	//argument sanity check
+	if (photon == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_scatf: photon cannot be NULL");
+		return;
+	}
+	if (description == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_scatf: description cannot be NULL");
+		return;
+	}
+	if (description->density <= 0) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_scatf: description->density must be greater than 0");
+		return;
+	}
+	if (description->nelem <= 0) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_scatf: description->nelem must be greater than 0");
+		return;
+	}
+	if (photon->n_energies <= 0) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_scatf: photon->n_energies must be greater than 0");
+		return;
+	}
+	for(i=0; i<photon->n_energies; i++){
+		if (photon->energies[i] < 1. || photon->energies[i] > 100.) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_scatf: photon->energies[i] must be greater than 1 and smaller than 100");
+			return;
+		}
+	}
+	for(i=0; i<description->nelem; i++){
+		if (description->wi[i] < 0. || description->wi[i] > 1.) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_scatf: description->wi[i] must be greater than 0 and smaller than 1");
+			return;
+		}
+		if (description->iz[i] < 1 || description->iz[i] > 111) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_scatf: description->iz[i] must be greater than 0 and smaller than 104");
+			return;
+		}
+	}
 
 	for(i=0; i<photon->n_energies; i++){
 		totmu = 0;
@@ -31,27 +69,52 @@ void polycap_photon_scatf(polycap_photon *photon, polycap_description *descripti
 
 //===========================================
 // construct a new polycap_photon with its initial position, direction, electric field vector
-polycap_photon* polycap_photon_new(polycap_rng *rng, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, size_t n_energies, double *energies)
+polycap_photon* polycap_photon_new(polycap_rng *rng, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, size_t n_energies, double *energies, polycap_error **error)
 {
 	polycap_photon *photon;
 	int i;
 
+	//argument sanity check
+	if (rng == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: rng cannot be NULL");
+		return NULL;
+	}
+	if (energies == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: energies cannot be NULL");
+		return NULL;
+	}
+	if (start_coords.z < 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: start_coords.z must be greater than 0");
+		return NULL;
+	}
+	if (start_direction.z < 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: start_direction.z must be greater than 0");
+		return NULL;
+	}
+	if (n_energies < 1) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: n_energies must be greater than 0");
+		return NULL;
+	}
+	
+
 	//allocate memory
 	photon = calloc(1, sizeof(polycap_photon));
 	if(photon == NULL){
-		printf("Could not allocate photon memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon -> %s", strerror(errno));
+		return NULL;
 	}
 	photon->n_energies = n_energies;
 	photon->energies = malloc(sizeof(double)*photon->n_energies);
 	if(photon->energies == NULL){
-		printf("Could not allocate photon->energies memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon->energies -> %s", strerror(errno));
+		polycap_photon_free(photon);
+		return NULL;
 	}
 	photon->weight = malloc(sizeof(double)*photon->n_energies);
 	if(photon->weight == NULL){
-		printf("Could not allocate photon->weight memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon->weight -> %s", strerror(errno));
+		polycap_photon_free(photon);
+		return NULL;
 	}
 
 	//assign *rng pointer
@@ -73,13 +136,15 @@ polycap_photon* polycap_photon_new(polycap_rng *rng, polycap_vector3 start_coord
 	//calculate amu and scatf for each energy
 	photon->amu = malloc(sizeof(double)*photon->n_energies);
 	if(photon->amu == NULL){
-		printf("Could not allocate photon->amu memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon->amu -> %s", strerror(errno));
+		polycap_photon_free(photon);
+		return NULL;
 	}
 	photon->scatf = malloc(sizeof(double)*photon->n_energies);
 	if(photon->scatf == NULL){
-		printf("Could not allocate photon->scatf memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon->scatf -> %s", strerror(errno));
+		polycap_photon_free(photon);
+		return NULL;
 	}
 	
 
@@ -87,11 +152,17 @@ polycap_photon* polycap_photon_new(polycap_rng *rng, polycap_vector3 start_coord
 }
 
 //===========================================
-int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord)
+int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord, polycap_error **error)
 {
 	double hex_edge_norm1[2], hex_edge_norm2[2], hex_edge_norm3[3]; //normal vectors of edges of the hexagonal polycap shape
 	double d_cen2hexedge; //distance between polycap centre and edges (along edge norm)
 	double dp1, dp2, dp3; //dot products; distance of photon_coord along hex edge norms
+
+	//argument sanity check
+	if (polycap_radius <= 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_within_pc_boundary: polycap_radius must be greater than 0");
+		return -1;
+	}
 
 	hex_edge_norm1[0] = 0; //vertical hexagon edge x vector
 	hex_edge_norm1[1] = 1; //vertical hexagon edge y vector
@@ -107,9 +178,9 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 	dp3 = fabs(hex_edge_norm3[0]*photon_coord.x + hex_edge_norm3[1]*photon_coord.y);
 
 	if(dp1 > d_cen2hexedge || dp2 > d_cen2hexedge || dp3 > d_cen2hexedge){
-		return -1; //outside of boundaries
+		return 0; //outside of boundaries
 	} else {
-		return 0; //inside polycap boundaries
+		return 1; //inside polycap boundaries
 	}
 }
 
@@ -152,12 +223,25 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 	int *ix = &ix_val; //index to remember from which part of capillary last interaction was calculated
 	double d_ph_capcen; //distance between photon start coordinates and selected capillary center
 
+	//argument sanity check
+	if (photon == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon cannot be NULL");
+		return -1;
+	}
+	if (description == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: description cannot be NULL");
+		return -1;
+	}
+
 	//check if photon->start_coord are within hexagonal polycap boundaries
-	photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords);
-	if(photon_pos_check == -1) return -1;
+	photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords, error);
+	if(photon_pos_check == 0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within polycapillary boundaries");
+		return -1;
+	}
 
 	//calculate attenuation coefficients and scattering factors
-	polycap_photon_scatf(photon,description);
+	polycap_photon_scatf(photon,description, error);
 
 	//define polycapillary-to-photonsource axis 
 	//!!NOTE:this has to be changed. Now we assume all sources are in a straight line with PC central axis!!
@@ -194,13 +278,14 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 	//NOTE: Assuming polycap centre coordinates are X=0,Y=0 with respect to photon->start_coords
 	cap_x = malloc(sizeof(double)*(description->profile->nmax+1));
 	if(cap_x == NULL){
-		printf("Could not allocate cap_x memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for cap_x -> %s", strerror(errno));
+		return -1;
 	}
 	cap_y = malloc(sizeof(double)*(description->profile->nmax+1));
 	if(cap_y == NULL){
-		printf("Could not allocate cap_y memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for cap_y -> %s", strerror(errno));
+		free(cap_x);
+		return -1;
 	}
 	
 	for(i=0; i<=description->profile->nmax; i++){

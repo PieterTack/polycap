@@ -25,15 +25,15 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 		start_coords.z = 0.;
 	} else { // polycapillary case
 		// select random coordinates, check whether they are inside polycap boundary
-		boundary_check = -1;
+		boundary_check = 0;
 		do{
 			r = polycap_rng_uniform(rng);
 			start_coords.x = (2.*r-1.) * description->profile->ext[0];
 			r = polycap_rng_uniform(rng);
 			start_coords.y = (2.*r-1.) * description->profile->ext[0];
 			start_coords.z = 0.;
-			boundary_check = polycap_photon_within_pc_boundary(description->profile->ext[0], start_coords);
-		} while(boundary_check == -1);
+			boundary_check = polycap_photon_within_pc_boundary(description->profile->ext[0], start_coords, NULL); //TODO: include error
+		} while(boundary_check == 0);
 	}
 
 	// Obtain point from source as photon origin, determining photon start_direction
@@ -69,7 +69,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 	polycap_norm(&start_electric_vector);
 
 	// Create photon structure
-	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies);
+	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies, NULL); //TODO: include error
 	photon->src_start_coords = src_start_coords;
 
 	return photon;

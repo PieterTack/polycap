@@ -26,7 +26,8 @@ polycap_photon* polycap_photon_new(
 	polycap_vector3 start_direction,
 	polycap_vector3 start_electric_vector,
 	size_t n_energies,
-	double *energies); //give full energy range as for each photon a full spectrum transmission is simulated
+	double *energies,
+	polycap_error **error); //give full energy range as for each photon a full spectrum transmission is simulated
 
 // simulate a single photon for a given polycap_description
 int polycap_photon_launch(polycap_photon *photon, polycap_description *description, polycap_error **error);

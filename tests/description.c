@@ -81,6 +81,7 @@ void test_polycap_description_new() {
 	double focal_dist_downstream = 0.5;
 
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
+	assert(profile != NULL);
 
 	//some cases that don't work
 	polycap_clear_error(&error);
