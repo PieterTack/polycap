@@ -5,6 +5,8 @@
 #include "config.h"
 #include "polycap.h"
 #include <stdint.h>
+#include <errno.h>
+#include <string.h>
 
 #define NSPOT 1000  /* The number of bins in the grid for the spot*/
 #define IMSIZE 500001

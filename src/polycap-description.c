@@ -646,7 +646,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 	for(j=0; j < n_photons; j++){
 		do{
 			// Create photon structure
-			photon = polycap_source_get_photon(source, description, rng, n_energies, energies);
+			photon = polycap_source_get_photon(source, description, rng, n_energies, energies, error);
 			// Launch photon
 			photon->i_refl = 0; //set reflections to 0
 			iesc = polycap_photon_launch(photon, description, error);

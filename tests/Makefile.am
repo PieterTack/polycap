@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include -DEXAMPLE_DIR=\"$(top_srcdir)/example/\"
 
-check_PROGRAMS = error profile description capil photon
+check_PROGRAMS = error profile description capil photon source
 TESTS = $(check_PROGRAMS)
 TESTS_ENVIRONMENT = OMP_CANCELLATION=true
 
@@ -28,3 +28,8 @@ photon_SOURCES = photon.c
 photon_LDADD = ../src/libpolycap.la
 photon_CFLAGS = @OPENMP_CFLAGS@ @easyRNG_CFLAGS@
 photon_LDFLAGS = @OPENMP_CFLAGS@
+
+source_SOURCES = source.c
+source_LDADD = ../src/libpolycap.la
+source_CFLAGS = @OPENMP_CFLAGS@ @easyRNG_CFLAGS@
+source_LDFLAGS = @OPENMP_CFLAGS@
