@@ -10,7 +10,11 @@ void test_polycap_source_get_photon() {
 	polycap_profile *profile;
 	polycap_description *description;
 	polycap_source *source;
+#ifdef _WIN32
 	unsigned int seed;
+#else
+	unsigned long int seed;
+#endif
 	polycap_rng *rng;
 	double energies = 10.;
 	double rad_ext_upstream = 0.2065;
@@ -19,8 +23,8 @@ void test_polycap_source_get_photon() {
 	double rad_int_downstream = 9.9153E-5;
 	double focal_dist_upstream = 1000.0;
 	double focal_dist_downstream = 0.5;
-	int iz[2]={8,14};
-	double wi[2]={53.0,47.0};
+	int iz[2]={8, 14};
+	double wi[2]={53.0, 47.0};
 
 	// Create new rng
 #ifdef _WIN32
@@ -31,13 +35,12 @@ void test_polycap_source_get_photon() {
 	fclose(random_device);
 #endif
 	rng = polycap_rng_new(seed);
-	source = polycap_source_new(0.05,0.1,0.1,0.2,0.2,0.3,0.3,&error);
+	assert(error == NULL);
+	source = polycap_source_new(0.05, 0.1, 0.1, 0.2, 0.2, 0.3, 0.3, &error);
 	assert(source != NULL);
-printf("*Here\n");
+	assert(error == NULL);
 	polycap_clear_error(&error);
-printf("*Here2\n");
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
-printf("*Here3\n");
 	assert(profile != NULL);
 	polycap_clear_error(&error);
 	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);

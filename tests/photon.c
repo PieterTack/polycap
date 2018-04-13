@@ -17,7 +17,11 @@ void test_polycap_photon_scatf() {
 	double focal_dist_upstream = 1000.0;
 	double focal_dist_downstream = 0.5;
 	double energies = 10.0;
+#ifdef _WIN32
 	unsigned int seed;
+#else
+	unsigned long int seed;
+#endif
 	polycap_rng *rng;
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
@@ -71,7 +75,11 @@ void test_polycap_photon_scatf() {
 void test_polycap_photon_new() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
 	double energies = 10.0;
+#ifdef _WIN32
 	unsigned int seed;
+#else
+	unsigned long int seed;
+#endif
 	polycap_rng *rng;
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
@@ -187,8 +195,12 @@ void test_polycap_photon_launch() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
 	int test;
 	double energies = 10.0;
-	unsigned int seed;
 	polycap_rng *rng;
+#ifdef _WIN32
+	unsigned int seed;
+#else
+	unsigned long int seed;
+#endif
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
 	int iz[2]={8,14};
