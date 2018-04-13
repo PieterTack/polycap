@@ -598,7 +598,11 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 {
 	int thread_id = omp_get_thread_num();
 	polycap_rng *rng;
+#ifdef _WIN32
 	unsigned int seed;
+#else
+	unsigned long int seed;
+#endif
 	polycap_photon *photon;
 	int iesc=-1, k;
 	double *weights;
