@@ -598,11 +598,6 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 {
 	int thread_id = omp_get_thread_num();
 	polycap_rng *rng;
-#ifdef _WIN32
-	unsigned int seed;
-#else
-	unsigned long int seed;
-#endif
 	polycap_photon *photon;
 	int iesc=-1, k;
 	double *weights;
@@ -624,26 +619,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 		weights[k] = 0.;
 
 	// Create new rng
-#ifdef _WIN32
-	rand_s(&seed);
-#else
-	FILE *random_device = fopen("/dev/urandom", "r");
-//	if (random_device == NULL){
-//#pragma omp critical
-//		{
-//		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_profile_new_from_file: could not open /dev/urandom -> %s", strerror(errno));
-//		free(weights);
-//		polycap_transmission_efficiencies_free(efficiencies);
-//		free(sum_weights);
-//		cancelled = true;
-//		}
-//#pragma omp cancel parallel
-//	}
-
-	fread(&seed, sizeof(unsigned long int), 1, random_device);
-	fclose(random_device);
-#endif
-	rng = polycap_rng_new(seed);
+	rng = polycap_rng_new();
 
 	i=0; //counter to monitor calculation proceeding
 	#pragma omp for

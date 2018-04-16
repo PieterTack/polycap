@@ -17,24 +17,12 @@ void test_polycap_photon_scatf() {
 	double focal_dist_upstream = 1000.0;
 	double focal_dist_downstream = 0.5;
 	double energies = 10.0;
-#ifdef _WIN32
-	unsigned int seed;
-#else
-	unsigned long int seed;
-#endif
 	polycap_rng *rng;
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
 
 	// Create new rng
-#ifdef _WIN32
-	rand_s(&seed);
-#else
-	FILE *random_device = fopen("/dev/urandom", "r");
-	fread(&seed, sizeof(unsigned long int), 1, random_device);
-	fclose(random_device);
-#endif
-	rng = polycap_rng_new(seed);
+	rng = polycap_rng_new(20000);
 
 	//make some structures that are required to run the function
 	start_coords.x = 0.;
@@ -75,11 +63,6 @@ void test_polycap_photon_scatf() {
 void test_polycap_photon_new() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
 	double energies = 10.0;
-#ifdef _WIN32
-	unsigned int seed;
-#else
-	unsigned long int seed;
-#endif
 	polycap_rng *rng;
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
@@ -96,14 +79,7 @@ void test_polycap_photon_new() {
 	start_electric_vector.z = 0.;
 
 	// Create new rng
-#ifdef _WIN32
-	rand_s(&seed);
-#else
-	FILE *random_device = fopen("/dev/urandom", "r");
-	fread(&seed, sizeof(unsigned long int), 1, random_device);
-	fclose(random_device);
-#endif
-	rng = polycap_rng_new(seed);
+	rng = polycap_rng_new(20000);
 
 
 	//This won't work
@@ -196,11 +172,6 @@ void test_polycap_photon_launch() {
 	int test;
 	double energies = 10.0;
 	polycap_rng *rng;
-#ifdef _WIN32
-	unsigned int seed;
-#else
-	unsigned long int seed;
-#endif
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
 	int iz[2]={8,14};
@@ -215,14 +186,7 @@ void test_polycap_photon_launch() {
 	double focal_dist_downstream = 0.5;
 
 	// Create new rng
-#ifdef _WIN32
-	rand_s(&seed);
-#else
-	FILE *random_device = fopen("/dev/urandom", "r");
-	fread(&seed, sizeof(unsigned long int), 1, random_device);
-	fclose(random_device);
-#endif
-	rng = polycap_rng_new(seed);
+	rng = polycap_rng_new(20000);
 
 	//make some structures that are required to run the function
 	start_coords.x = 0.;

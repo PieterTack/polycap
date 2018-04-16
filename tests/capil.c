@@ -86,7 +86,6 @@ void test_polycap_capil_reflect() {
 	double energies = 10.;
 	int iz[2]={8,14};
 	double wi[2]={53.0,47.0};
-	unsigned int seed;
 	polycap_rng *rng;
 	polycap_photon *photon;
 	
@@ -102,14 +101,7 @@ void test_polycap_capil_reflect() {
 	start_electric_vector.y = 0.5;
 	start_electric_vector.z = 0.;
 	// Create new rng
-#ifdef _WIN32
-	rand_s(&seed);
-#else
-	FILE *random_device = fopen("/dev/urandom", "r");
-	fread(&seed, sizeof(unsigned long int), 1, random_device);
-	fclose(random_device);
-#endif
-	rng = polycap_rng_new(seed);
+	rng = polycap_rng_new_with_seed(20000);
 
 	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
 	assert(photon != NULL);
@@ -164,7 +156,6 @@ void test_polycap_capil_trace() {
 	double energies = 10.;
 	int iz[2]={8,14};
 	double wi[2]={53.0,47.0};
-	unsigned int seed;
 	polycap_rng *rng;
 	polycap_photon *photon;
 	int ix_val = 0;
@@ -187,14 +178,7 @@ void test_polycap_capil_trace() {
 	start_electric_vector.y = 0.5;
 	start_electric_vector.z = 0.;
 	// Create new rng
-#ifdef _WIN32
-	rand_s(&seed);
-#else
-	FILE *random_device = fopen("/dev/urandom", "r");
-	fread(&seed, sizeof(unsigned long int), 1, random_device);
-	fclose(random_device);
-#endif
-	rng = polycap_rng_new(seed);
+	rng = polycap_rng_new_with_seed(20000);
 
 	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
 	assert(photon != NULL);
