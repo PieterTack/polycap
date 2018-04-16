@@ -58,7 +58,6 @@ void test_polycap_description_new_from_file() {
 	assert(polycap_error_matches(error, POLYCAP_ERROR_IO));
 
 	//test with example file
-	//TODO: fix the file path name so it won't fail on other computers... (e.g. where is this example file stored?)
 	polycap_clear_error(&error);
 	description = polycap_description_new_from_file(EXAMPLE_DIR"ellip_l9.inp", &source, &error);
 	assert(description != NULL);

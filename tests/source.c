@@ -36,7 +36,7 @@ void test_polycap_source_get_photon() {
 #endif
 	rng = polycap_rng_new(seed);
 	assert(error == NULL);
-	source = polycap_source_new(0.05, 0.1, 0.1, 0.2, 0.2, 0.3, 0.3, &error);
+	source = polycap_source_new(0.05, 0.1, 0.1, 0.2, 0.2, 0., 0., &error);
 	assert(source != NULL);
 	assert(error == NULL);
 	polycap_clear_error(&error);
@@ -54,12 +54,13 @@ void test_polycap_source_get_photon() {
 
 	//This should work
 	polycap_clear_error(&error);
+	polycap_clear_error(&error);
 	photon = polycap_source_get_photon(source, description, rng, 1, &energies, &error);
 	assert(photon != NULL);
 	assert(photon->n_energies == 1);
 	assert(fabs(photon->energies[0] - 10.) < 1.e-5);
-	assert(fabs(photon->src_start_coords.x) < 0.1);
-	assert(fabs(photon->src_start_coords.y) < 0.1);
+	assert(fabs(photon->src_start_coords.x) <= 0.1);
+	assert(fabs(photon->src_start_coords.y) <= 0.1);
 	assert(photon->src_start_coords.z == 0.);
 
 	polycap_profile_free(profile);
