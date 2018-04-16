@@ -619,7 +619,7 @@ polycap_transmission_efficiencies* polycap_description_get_transmission_efficien
 		weights[k] = 0.;
 
 	// Create new rng
-	rng = polycap_rng_new();
+	rng = polycap_rng_new(error);
 
 	i=0; //counter to monitor calculation proceeding
 	#pragma omp for

@@ -13,7 +13,7 @@ polycap_rng* polycap_rng_new_with_seed(unsigned long int seed) {
 }
 
 //get a new rng with seed from /dev/urandom or rand_s
-polycap_rng* polycap_rng_new() {
+polycap_rng* polycap_rng_new(polycap_error **error) {
 
 #ifdef _WIN32
 	unsigned int seed;
@@ -21,8 +21,13 @@ polycap_rng* polycap_rng_new() {
 #else
 	unsigned long int seed;
 	FILE *random_device = fopen("/dev/urandom","r");
-	fread(&seed, sizeof(unsigned long int), 1, random_device);
-	fclose(random_device);
+	if(random_device == NULL) {
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_rng_new: could not open /dev/urandom -> %s", strerror(errno));
+		seed = 12345678; //set default seed
+	} else {
+		fread(&seed, sizeof(unsigned long int), 1, random_device);
+		fclose(random_device);
+	}
 #endif
 
 	return polycap_rng_new_with_seed(seed);

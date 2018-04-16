@@ -22,7 +22,7 @@ void test_polycap_photon_scatf() {
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
 
 	// Create new rng
-	rng = polycap_rng_new(20000);
+	rng = polycap_rng_new_with_seed(20000);
 
 	//make some structures that are required to run the function
 	start_coords.x = 0.;
@@ -79,7 +79,7 @@ void test_polycap_photon_new() {
 	start_electric_vector.z = 0.;
 
 	// Create new rng
-	rng = polycap_rng_new(20000);
+	rng = polycap_rng_new_with_seed(20000);
 
 
 	//This won't work
@@ -186,7 +186,7 @@ void test_polycap_photon_launch() {
 	double focal_dist_downstream = 0.5;
 
 	// Create new rng
-	rng = polycap_rng_new(20000);
+	rng = polycap_rng_new_with_seed(20000);
 
 	//make some structures that are required to run the function
 	start_coords.x = 0.;

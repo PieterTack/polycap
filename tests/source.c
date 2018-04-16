@@ -10,11 +10,6 @@ void test_polycap_source_get_photon() {
 	polycap_profile *profile;
 	polycap_description *description;
 	polycap_source *source;
-#ifdef _WIN32
-	unsigned int seed;
-#else
-	unsigned long int seed;
-#endif
 	polycap_rng *rng;
 	double energies = 10.;
 	double rad_ext_upstream = 0.2065;
@@ -27,14 +22,7 @@ void test_polycap_source_get_photon() {
 	double wi[2]={53.0, 47.0};
 
 	// Create new rng
-#ifdef _WIN32
-	rand_s(&seed);
-#else
-	FILE *random_device = fopen("/dev/urandom", "r");
-	fread(&seed, sizeof(unsigned long int), 1, random_device);
-	fclose(random_device);
-#endif
-	rng = polycap_rng_new(seed);
+	rng = polycap_rng_new_with_seed(20000);
 	assert(error == NULL);
 	source = polycap_source_new(0.05, 0.1, 0.1, 0.2, 0.2, 0., 0., &error);
 	assert(source != NULL);
