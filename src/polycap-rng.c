@@ -20,15 +20,12 @@ polycap_rng* polycap_rng_new() {
 	rand_s(&seed);
 #else
 	unsigned long int seed;
-	FILE *random_device = fopen("dev/urandom","r");
+	FILE *random_device = fopen("/dev/urandom","r");
 	fread(&seed, sizeof(unsigned long int), 1, random_device);
 	fclose(random_device);
 #endif
-	polycap_rng *rng = calloc(1, sizeof(polycap_rng));
 
-	rng->_rng = _polycap_rng_alloc(polycap_rng_mt19937);
-	_polycap_rng_set(rng, seed);
-	return rng;
+	return polycap_rng_new_with_seed(seed);
 }
 
 
