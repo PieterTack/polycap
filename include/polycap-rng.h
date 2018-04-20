@@ -12,7 +12,7 @@ struct _polycap_rng; // our rng struct, which will be mapped to either gsl_rng o
 typedef struct _polycap_rng                         polycap_rng;
 
 //get a new rng with seed from /dev/urandom or rand_s
-polycap_rng* polycap_rng_new(polycap_error **error);
+polycap_rng* polycap_rng_new(void);
 
 // get a new rng with seed provided by caller
 polycap_rng* polycap_rng_new_with_seed(unsigned long int seed);

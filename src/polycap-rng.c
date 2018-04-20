@@ -1,5 +1,5 @@
-
 #include "polycap-private.h"
+#include <sys/time.h>
 #include <stdlib.h>
 
 /* public */
@@ -13,22 +13,25 @@ polycap_rng* polycap_rng_new_with_seed(unsigned long int seed) {
 }
 
 //get a new rng with seed from /dev/urandom or rand_s
-polycap_rng* polycap_rng_new(polycap_error **error) {
+polycap_rng* polycap_rng_new() {
 
 #ifdef _WIN32
 	unsigned int seed;
-	rand_s(&seed);
+	if (rand_s(&seed) != 0)
 #else
 	unsigned long int seed;
 	FILE *random_device = fopen("/dev/urandom","r");
-	if(random_device == NULL) {
-		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_rng_new: could not open /dev/urandom -> %s", strerror(errno));
-		seed = 12345678; //set default seed
-	} else {
+	if(random_device != NULL) {
 		fread(&seed, sizeof(unsigned long int), 1, random_device);
 		fclose(random_device);
 	}
+	else
 #endif
+	{
+		struct timeval tv;
+		gettimeofday(&tv, NULL);
+		seed = tv.tv_sec % tv.tv_usec;
+	}
 
 	return polycap_rng_new_with_seed(seed);
 }

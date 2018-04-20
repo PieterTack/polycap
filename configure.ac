@@ -39,6 +39,7 @@ CFLAGS_BKP=$CFLAGS
 CFLAGS=
 AC_CHECK_FUNC([vasprintf], [], [AC_MSG_ERROR([vasprintf must be present on the system])])
 AC_CHECK_FUNC([strdup], [], [AC_MSG_ERROR([strdup must be present on the system])])
+AC_CHECK_FUNC([gettimeofday], [], [AC_MSG_ERROR([strdup must be present on the system])])
 CFLAGS=$CFLAGS_BKP
 
 #initialize pkg-config
