@@ -1,6 +1,6 @@
 AC_INIT([polycap],[0.1],[Pieter.Tack@UGent.be])
 AC_PREREQ([2.60])
-AC_CONFIG_SRCDIR([src/polycap.c])
+AC_CONFIG_SRCDIR([src/polycap-description.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CANONICAL_HOST
@@ -34,6 +34,13 @@ if test -z $CC ; then
 fi
 
 AC_CANONICAL_HOST
+
+CFLAGS_BKP=$CFLAGS
+CFLAGS=
+AC_CHECK_FUNC([vasprintf], [], [AC_MSG_ERROR([vasprintf must be present on the system])])
+AC_CHECK_FUNC([strdup], [], [AC_MSG_ERROR([strdup must be present on the system])])
+AC_CHECK_FUNC([gettimeofday], [], [AC_MSG_ERROR([strdup must be present on the system])])
+CFLAGS=$CFLAGS_BKP
 
 #initialize pkg-config
 PKG_PROG_PKG_CONFIG
@@ -110,6 +117,7 @@ AC_CONFIG_FILES([ 	Makefile
 		 	include/Makefile
 			src/Makefile
 			tests/Makefile
+			example/Makefile
 		])
 AC_CONFIG_HEADERS([config.h])
 

@@ -1,17 +1,17 @@
 #include "polycap-private.h"
+#include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include <complex.h> //complex numbers required for Fresnel equation
+#include <errno.h>
 
 #define NSPOT 1000  /* The number of bins in the grid for the spot*/
 #define BINSIZE 20.e-4 /* cm */
 #define EPSILON 1.0e-30
 
-void polycap_norm(polycap_vector3 *vect);
-double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2);
 //===========================================
 // calculates the intersection point coordinates of the photon trajectory and a given linear segment of the capillary wall
-int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa)
+int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa, polycap_error **error)
 {
 	double disc, solution1, solution2, sol_final; //discriminant and solutions of formed quadratic equation
 	polycap_vector3 photon_coord_rel, cap_coord1_rel; //coordinates of previous photon interaction and current point capillary axis, with previous point capillary axis set as origin [0,0,0]
@@ -24,6 +24,45 @@ int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1
 	double au, ads; //distance between capillary axis and interaction point (au), distance between cap_coords
 	double tga, sga, cga, gam; //tan(gamma), sin(ga) and cos(ga) and gamma where gamma is angle between capillary wall and axis
 
+	//argument sanity check
+	if (cap_coord0.z < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: cap_coord0.z must be greater than 0");
+		return -1;
+	}
+	if (cap_coord1.z < 0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: cap_coord0.z must be greater than 0");
+		return -1;
+	}
+	if (cap_rad0 < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: cap_rad0 must be greater than 0");
+		return -1;
+	}
+	if (cap_rad1 < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: cap_rad1 must be greater than 0");
+		return -1;
+	}
+	if (photon_coord == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: photon_coord must not be NULL");
+		return -1;
+	}
+	if (photon_dir.z < 0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: photon_dir.z must be greater than 0");
+		return -1;
+	}
+	if (photon_dir.z < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: photon_dir.z must be greater than 0");
+		return -1;
+	}
+	if (surface_norm == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: surface_norm must not be NULL");
+		return -1;
+	}
+	if (alfa == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: alfa must not be NULL");
+		return -1;
+	}
+
+	*alfa = 0.0; //angle between surface normal and photon direction, set to 0 for now in case of premature return
 	sol_final = -1000;
 
 	photon_coord_rel.x = photon_coord->x - cap_coord0.x;
@@ -112,10 +151,33 @@ int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1
 }
 
 //===========================================
-double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff){
+double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error){
 	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
 	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
 	double complex rtot; //reflectivity
+
+	//argument sanity check
+	if (e < 1. || e > 100.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: e must be greater than 1 and smaller than 100.");
+		return -1;
+	}
+	if (theta < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: theta must be greater than 0");
+		return -1;
+	}
+	if (density <= 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: density must be greater than 0");
+		return -1;
+	}
+	if (scatf < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: scatf must be greater than 0");
+		return -1;
+	}
+	if (lin_abs_coeff < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: lin_abs_coeff must be greater than 0");
+		return -1;
+	}
+	
 
 	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
 	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
@@ -127,7 +189,7 @@ double polycap_refl(double e, double theta, double density, double scatf, double
 }
 
 //===========================================
-int polycap_capil_reflect(polycap_photon *photon, polycap_description *description, double alfa)
+int polycap_capil_reflect(polycap_photon *photon, polycap_description *description, double alfa, polycap_error **error)
 {
 	int i, iesc=0;
 	double d_esc;  //distance in capillary at which photon escaped divided by propagation vector in z direction
@@ -137,6 +199,21 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_description *descripti
 //	double xp, yp; //position on screen where photon will end up if unobstructed
 //	int ind_x, ind_y; //indices of screen where photon will hit screen
 
+	//argument sanity check
+	if (alfa < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: alfa must be greater than 0");
+		return -1;
+	}
+	if (photon == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: photon must not be NULL");
+		return -1;
+	}
+	if (description == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: description must not be NULL");
+		return -1;
+	}
+	
+
 	d_esc = (description->profile->z[description->profile->nmax] - photon->exit_coords.z) / photon->exit_direction.z;
 	if(d_esc < 0) d_esc = description->profile->z[description->profile->nmax];
 	for(i=0; i < photon->n_energies; i++){
@@ -144,7 +221,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_description *descripti
 		r_rough = exp(-1.*cons1*cons1);
 
 		//reflectivity according to Fresnel expression
-		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i]);
+		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
 
 //		w_leak = (1.-rtot) * photon->weight[i] * exp(-1.*d_esc * photon->amu[i]);
 //		leak[i] = leak[i] + w_leak;
@@ -169,7 +246,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_description *descripti
 
 //===========================================
 // trace photon through capillary
-int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y)
+int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, polycap_error **error)
 {
 	int i, iesc=0;
 	double cap_rad0, cap_rad1;
@@ -181,15 +258,39 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 	double d_travel; //distance between interactions
 //	double w0, w1; //photon weights
 
+	//argument sanity check
+	if (ix == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_trace: ix must not be NULL");
+		return -1;
+	}
+	if (photon == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_trace: photon must not be NULL");
+		return -1;
+	}
+	if (description == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_trace: description must not be NULL");
+		return -1;
+	}
+	if (cap_x == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_trace: cap_x must not be NULL");
+		return -1;
+	}
+	if (cap_y == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_trace: cap_y must not be NULL");
+		return -1;
+	}
+	
+
 	photon_coord = malloc(sizeof(polycap_vector3));
 	if(photon_coord == NULL){
-		printf("Could not allocate photon_coord memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_trace: could not allocate memory for photon_coord -> %s", strerror(errno));
+		return -1;
 	}
 	surface_norm = malloc(sizeof(polycap_vector3));
 	if(surface_norm == NULL){
-		printf("Could not allocate surface_norm memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_trace: could not allocate memory for surface_norm -> %s", strerror(errno));
+		free(photon_coord);
+		return -1;
 	}
 
 	//calculate next intersection point
@@ -209,7 +310,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 		cap_coord1.y = cap_y[i];
 		cap_coord1.z = description->profile->z[i];
 		cap_rad1 = description->profile->cap[i];
-		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, photon_coord, photon_dir, surface_norm, &alfa);
+		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, photon_coord, photon_dir, surface_norm, &alfa, error);
 		if(iesc == 0){
 			*ix = i-1;
 			break;
@@ -236,7 +337,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 			alfa = M_PI_2 - alfa;
 //			w0 = photon->weight[0];
 			
-			iesc = polycap_capil_reflect(photon, description, alfa);
+			iesc = polycap_capil_reflect(photon, description, alfa, error);
 
 			if(iesc != -2){
 //				w1 = photon->weight[0];

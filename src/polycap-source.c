@@ -2,20 +2,39 @@
 #include <stdlib.h>
 #include <math.h>
 
-int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord);
-void polycap_norm(polycap_vector3 *vect);
 //===========================================
 // Obtain a photon structure from source and polycap description
-polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_description *description, polycap_rng *rng, size_t n_energies, double *energies, polycap_vector3 *src_start_coords)
+polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_description *description, polycap_rng *rng, size_t n_energies, double *energies, polycap_error **error)
 {
 	double n_shells; //amount of capillary shells in polycapillary
-	polycap_vector3 start_coords, start_direction, start_electric_vector;
+	polycap_vector3 start_coords, start_direction, start_electric_vector, src_start_coords;
 	double r; //random number
 	int boundary_check;
 	double src_rad, phi; //distance from source centre along angle phi from x axis
 	double src_start_x, src_start_y;
 	polycap_photon *photon;
 
+	// Argument sanity check
+	if (source == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: source cannot be NULL");
+		return NULL;
+	}
+	if (description == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: description cannot be NULL");
+		return NULL;
+	}
+	if (rng == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: rng cannot be NULL");
+		return NULL;
+	}
+	if (energies == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: energies cannot be NULL");
+		return NULL;
+	}
+	if (n_energies < 1) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: n_energies must be greater than 0");
+		return NULL;
+	}
 
 	// Obtain photon start coordinates
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
@@ -27,15 +46,15 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 		start_coords.z = 0.;
 	} else { // polycapillary case
 		// select random coordinates, check whether they are inside polycap boundary
-		boundary_check = -1;
+		boundary_check = 0;
 		do{
 			r = polycap_rng_uniform(rng);
 			start_coords.x = (2.*r-1.) * description->profile->ext[0];
 			r = polycap_rng_uniform(rng);
 			start_coords.y = (2.*r-1.) * description->profile->ext[0];
 			start_coords.z = 0.;
-			boundary_check = polycap_photon_within_pc_boundary(description->profile->ext[0], start_coords);
-		} while(boundary_check == -1);
+			boundary_check = polycap_photon_within_pc_boundary(description->profile->ext[0], start_coords, error);
+		} while(boundary_check == 0);
 	}
 
 	// Obtain point from source as photon origin, determining photon start_direction
@@ -45,9 +64,9 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 	src_rad = sqrt((1./(((tan(phi)*tan(phi))/(source->src_y*source->src_y))+(1./(source->src_x*source->src_x))))+(source->src_y*source->src_y)*(1.-(((1./(((tan(phi)*tan(phi))/(source->src_y*source->src_y))+(1./(source->src_x*source->src_x)))))/(source->src_x*source->src_x)))) * sqrt(fabs(r)); //sqrt(r) to simulate source intensity distribution (originally src_rad * r/sqrt(r) )
 	src_start_x = src_rad * cos(phi) + source->src_shiftx;
 	src_start_y = src_rad * sin(phi) + source->src_shifty;
-	src_start_coords->x = src_start_x;
-	src_start_coords->y = src_start_y;
-	src_start_coords->z = 0;
+	src_start_coords.x = src_start_x;
+	src_start_coords.y = src_start_y;
+	src_start_coords.z = 0;
 	if((source->src_sigx * source->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
 		start_direction.x = start_coords.x - src_start_x;
 		start_direction.y = start_coords.y - src_start_y;
@@ -71,20 +90,43 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_descri
 	polycap_norm(&start_electric_vector);
 
 	// Create photon structure
-	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies);
+	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, n_energies, energies, error);
+	photon->src_start_coords = src_start_coords;
 
 	return photon;
 }
 //===========================================
 // get a new polycap_source by providing all its properties 
-polycap_source* polycap_source_new(double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty)
+polycap_source* polycap_source_new(double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, polycap_error **error)
 {
 	polycap_source *source;
 
+	//Argument sanity check
+	if (d_source <= 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: d_source must be greater than 0");
+		return NULL;
+	}
+	if (src_x <= 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_x must be greater than 0");
+		return NULL;
+	}
+	if (src_y <= 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_y must be greater than 0");
+		return NULL;
+	}
+	if (src_sigx < 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_sigx must be greater than 0");
+		return NULL;
+	}
+	if (src_sigy < 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_sigy must be greater than 0");
+		return NULL;
+	}
+
 	source = malloc(sizeof(polycap_source));
 	if(source == NULL){
-		printf("Could not allocate source memory.\n");
-		exit(1);
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source -> %s", strerror(errno));
+		return NULL;
 	}
 
 	source->d_source = d_source;
@@ -101,8 +143,7 @@ polycap_source* polycap_source_new(double d_source, double src_x, double src_y, 
 // free a polycap_source struct
 void polycap_source_free(polycap_source *source)
 {
-	free(source);
-
-	return;
+	if (source)
+		free(source);
 }
 

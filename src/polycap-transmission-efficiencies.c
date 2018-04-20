@@ -62,7 +62,7 @@ void polycap_h5_write_dataset(hid_t file, int rank, hsize_t *dim, char *dataset_
 }
 //===========================================
 // Write efficiencies output in a hdf5 file
-void polycap_transmission_efficiencies_write_hdf5(const char *filename, polycap_transmission_efficiencies *efficiencies)
+void polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficiencies *efficiencies, const char *filename)
 {
 	hid_t file;
 	hsize_t n_energies_temp, dim[2];
@@ -183,7 +183,63 @@ void polycap_transmission_efficiencies_write_hdf5(const char *filename, polycap_
 //===========================================
 void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *efficiencies)
 {
-	free(efficiencies->energies);
-	free(efficiencies->efficiencies);
+	if (efficiencies == NULL)
+		return;
+	if (efficiencies->energies)
+		free(efficiencies->energies);
+	if (efficiencies->efficiencies)
+		free(efficiencies->efficiencies);
+	if (efficiencies->images) {
+		if (efficiencies->images->src_start_coords[0])
+			free(efficiencies->images->src_start_coords[0]);
+		if (efficiencies->images->src_start_coords[1])
+			free(efficiencies->images->src_start_coords[1]);
+		if (efficiencies->images->pc_start_coords[0])
+			free(efficiencies->images->pc_start_coords[0]);
+		if (efficiencies->images->pc_start_coords[1])
+			free(efficiencies->images->pc_start_coords[1]);
+		if (efficiencies->images->pc_start_dir[0])
+			free(efficiencies->images->pc_start_dir[0]);
+		if (efficiencies->images->pc_start_dir[1])
+			free(efficiencies->images->pc_start_dir[1]);
+		if (efficiencies->images->pc_exit_coords[0])
+			free(efficiencies->images->pc_exit_coords[0]);
+		if (efficiencies->images->pc_exit_coords[1])
+			free(efficiencies->images->pc_exit_coords[1]);
+		if (efficiencies->images->pc_exit_dir[0])
+			free(efficiencies->images->pc_exit_dir[0]);
+		if (efficiencies->images->pc_exit_dir[1])
+			free(efficiencies->images->pc_exit_dir[1]);
+		if (efficiencies->images->exit_coord_weights)
+			free(efficiencies->images->exit_coord_weights);
+		free(efficiencies->images);
+	}
 	free(efficiencies);
+}
+
+bool polycap_transmission_efficiencies_get_data(polycap_transmission_efficiencies *efficiencies, size_t *n_energies, double **energies_arr, double **efficiencies_arr, polycap_error **error) {
+	if (efficiencies == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies_get_data: efficiencies cannot be NULL");
+		return false;
+	}
+
+	if (n_energies)
+		*n_energies = efficiencies->n_energies;
+
+	if (energies_arr) {
+		*energies_arr = malloc(sizeof(double) * efficiencies->n_energies);
+		memcpy(*energies_arr, efficiencies->energies, sizeof(double) * efficiencies->n_energies);
+	}
+
+	if (efficiencies_arr) {
+		*efficiencies_arr = malloc(sizeof(double) * efficiencies->n_energies);
+		memcpy(*efficiencies_arr, efficiencies->efficiencies, sizeof(double) * efficiencies->n_energies);
+	}
+
+	return true;
+}
+
+void polycap_free(void *data) {
+	if (data)
+		free(data);
 }
