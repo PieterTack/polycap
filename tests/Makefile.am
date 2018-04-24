@@ -39,7 +39,7 @@ source_CFLAGS = @OPENMP_CFLAGS@ @easyRNG_CFLAGS@
 source_LDFLAGS = @OPENMP_CFLAGS@
 
 python.sh: ../python/polycap.la python.py
-	@echo "LD_LIBRARY_PATH=\"${top_builddir}/src/.libs\" DYLD_LIBRARY_PATH=\"${top_builddir}/src/.libs\" PYTHONPATH=\"${top_builddir}/python:${top_builddir}/python/.libs\" $(PYTHON) ${top_srcdir}/tests/python.py" > python.sh
+	@echo "PATH=\"../src/.libs:$$PATH\" LD_LIBRARY_PATH=\"../src/.libs\" DYLD_LIBRARY_PATH=\"../src/.libs\" PYTHONPATH=\"../python/.libs\" $(PYTHON) ${top_srcdir}/tests/python.py" > python.sh
 	@chmod +x python.sh
 
 EXTRA_DIST = python.py

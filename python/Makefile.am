@@ -4,9 +4,9 @@ polycap_la_CFLAGS = $(PYTHON_CFLAGS) -I$(top_srcdir)/include $(PYTHON_CPPFLAGS) 
 polycap_la_LIBADD = ../src/libpolycap.la
 nodist_polycap_la_SOURCES = polycap-python.c
 polycap_la_LDFLAGS = $(LDFLAGS_PYTHON) -avoid-version -module -shared -export-dynamic -shrext $(PYTHON_EXT)
-#if OS_WINDOWS
-#polycap_la_LDFLAGS += $(PYTHON_LDFLAGS)
-#endif
+if OS_WINDOWS
+polycap_la_LDFLAGS += $(PYTHON_LDFLAGS)
+endif
 endif
 
 cython_sources = cerror.pxd crng.pxd polycap.pyx
