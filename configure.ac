@@ -40,6 +40,7 @@ case "$host" in
 	*mingw*)
 		#build dll
 		OS_WINDOWS=1
+		LDFLAGS_LIBPOLYCAP="-no-undefined"
 		#LDFLAGS_FORTRAN="-no-undefined"
 		LDFLAGS_PYTHON="-no-undefined -Wl,-subsystem,windows"
 		;;
@@ -48,6 +49,7 @@ AM_CONDITIONAL([OS_WINDOWS],[test x$OS_WINDOWS = x1])
 AC_SUBST(OS_WINDOWS)
 
 #AC_SUBST(LDFLAGS_FORTRAN)
+AC_SUBST(LDFLAGS_LIBPOLYCAP)
 AC_SUBST(LDFLAGS_PYTHON)
 
 CFLAGS_BKP=$CFLAGS
