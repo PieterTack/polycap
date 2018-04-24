@@ -9,7 +9,7 @@ polycap_la_LDFLAGS += $(PYTHON_LDFLAGS)
 endif
 endif
 
-cython_sources = cerror.pxd crng.pxd polycap.pyx
+cython_sources = cerror.pxd crng.pxd cprofile.pxd polycap.pyx
 
 polycap-python.c: $(cython_sources)
 	$(CYTHON) -X boundscheck=False,wraparound=False,cdivision=True -I${top_srcdir}/include -o ${builddir}/polycap-python.c ${srcdir}/polycap.pyx
