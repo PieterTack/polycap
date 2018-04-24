@@ -24,7 +24,12 @@ matrix:
             - libhdf5-serial-dev
             - hdf5-tools
             - gcc-7
-      env: CC='gcc-7'
+            - python-all-dev
+            - python-numpy
+            - cython
+            - python3-all-dev
+            - python3-numpy
+      env: CC='gcc-7' XRL_PYTHON2='/usr/bin/python' XRL_PYTHON3='/usr/bin/python3'
     - os: linux
       sudo: required
       dist: trusty
@@ -41,19 +46,24 @@ matrix:
             - libhdf5-serial-dev
             - hdf5-tools
             - gcc-7
-      env: CC='gcc-7'
+            - python-all-dev
+            - python-numpy
+            - cython
+            - python3-all-dev
+            - python3-numpy
+      env: CC='gcc-7' XRL_PYTHON2='/usr/bin/python' XRL_PYTHON3='/usr/bin/python3'
     - os: osx
       sudo: required
-      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm' EXTRA_LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
+      env: CC='/usr/local/opt/llvm/bin/clang' HOMEBREW_ARGS='llvm' EXTRA_LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib' XRL_PYTHON2='/usr/local/opt/python@2/bin/python2' XRL_PYTHON3='/usr/local/bin/python3'
     - os: osx
       sudo: required
-      env: CC='/usr/local/bin/gcc-7' HOMEBREW_ARGS='gcc@7'
+      env: CC='/usr/local/bin/gcc-7' HOMEBREW_ARGS='gcc@7' XRL_PYTHON2='/usr/local/opt/python@2/bin/python2' XRL_PYTHON3='/usr/local/bin/python3'
     - os: osx
       sudo: required
-      env: CC='/usr/local/opt/llvm/bin/clang' CXX='/usr/local/opt/llvm/bin/clang++' HOMEBREW_ARGS='llvm tschoonj/tap/easyrng' EXTRA_LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib'
+      env: CC='/usr/local/opt/llvm/bin/clang' CXX='/usr/local/opt/llvm/bin/clang++' HOMEBREW_ARGS='llvm tschoonj/tap/easyrng' EXTRA_LIBS='-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib' XRL_PYTHON2='/usr/local/opt/python@2/bin/python2' XRL_PYTHON3='/usr/local/bin/python3'
     - os: osx
       sudo: required
-      env: CC='/usr/local/bin/gcc-7' CXX='/usr/local/bin/g++-7' HOMEBREW_ARGS='gcc@7 tschoonj/tap/easyrng'
+      env: CC='/usr/local/bin/gcc-7' CXX='/usr/local/bin/g++-7' HOMEBREW_ARGS='gcc@7 tschoonj/tap/easyrng' XRL_PYTHON2='/usr/local/opt/python@2/bin/python2' XRL_PYTHON3='/usr/local/bin/python3'
 
 before_install:
   - |
@@ -63,19 +73,29 @@ before_install:
       brew update || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
-      brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl || exit 1
+      brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl python python@2 || exit 1
       brew install $HOMEBREW_ARGS tschoonj/tap/xraylib || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
+      /usr/local/opt/python@2/bin/pip2.7 install Cython numpy || exit 1
+      /usr/local/bin/pip3 install numpy || exit 1
     fi
 
 script:
   - autoreconf -fi || exit 1
   - export LIBS="$LIBS $EXTRA_LIBS"
-  - ./configure || exit 1
+  - ./configure --disable-python || exit 1
   - make || exit 1
   - make check || exit 1
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] ; then make distcheck || exit 1 ; fi
+  - make distclean || exit 1
+  - ./configure --enable-python PYTHON=${XRL_PYTHON2} || exit 1
+  - make || exit 1
+  - make check || exit 1
+  - make distclean || exit 1
+  - ./configure --enable-python PYTHON=${XRL_PYTHON3} || exit 1
+  - make || exit 1
+  - make check || exit 1
+  - PYTHON=${XRL_PYTHON2} make distcheck || exit 1
 
 notifications:
   email:
