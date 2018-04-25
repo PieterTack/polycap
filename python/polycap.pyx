@@ -4,8 +4,11 @@ from profile cimport *
 from transmission_efficiencies cimport *
 from libc.string cimport strdup, memcpy
 from libc.stdlib cimport free
+from cpython cimport Py_DECREF
 cimport numpy as np
 import numpy as np
+
+np.import_array()
 
 cdef extern from "Python.h":
     ctypedef void PyObject
@@ -30,7 +33,6 @@ cdef void set_exception(polycap_error *error) except *:
     if error == NULL:
         return
     eclass = error_map.get(error.code, RuntimeError) 
-    #raise eclass(error.message)
     PyErr_SetString(eclass, error.message)
     polycap_error_free(error)
 
@@ -84,13 +86,21 @@ cdef class Rng:
 
 cdef class TransmissionEfficiencies:
     cdef polycap_transmission_efficiencies *trans_eff
+    cdef object energies_np
+    cdef object efficiencies_np
 
     def __cinit__(self):
-        trans_eff = NULL
+        self.trans_eff = NULL
+        self.energies_np = None
+        self.efficiencies_np = None
 
     def __dealloc__(self):
         if self.trans_eff is not NULL:
             polycap_transmission_efficiencies_free(self.trans_eff)
+        if self.energies_np is not None:
+            Py_DECREF(self.energies_np)
+        if self.efficiencies_np is not None:
+            Py_DECREF(self.efficiencies_np)
 
     def write_hdf5(self, str filename):
         cdef polycap_error *error = NULL
@@ -99,25 +109,8 @@ cdef class TransmissionEfficiencies:
 
     @property
     def data(self):
-        cdef size_t n_energies = 0
-        cdef double *energies_arr = NULL
-        cdef double *efficiencies_arr = NULL
-        cdef polycap_error *error = NULL
+        return (self.energies_np, self.efficiencies_np)
 
-        polycap_transmission_efficiencies_get_data(self.trans_eff, &n_energies, &energies_arr, &efficiencies_arr, &error)
-        set_exception(error)
-
-        cdef np.ndarray[np.double_t, ndim=1] energies_np = np.empty((n_energies,), dtype=np.double)
-        temp = <double*>energies_np.data
-        memcpy(temp, energies_arr, sizeof(double) * n_energies)
-        polycap_free(energies_arr)
-
-        cdef np.ndarray[np.double_t, ndim=1] efficiencies_np = np.empty((n_energies,), dtype=np.double)
-        temp = <double*>efficiencies_np.data
-        memcpy(temp, efficiencies_arr, sizeof(double) * n_energies)
-        polycap_free(efficiencies_arr)
-
-        return (energies_np, efficiencies_np)
 
     # factory method -> these objects cannot be newed, as they are produced via polycap_description_get_transmission_efficiencies
     @staticmethod
@@ -126,6 +119,29 @@ cdef class TransmissionEfficiencies:
             return None
         rv = TransmissionEfficiencies()
         rv.trans_eff = trans_eff
+
+        cdef size_t n_energies = 0
+        cdef double *energies_arr = NULL
+        cdef double *efficiencies_arr = NULL
+        cdef polycap_error *error = NULL
+
+        polycap_transmission_efficiencies_get_data(rv.trans_eff, &n_energies, &energies_arr, &efficiencies_arr, &error)
+        set_exception(error)
+
+        cdef np.npy_intp dims[1]
+        dims[0] = n_energies
+
+        rv.energies_np = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        # make read-only
+        np.PyArray_CLEARFLAG(rv.energies_np, np.NPY_ARRAY_WRITEABLE) # needs verification
+        memcpy(np.PyArray_DATA(rv.energies_np), energies_arr, sizeof(double) * n_energies)
+        polycap_free(energies_arr)
+
+        rv.efficiencies_np= np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        # make read-only
+        np.PyArray_CLEARFLAG(rv.efficiencies_np, np.NPY_ARRAY_WRITEABLE) # needs verification
+        memcpy(np.PyArray_DATA(rv.efficiencies_np), efficiencies_arr, sizeof(double) * n_energies)
+        polycap_free(efficiencies_arr)
         
         return rv
 
