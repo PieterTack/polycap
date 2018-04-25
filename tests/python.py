@@ -27,7 +27,7 @@ class TestPolycapProfile(unittest.TestCase):
         focal_dist_downstream = 1.0
 
         with self.assertRaises(ValueError):
-	    profile = polycap.Profile(polycap.Profile.CONICAL, -1, rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream)
+            profile = polycap.Profile(polycap.Profile.CONICAL, -1, rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream)
 
     def test_profile_good_conical(self):
         rad_ext_upstream = 2E-5

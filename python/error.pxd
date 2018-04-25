@@ -9,5 +9,4 @@ cdef extern from "polycap-error.h" nogil:
         polycap_error_code code
         char *message
 
-    void polycap_free(void *)
     void polycap_error_free(polycap_error *error)
