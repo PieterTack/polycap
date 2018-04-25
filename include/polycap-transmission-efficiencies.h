@@ -18,7 +18,7 @@ typedef struct _polycap_transmission_efficiencies   polycap_transmission_efficie
 void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *efficiencies);
 
 // write polycap_transmission_efficiencies data to hdf5 file
-void polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficiencies *efficiencies, const char *filename);
+bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficiencies *efficiencies, const char *filename, polycap_error **error);
 
 // extract data from struct. returned arrays should be freed with polycap_free
 bool polycap_transmission_efficiencies_get_data(polycap_transmission_efficiencies *efficiencies, size_t *n_energies, double **energies_arr, double **efficiencies_arr, polycap_error **error);

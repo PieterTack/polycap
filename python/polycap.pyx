@@ -19,8 +19,12 @@ error_map = {
     POLYCAP_ERROR_MEMORY: MemoryError,
     POLYCAP_ERROR_INVALID_ARGUMENT: ValueError,
     POLYCAP_ERROR_IO: IOError,
-    POLYCAP_ERROR_OPENMP: IOError
+    POLYCAP_ERROR_OPENMP: IOError,
+    POLYCAP_ERROR_TYPE: TypeError,
+    POLYCAP_ERROR_UNSUPPORTED: NotImplementedError,
+    POLYCAP_ERROR_RUNTIME: RuntimeError,
 }
+
 # this is inspired by h5py...
 cdef void set_exception(polycap_error *error) except *:
     if error == NULL:
@@ -89,8 +93,9 @@ cdef class TransmissionEfficiencies:
             polycap_transmission_efficiencies_free(self.trans_eff)
 
     def write_hdf5(self, str filename):
-        cdef polycap_error *error = NULL # FIXME in API!!!
-        polycap_transmission_efficiencies_write_hdf5(self.trans_eff, filename)
+        cdef polycap_error *error = NULL
+        polycap_transmission_efficiencies_write_hdf5(self.trans_eff, filename, &error)
+        set_exception(error)
 
     @property
     def data(self):
@@ -98,7 +103,7 @@ cdef class TransmissionEfficiencies:
         cdef double *energies_arr = NULL
         cdef double *efficiencies_arr = NULL
         cdef polycap_error *error = NULL
-        
+
         polycap_transmission_efficiencies_get_data(self.trans_eff, &n_energies, &energies_arr, &efficiencies_arr, &error)
         set_exception(error)
 

@@ -26,7 +26,6 @@ matrix:
             - gcc-7
             - python-all-dev
             - python-numpy
-            - cython
             - python3-all-dev
             - python3-numpy
       env: CC='gcc-7' XRL_PYTHON2='/usr/bin/python' XRL_PYTHON3='/usr/bin/python3'
@@ -48,7 +47,6 @@ matrix:
             - gcc-7
             - python-all-dev
             - python-numpy
-            - cython
             - python3-all-dev
             - python3-numpy
       env: CC='gcc-7' XRL_PYTHON2='/usr/bin/python' XRL_PYTHON3='/usr/bin/python3'
@@ -79,6 +77,9 @@ before_install:
       rm -rf $(brew --cache) || exit 1
       /usr/local/opt/python@2/bin/pip2.7 install Cython numpy || exit 1
       /usr/local/bin/pip3 install numpy || exit 1
+    else
+      sudo pip install Cython || exit 1
+      export PATH=/usr/local/bin:$PATH
     fi
 
 script:

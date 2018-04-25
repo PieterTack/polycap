@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
+#include <unistd.h>
 
 void test_polycap_read_input_line() {
 
@@ -192,6 +193,20 @@ void test_polycap_description_get_transmission_efficiencies() {
 	efficiencies = polycap_description_get_transmission_efficiencies(description, source, 1, 1, &energies, 5, &error);
 	assert(efficiencies != NULL);
 
+	// Try writing
+	assert(!polycap_transmission_efficiencies_write_hdf5(efficiencies, NULL, &error));
+	assert(error->code == POLYCAP_ERROR_INVALID_ARGUMENT);
+	polycap_clear_error(&error);
+
+	assert(!polycap_transmission_efficiencies_write_hdf5(efficiencies, "/hoahohfhwofh/hohadohfowf.h5", &error));
+	assert(error->code == POLYCAP_ERROR_IO);
+	polycap_clear_error(&error);
+
+	assert(polycap_transmission_efficiencies_write_hdf5(efficiencies, "temp.h5", &error));
+	unlink("temp.h5"); // cleanup
+	
+
+	polycap_transmission_efficiencies_free(efficiencies);
 	polycap_profile_free(profile);
 	polycap_source_free(source);
 }

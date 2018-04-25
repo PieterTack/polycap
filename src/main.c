@@ -50,7 +50,10 @@ int main(int argc, char *argv[])
 	}
 
 	//Write output
-	polycap_transmission_efficiencies_write_hdf5(efficiencies, filename);
+	if (!polycap_transmission_efficiencies_write_hdf5(efficiencies, filename, &error)) {
+		fprintf(stderr, "%s\n", error->message);
+		return 1;
+	}
 
 //	for(i=0; i<n_energies; i++){
 //		printf("%f keV: %f%%; ",energies[i],efficiencies->efficiencies[i]);
