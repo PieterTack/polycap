@@ -103,40 +103,41 @@ void test_polycap_capil_reflect() {
 	// Create new rng
 	rng = polycap_rng_new_with_seed(20000);
 
-	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 	//calculate attenuation coefficients and scattering factors
-	polycap_photon_scatf(photon,description, &error);
+	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
 
 	//won't work
-	test = polycap_capil_reflect(NULL, NULL, -1, &error);
+	test = polycap_capil_reflect(NULL, -1, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//should work
 	polycap_clear_error(&error);
 	double alfa = 2.e-3;
-	test = polycap_capil_reflect(photon, description, alfa, &error);
+	test = polycap_capil_reflect(photon, alfa, &error);
 	assert(test == 0);
 	assert(fabs(photon->weight[0] - 0.984522) < 1.e-5);
 
 	polycap_clear_error(&error);
 	alfa = 3.1e-3;
 	photon->weight[0] = 1.;
-	test = polycap_capil_reflect(photon, description, alfa, &error);
+	test = polycap_capil_reflect(photon, alfa, &error);
 	assert(test == 0);
 	assert(fabs(photon->weight[0] - 0.496310) < 1.e-5);
 
 	polycap_clear_error(&error);
 	alfa = M_PI_2;
 	photon->weight[0] = 1.;
-	test = polycap_capil_reflect(photon, description, alfa, &error);
+	test = polycap_capil_reflect(photon, alfa, &error);
 	assert(test == -2);
 	assert(fabs(photon->weight[0] - 0.) < 1.e-5);
 
 	polycap_description_free(description);
+	polycap_profile_free(profile);
 	polycap_photon_free(photon);
 	polycap_rng_free(rng);
 }
@@ -180,11 +181,11 @@ void test_polycap_capil_trace() {
 	// Create new rng
 	rng = polycap_rng_new_with_seed(20000);
 
-	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 	//calculate attenuation coefficients and scattering factors
-	polycap_photon_scatf(photon,description, &error);
+	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
 
 	cap = malloc(sizeof(double)*1000);
@@ -213,12 +214,11 @@ void test_polycap_capil_trace() {
 	polycap_photon_free(photon);
 
 	//Should work, but does not find reflection point
-	photon->i_refl = 0;
 	*ix = 0;
 	start_direction.x = 0.0;
 	start_direction.y = 0.0;
 	start_direction.z = 1.0;
-	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 	test = polycap_capil_trace(ix, photon, description, cap, cap, &error);
@@ -226,6 +226,7 @@ void test_polycap_capil_trace() {
 	assert(photon->i_refl == 0);
 
 	polycap_description_free(description);
+	polycap_profile_free(profile);
 	polycap_photon_free(photon);
 	polycap_rng_free(rng);
 	free(cap);
