@@ -1,12 +1,15 @@
+from __future__ import print_function
 from error cimport *
 from rng cimport *
 from profile cimport *
+from description cimport *
 from transmission_efficiencies cimport *
 from libc.string cimport strdup, memcpy
 from libc.stdlib cimport free
 from cpython cimport Py_DECREF
 cimport numpy as np
 import numpy as np
+import sys
 
 np.import_array()
 
@@ -17,7 +20,11 @@ cdef extern from "Python.h":
 
 cdef extern from "polycap.h":
     void polycap_free(void *)
-    
+
+cdef extern from "xraylib.h":
+    int SymbolToAtomicNumber(const char *symbol)
+    void xrlFree(void *)
+
 error_map = {
     POLYCAP_ERROR_MEMORY: MemoryError,
     POLYCAP_ERROR_INVALID_ARGUMENT: ValueError,
@@ -83,6 +90,58 @@ cdef class Rng:
     def __dealloc__(self):
         if self.rng is not NULL:
             polycap_rng_free(self.rng)
+
+def ensure_int(x):
+    if isinstance(x, str):
+        Z = SymbolToAtomicNumber(x.encode())
+        if Z == 0:
+            raise ValueError("Invalid chemical element {} detected".format(x))
+    else:
+        Z = int(x)
+    return Z
+
+cdef class Description:
+    cdef polycap_description *description
+    cdef object profile_py
+
+    def __cinit__(self, 
+        double sig_rough,
+        double sig_wave,
+        double corr_length,
+        int64_t n_cap,
+        dict composition,
+        double density,
+        Profile profile):
+        if len(composition) == 0:
+            raise ValueError("composition cannot be empty")
+        # convert dict to numpy arrays
+
+        iz = list(map(ensure_int, composition.keys()))
+        iz = np.asarray(iz, dtype=np.int32)
+        wi = list(map(lambda x: float(x), composition.values()))
+        wi = np.asarray(wi, dtype=np.double)
+
+        cdef polycap_error *error = NULL
+        self.description = polycap_description_new(
+            sig_rough,
+            sig_wave,
+            corr_length,
+            n_cap,
+            len(composition),
+            <int*> np.PyArray_DATA(iz),
+            <double*> np.PyArray_DATA(wi),
+            density,
+            profile.profile,
+            &error)
+        set_exception(error)
+
+#        self.profile_py = Profile()
+#        self.profile_py.profile = polycap_description_get_profile(self.description)
+
+    def __dealloc__(self):
+        if self.description is not NULL:
+            polycap_description_free(self.description)
+    
 
 cdef class TransmissionEfficiencies:
     cdef polycap_transmission_efficiencies *trans_eff

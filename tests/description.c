@@ -85,6 +85,16 @@ void test_polycap_description_new() {
 	assert(description == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
+	polycap_clear_error(&error);
+	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, NULL, wi, 2.23, profile, &error);
+	assert(description == NULL);
+	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
+
+	polycap_clear_error(&error);
+	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, NULL, 2.23, profile, &error);
+	assert(description == NULL);
+	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
+
 	//This should work
 	polycap_clear_error(&error);
 	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);

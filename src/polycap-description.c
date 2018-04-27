@@ -7,6 +7,7 @@
   #endif
 #endif
 #include <stdlib.h>
+#include <stdio.h>
 #include <inttypes.h>
 #include <math.h>
 #include <errno.h>
@@ -22,7 +23,7 @@ char *polycap_read_input_line(FILE *fptr, polycap_error **error)
 
 	// Argument sanity check
 	if(fptr == NULL){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: fptr cannot be NULL");
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_read_input_line: fptr cannot be NULL");
 		return NULL;
 	}
 
@@ -83,7 +84,8 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 	polycap_description *description;
 
 	//Perform source_temp and description argument sanity check
-	if (n_cap < 1){
+	// TODO: more sanity checks??
+	if (n_cap <= 1){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: n_cap must be greater than 1");
 		return NULL;
 	}
@@ -91,11 +93,23 @@ polycap_description* polycap_description_new(double sig_rough, double sig_wave, 
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: nelem must be 1 or greater");
 		return NULL;
 	}
+	if (iz == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: iz cannot be NULL");
+		return NULL;
+	}
+	if (wi == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: wi cannot be NULL");
+		return NULL;
+	}
 	for(i=0; i<nelem; i++){
 		if (iz[i] < 1 || iz[i] > 111){
 			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: iz[i] must be greater than 0 and smaller than 111");
 			return NULL;
 		}
+		/*else {
+			fprintf(stderr, "iz[%d] -> %d\n", i, iz[i]);
+			fprintf(stderr, "wi[%d] -> %g\n", i, wi[i]);
+		}*/
 	}
 	if (density < 0.0){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: density must be greater than 0.0");

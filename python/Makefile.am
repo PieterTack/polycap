@@ -1,7 +1,7 @@
 if ENABLE_PYTHON
 pyexec_LTLIBRARIES = polycap.la 
-polycap_la_CFLAGS = $(PYTHON_CFLAGS) -I$(top_srcdir)/include $(PYTHON_CPPFLAGS) $(NUMPY_HEADERS) -Wno-error=cpp
-#polycap_la_CPPFLAGS = -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
+polycap_la_CFLAGS = $(PYTHON_CFLAGS) -Wno-error=cpp -fno-strict-aliasing
+polycap_la_CPPFLAGS = @xraylib_CFLAGS@ -I$(top_srcdir)/include $(PYTHON_CPPFLAGS) $(NUMPY_HEADERS)
 polycap_la_LIBADD = ../src/libpolycap.la
 nodist_polycap_la_SOURCES = polycap-python.c
 polycap_la_LDFLAGS = $(LDFLAGS_PYTHON) -avoid-version -module -shared -export-dynamic -shrext $(PYTHON_EXT)
@@ -10,7 +10,7 @@ polycap_la_LDFLAGS += $(PYTHON_LDFLAGS)
 endif
 endif
 
-cython_sources = error.pxd rng.pxd profile.pxd transmission_efficiencies.pxd polycap.pyx
+cython_sources = error.pxd rng.pxd profile.pxd transmission_efficiencies.pxd description.pxd polycap.pyx
 
 polycap-python.c: $(cython_sources)
 	$(CYTHON) -X boundscheck=False,wraparound=False,cdivision=True -I${top_srcdir}/include -o ${builddir}/polycap-python.c ${srcdir}/polycap.pyx
