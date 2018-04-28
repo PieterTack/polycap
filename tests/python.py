@@ -65,5 +65,33 @@ class TestPolycapDescription(unittest.TestCase):
         composition = {"O": 53.0, "Si": 47.0}
         description = polycap.Description(0.0, 0.0, 0.0, 200000, composition, 2.23, TestPolycapDescription.profile)
 
+class TestPolycapPhoton(unittest.TestCase):
+    composition = {"O": 53.0, "Si": 47.0}
+    description = polycap.Description(0.0, 0.0, 0.0, 200000, composition, 2.23, TestPolycapDescription.profile)
+
+    def test_photon_bad_input(self):
+        start_coords = (0., 0. , 0.)
+        start_direction = ( 0.005, -0.005, 0.1)
+        start_electric_vector = (0.5, 0.5, 0.)
+        with self.assertRaises(ValueError):
+            photon = polycap.Photon(None, polycap.Rng(), start_coords, start_direction, start_electric_vector, 10.0)
+
+    def test_photon_bad_coords(self):
+        start_coords = (0., 0. , 0.)
+        start_direction = ( 0.005, -0.005, 0.1)
+        start_electric_vector = (0.5, 0.5, 0.)
+        photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector, 10.0)
+        self.assertEqual(-1, photon.launch())
+
+    def test_photon_good_coords(self):
+        start_coords = (0., 0. , 0.)
+        start_direction = ( 0, 0, 1.0)
+        start_electric_vector = (0.5, 0.5, 0.)
+        photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector, 10.0)
+        self.assertEqual(0, photon.launch())
+        self.assertIsInstance(photon.get_exit_coords(), tuple)
+        self.assertIsInstance(photon.get_exit_direction(), tuple)
+        self.assertIsInstance(photon.get_exit_electric_vector(), tuple)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

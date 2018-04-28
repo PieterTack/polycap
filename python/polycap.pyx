@@ -4,6 +4,7 @@ from rng cimport *
 from profile cimport *
 from description cimport *
 from transmission_efficiencies cimport *
+from photon cimport *
 from libc.string cimport strdup, memcpy
 from libc.stdlib cimport free
 from cpython cimport Py_DECREF
@@ -112,6 +113,8 @@ cdef class Description:
         dict composition,
         double density,
         Profile profile):
+        if profile is None:
+            raise ValueError("profile cannot be None")
         if len(composition) == 0:
             raise ValueError("composition cannot be empty")
         # convert dict to numpy arrays
@@ -174,7 +177,7 @@ cdef class TransmissionEfficiencies:
     # factory method -> these objects cannot be newed, as they are produced via polycap_description_get_transmission_efficiencies
     @staticmethod
     cdef create(polycap_transmission_efficiencies *trans_eff):
-        if trans_eff == NULL:
+        if trans_eff is NULL:
             return None
         rv = TransmissionEfficiencies()
         rv.trans_eff = trans_eff
@@ -204,3 +207,89 @@ cdef class TransmissionEfficiencies:
         
         return rv
 
+cdef polycap_vector3 np2vector(np.ndarray[double, ndim=1] arr):
+    cdef polycap_vector3 rv
+    rv.x = arr[0]
+    rv.y = arr[1]
+    rv.z = arr[2]
+    return rv
+
+cdef tuple vector2tuple(polycap_vector3 vec):
+    return (vec.x, vec.y, vec.z)
+
+cdef class Photon:
+    cdef polycap_photon *photon
+
+    def __cinit__(self, 
+        Description description,
+        Rng rng,
+        object start_coords,
+        object start_direction,
+        object start_electric_vector,
+        object energies,
+        bool ignore=False
+        ):
+        cdef polycap_vector3 start_coords_pc
+        cdef polycap_vector3 start_direction_pc
+        cdef polycap_vector3 start_electric_vector_pc
+        cdef polycap_error *error = NULL
+
+        if ignore is True:
+            self.photon = NULL
+        else:
+            if description is None:
+                raise ValueError("description cannot be None")
+
+            if rng is None:
+                raise ValueError("rng cannot be None")
+
+            start_coords = np.asarray(start_coords, dtype=np.double)
+            if len(start_coords.shape) != 1 or start_coords.size != 3:
+                raise ValueError("start_coords must have exactly three elements")
+
+            start_direction = np.asarray(start_direction, dtype=np.double)
+            if len(start_direction.shape) != 1 or start_direction.size != 3:
+                raise ValueError("start_direction must have exactly three elements")
+
+            start_electric_vector = np.asarray(start_electric_vector, dtype=np.double)
+            if len(start_electric_vector.shape) != 1 or start_electric_vector.size != 3:
+                raise ValueError("start_electric_vector must have exactly three elements")
+
+            energies = np.asarray(energies, dtype=np.double)
+            energies = np.atleast_1d(energies)
+            if len(energies.shape) != 1:
+                raise ValueError("energies must be a 1D array")
+           
+            start_coords_pc = np2vector(start_coords)
+            start_direction_pc = np2vector(start_direction)
+            start_electric_vector_pc = np2vector(start_electric_vector)
+
+            self.photon = polycap_photon_new(
+                description.description,
+                rng.rng,
+                start_coords_pc,
+                start_direction_pc,
+                start_electric_vector_pc,
+                energies.size,
+                <double*> np.PyArray_DATA(energies),
+                &error)
+            set_exception(error)
+
+    def __dealloc__(self):
+        if self.photon is not NULL:
+            polycap_photon_free(self.photon)
+
+    def launch(self):
+        cdef polycap_error *error = NULL
+        rv = polycap_photon_launch(self.photon, &error)
+        set_exception(error)
+        return rv
+
+    def get_exit_coords(self):
+        return vector2tuple(polycap_photon_get_exit_coords(self.photon))
+
+    def get_exit_direction(self):
+        return vector2tuple(polycap_photon_get_exit_direction(self.photon))
+
+    def get_exit_electric_vector(self):
+        return vector2tuple(polycap_photon_get_exit_electric_vector(self.photon))
