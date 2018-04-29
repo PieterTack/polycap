@@ -1,5 +1,8 @@
 import unittest
 import polycap
+import numpy as np
+import os
+import sys
 
 class TestPolycapRng(unittest.TestCase):
     def test_rng_without_seed(self):
@@ -92,6 +95,59 @@ class TestPolycapPhoton(unittest.TestCase):
         self.assertIsInstance(photon.get_exit_coords(), tuple)
         self.assertIsInstance(photon.get_exit_direction(), tuple)
         self.assertIsInstance(photon.get_exit_electric_vector(), tuple)
+
+class TestPolycapSource(unittest.TestCase):
+    rng = polycap.Rng()
+
+    def test_source_bad_input(self):
+        with self.assertRaises(TypeError):
+            source = polycap.Source(None, -1,-1,-1,-1,-1,0.3,0.3)
+        with self.assertRaises(ValueError):
+            source = polycap.Source(TestPolycapPhoton.description, -1,-1,-1,-1,-1,0.3,0.3)
+
+    def test_source_bad_get_photon(self):
+        source = polycap.Source(TestPolycapPhoton.description, 0.05, 0.1, 0.1, 0.2, 0.2, 0., 0.)
+    
+        with self.assertRaises(TypeError):
+            photon = source.get_photon(TestPolycapSource.rng, None)
+
+    def test_source_good_get_photon(self):
+        source = polycap.Source(TestPolycapPhoton.description, 0.05, 0.1, 0.1, 0.2, 0.2, 0., 0.)
+
+        photon = source.get_photon(TestPolycapSource.rng, 10.0) # scalar
+        photon = source.get_photon(TestPolycapSource.rng, [10.0]) # list
+        photon = source.get_photon(TestPolycapSource.rng, (10.0)) # tuple
+        photon = source.get_photon(TestPolycapSource.rng, np.array(10)) # numpy array
+
+    def test_source_bad_get_transmission_efficiencies(self):
+        source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0)
+        with self.assertRaises(TypeError):
+            efficiencies = source.get_transmission_efficiencies(-1, None, 1000)
+
+    def test_source_good_get_transmission_efficiencies(self):
+        source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0)
+        efficiencies = source.get_transmission_efficiencies(-1, 5.0, 1000)
+        efficiencies.write_hdf5("temp-py.h5")
+        self.assertTrue(os.path.exists("temp-py.h5"))
+        os.remove("temp-py.h5")
+        data = efficiencies.data
+        self.assertIsInstance(data, tuple)
+        data2 = efficiencies.data
+        self.assertIsNot(data, data2)
+        self.assertIs(data[0], data2[0])
+        self.assertIs(data[1], data2[1])
+        
+        self.assertEqual(sys.getrefcount(data[0]), 4)
+
+        data = data[0]
+        del(efficiencies)
+        del(data2)
+
+        self.assertEqual(sys.getrefcount(data), 2)
+
+        with self.assertRaises(ValueError):
+            data[0] = 6
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

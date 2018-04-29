@@ -5,6 +5,7 @@ from profile cimport *
 from description cimport *
 from transmission_efficiencies cimport *
 from photon cimport *
+from source cimport *
 from libc.string cimport strdup, memcpy
 from libc.stdlib cimport free
 from cpython cimport Py_DECREF
@@ -159,14 +160,14 @@ cdef class TransmissionEfficiencies:
     def __dealloc__(self):
         if self.trans_eff is not NULL:
             polycap_transmission_efficiencies_free(self.trans_eff)
-        if self.energies_np is not None:
-            Py_DECREF(self.energies_np)
-        if self.efficiencies_np is not None:
-            Py_DECREF(self.efficiencies_np)
+        #if self.energies_np is not None:
+        #    Py_DECREF(self.energies_np)
+        #if self.efficiencies_np is not None:
+        #    Py_DECREF(self.efficiencies_np)
 
-    def write_hdf5(self, str filename):
+    def write_hdf5(self, str filename not None):
         cdef polycap_error *error = NULL
-        polycap_transmission_efficiencies_write_hdf5(self.trans_eff, filename, &error)
+        polycap_transmission_efficiencies_write_hdf5(self.trans_eff, filename.encode(), &error)
         set_exception(error)
 
     @property
@@ -195,13 +196,15 @@ cdef class TransmissionEfficiencies:
 
         rv.energies_np = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
         # make read-only
-        np.PyArray_CLEARFLAG(rv.energies_np, np.NPY_ARRAY_WRITEABLE) # needs verification
+        #np.PyArray_CLEARFLAGS(rv.energies_np, np.NPY_ARRAY_WRITEABLE) # needs verification
+        rv.energies_np.flags.writeable = False
         memcpy(np.PyArray_DATA(rv.energies_np), energies_arr, sizeof(double) * n_energies)
         polycap_free(energies_arr)
 
         rv.efficiencies_np= np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
         # make read-only
-        np.PyArray_CLEARFLAG(rv.efficiencies_np, np.NPY_ARRAY_WRITEABLE) # needs verification
+        #np.PyArray_CLEARFLAGS(rv.efficiencies_np, np.NPY_ARRAY_WRITEABLE) # needs verification
+        rv.efficiencies_np.flags.writeable = False
         memcpy(np.PyArray_DATA(rv.efficiencies_np), efficiencies_arr, sizeof(double) * n_energies)
         polycap_free(efficiencies_arr)
         
@@ -293,3 +296,77 @@ cdef class Photon:
 
     def get_exit_electric_vector(self):
         return vector2tuple(polycap_photon_get_exit_electric_vector(self.photon))
+
+cdef class Source:
+    cdef polycap_source *source
+
+    def __cinit__(self, 
+        Description description not None,
+        double d_source,
+        double src_x,
+        double src_y,
+        double src_sigx,
+        double src_sigy,
+        double src_shiftx,
+        double src_shifty):
+        cdef polycap_error *error = NULL
+        self.source = polycap_source_new(
+            description.description,
+            d_source,
+            src_x,
+            src_y,
+            src_sigx,
+            src_sigy,
+            src_shiftx,
+            src_shifty,
+            &error)
+        set_exception(error)
+
+    def __dealloc__(self):
+        if self.source is not NULL:
+            polycap_source_free(self.source)
+
+    def get_photon(self,
+        Rng rng not None,
+        object energies not None):
+
+        energies = np.asarray(energies, dtype=np.double)
+        energies = np.atleast_1d(energies)
+        if len(energies.shape) != 1:
+            raise ValueError("energies must be a 1D array")
+
+        cdef polycap_error *error = NULL
+        cdef polycap_photon *photon = polycap_source_get_photon(
+            self.source,
+            rng.rng,
+            energies.size,
+            <double*> np.PyArray_DATA(energies),
+            &error)
+        set_exception(error)
+
+        rv = Photon(None, None, None, None, None, None, ignore=True)
+        rv.photon = photon
+
+        return rv
+
+    def get_transmission_efficiencies(self,
+        int max_threads,
+        object energies not None,
+        int n_photons):
+
+        energies = np.asarray(energies, dtype=np.double)
+        energies = np.atleast_1d(energies)
+        if len(energies.shape) != 1:
+            raise ValueError("energies must be a 1D array")
+
+        cdef polycap_error *error = NULL
+        cdef polycap_transmission_efficiencies *transmission_efficiencies = polycap_source_get_transmission_efficiencies(
+            self.source,
+            max_threads,
+            energies.size,
+            <double*> np.PyArray_DATA(energies),
+            n_photons,
+            &error)
+
+        return TransmissionEfficiencies.create(transmission_efficiencies)
+
