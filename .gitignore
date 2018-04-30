@@ -5,7 +5,8 @@ polycap_lv
 Makefile.in
 configure
 aclocal.m4
-m4
+m4/libtool.m4
+m4/lt*m4
 build-aux
 autom4te.cache
 build

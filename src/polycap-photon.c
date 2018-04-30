@@ -11,7 +11,7 @@
 #include <xraylib.h>
 
 //===========================================
-void polycap_photon_scatf(polycap_photon *photon, polycap_description *description, polycap_error **error)
+void polycap_photon_scatf(polycap_photon *photon, polycap_error **error)
 {
 	int i, j;
 	double totmu, scatf;
@@ -21,6 +21,9 @@ void polycap_photon_scatf(polycap_photon *photon, polycap_description *descripti
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_scatf: photon cannot be NULL");
 		return;
 	}
+
+	polycap_description *description = photon->description;
+
 	if (description == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_scatf: description cannot be NULL");
 		return;
@@ -69,12 +72,16 @@ void polycap_photon_scatf(polycap_photon *photon, polycap_description *descripti
 
 //===========================================
 // construct a new polycap_photon with its initial position, direction, electric field vector
-polycap_photon* polycap_photon_new(polycap_rng *rng, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, size_t n_energies, double *energies, polycap_error **error)
+polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng *rng, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, size_t n_energies, double *energies, polycap_error **error)
 {
 	polycap_photon *photon;
 	int i;
 
 	//argument sanity check
+	if (description == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: description cannot be NULL");
+		return NULL;
+	}
 	if (rng == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: rng cannot be NULL");
 		return NULL;
@@ -119,6 +126,8 @@ polycap_photon* polycap_photon_new(polycap_rng *rng, polycap_vector3 start_coord
 
 	//assign *rng pointer
 	photon->rng = rng;
+
+	photon->description = description;
 
 	//fill rest of structure
 	for(i=0; i<photon->n_energies; i++){
@@ -210,7 +219,7 @@ double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2)
 
 //===========================================
 // simulate a single photon for a given polycap_description
-int polycap_photon_launch(polycap_photon *photon, polycap_description *description, polycap_error **error)
+int polycap_photon_launch(polycap_photon *photon, polycap_error **error)
 {
 	polycap_vector3 central_axis;
 	double weight;
@@ -228,6 +237,9 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon cannot be NULL");
 		return -1;
 	}
+
+	polycap_description *description = photon->description;
+
 	if (description == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: description cannot be NULL");
 		return -1;
@@ -241,7 +253,7 @@ int polycap_photon_launch(polycap_photon *photon, polycap_description *descripti
 	}
 
 	//calculate attenuation coefficients and scattering factors
-	polycap_photon_scatf(photon,description, error);
+	polycap_photon_scatf(photon, error);
 
 	//define polycapillary-to-photonsource axis 
 	//!!NOTE:this has to be changed. Now we assume all sources are in a straight line with PC central axis!!

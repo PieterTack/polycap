@@ -68,11 +68,12 @@ struct _polycap_description
   int *iz;
   double *wi;
   double density;
-  struct _polycap_profile *profile;
+  polycap_profile *profile;
   };
 
 struct _polycap_source
   {
+  polycap_description *description;
   double d_source;
   double src_x;
   double src_y;
@@ -85,6 +86,7 @@ struct _polycap_source
 struct _polycap_photon
   {
   polycap_rng *rng;
+  polycap_description *description;
   polycap_vector3 start_coords;
   polycap_vector3 start_direction;
   polycap_vector3 start_electric_vector;
@@ -129,8 +131,8 @@ char *polycap_read_input_line(FILE *fptr, polycap_error **error);
 void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error);
 int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa, polycap_error **error);
 double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error);
-int polycap_capil_reflect(polycap_photon *photon, polycap_description *description, double alfa, polycap_error **error);
-void polycap_photon_scatf(polycap_photon *photon, polycap_description *description, polycap_error **error);
+int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_error **error);
+void polycap_photon_scatf(polycap_photon *photon, polycap_error **error);
 
 
 

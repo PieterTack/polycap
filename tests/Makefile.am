@@ -1,8 +1,12 @@
 AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include -DEXAMPLE_DIR=\"$(top_srcdir)/example/\"
 
 check_PROGRAMS = error profile description capil photon source
-TESTS = $(check_PROGRAMS)
-TESTS_ENVIRONMENT = OMP_CANCELLATION=true
+check_SCRIPTS =
+if ENABLE_PYTHON
+check_SCRIPTS += python.sh
+endif
+
+TESTS = $(check_PROGRAMS) $(check_SCRIPTS)
 
 error_SOURCES = error.c
 error_LDADD = ../src/libpolycap.la
@@ -33,3 +37,12 @@ source_SOURCES = source.c
 source_LDADD = ../src/libpolycap.la
 source_CFLAGS = @OPENMP_CFLAGS@ @easyRNG_CFLAGS@
 source_LDFLAGS = @OPENMP_CFLAGS@
+
+python.sh: ../python/polycap.la python.py
+	@echo "PATH=\"../src/.libs:$$PATH\" LD_LIBRARY_PATH=\"../src/.libs\" DYLD_LIBRARY_PATH=\"../src/.libs\" PYTHONPATH=\"../python/.libs\" $(PYTHON) ${top_srcdir}/tests/python.py" > python.sh
+	@chmod +x python.sh
+
+EXTRA_DIST = python.py
+
+clean-local:
+	rm -rf python.sh

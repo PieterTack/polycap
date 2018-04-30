@@ -7,7 +7,6 @@
 //===========================================
 int main(int argc, char *argv[])
 {	
-	polycap_description *description;
 	polycap_source *source;
 	polycap_transmission_efficiencies *efficiencies;
 	int i;
@@ -23,9 +22,9 @@ int main(int argc, char *argv[])
 		exit(0);
 		}
 
-	// Read input file and define description structure
-	description = polycap_description_new_from_file(argv[1], &source, &error);
-	if (description == NULL) {
+	// Read input file and define source structure
+	source = polycap_source_new_from_file(argv[1], &error);
+	if (source == NULL) {
 		fprintf(stderr, "%s\n", error->message);
 		return 1;
 	}
@@ -43,14 +42,17 @@ int main(int argc, char *argv[])
 	// Perform calculations	
 	printf("Starting calculations...\n");
 	// TODO: add a command-line option to override the number of threads
-	efficiencies = polycap_description_get_transmission_efficiencies(description, source, -1, n_energies, energies, n_photons, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, n_energies, energies, n_photons, &error);
 	if (efficiencies == NULL) {
 		fprintf(stderr, "%s\n", error->message);
 		return 1;
 	}
 
 	//Write output
-	polycap_transmission_efficiencies_write_hdf5(efficiencies, filename);
+	if (!polycap_transmission_efficiencies_write_hdf5(efficiencies, filename, &error)) {
+		fprintf(stderr, "%s\n", error->message);
+		return 1;
+	}
 
 //	for(i=0; i<n_energies; i++){
 //		printf("%f keV: %f%%; ",energies[i],efficiencies->efficiencies[i]);
@@ -58,7 +60,6 @@ int main(int argc, char *argv[])
 
 	free(energies);
 	polycap_transmission_efficiencies_free(efficiencies);
-	polycap_description_free(description);
 	polycap_source_free(source);
 
 	return 0;

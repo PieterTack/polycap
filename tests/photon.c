@@ -34,23 +34,23 @@ void test_polycap_photon_scatf() {
 	start_electric_vector.x = 0.5;
 	start_electric_vector.y = 0.5;
 	start_electric_vector.z = 0.;
-	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
-	assert(photon != NULL);
-	polycap_clear_error(&error);
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
 	polycap_clear_error(&error);
 	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
 	assert(description != NULL);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
+	assert(photon != NULL);
+	polycap_clear_error(&error);
 
 	//This won't work
 	polycap_clear_error(&error);
-	polycap_photon_scatf(NULL, NULL, &error);
+	polycap_photon_scatf(NULL, &error);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 	
 	//This should work
 	polycap_clear_error(&error);
-	polycap_photon_scatf(photon, description, &error);
+	polycap_photon_scatf(photon, &error);
 	assert(fabs(photon->scatf[0] - 0.503696) < 1.e-5);
 	assert(fabs(photon->amu[0] - 42.544635) < 1.e-3);
 
@@ -83,13 +83,26 @@ void test_polycap_photon_new() {
 
 
 	//This won't work
-	photon = polycap_photon_new(NULL, start_coords, start_direction, start_electric_vector, -1, NULL, &error);
+	photon = polycap_photon_new(NULL, NULL, start_coords, start_direction, start_electric_vector, -1, NULL, &error);
 	assert(photon == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//This should work
 	polycap_clear_error(&error);
-	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, 1, &energies, &error);
+	double rad_ext_upstream = 0.2065;
+	double rad_ext_downstream = 0.0585;
+	double rad_int_upstream = 0.00035;
+	double rad_int_downstream = 9.9153E-5;
+	double focal_dist_upstream = 1000.0;
+	double focal_dist_downstream = 0.5;
+	int iz[2]={8,14};
+	double wi[2]={53.0,47.0};
+	polycap_profile *profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
+	assert(profile != NULL);
+	polycap_clear_error(&error);
+	polycap_description *description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
+	assert(description != NULL);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1, &energies, &error);
 	assert(photon != NULL);
 	assert( photon->start_coords.x == start_coords.x);
 	assert( photon->start_coords.y == start_coords.y);
@@ -132,6 +145,8 @@ void test_polycap_photon_new() {
 
 	polycap_rng_free(rng);
 	polycap_photon_free(photon);
+	polycap_description_free(description);
+	polycap_profile_free(profile);
 }
 
 void test_polycap_photon_within_pc_boundary() {
@@ -198,31 +213,31 @@ void test_polycap_photon_launch() {
 	start_electric_vector.x = 0.5;
 	start_electric_vector.y = 0.5;
 	start_electric_vector.z = 0.;
-	photon = polycap_photon_new(rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
-	assert(photon != NULL);
-	polycap_clear_error(&error);
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
 	polycap_clear_error(&error);
 	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
 	assert(description != NULL);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
+	assert(photon != NULL);
+	polycap_clear_error(&error);
 
 	//This should not work
-	test = polycap_photon_launch(NULL, NULL, &error);
+	test = polycap_photon_launch(NULL, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//This works but returns -1 (as photon was not in PC to begin with)
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.21;
-	test = polycap_photon_launch(photon, description, &error);
+	test = polycap_photon_launch(photon, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 	
 	//This works but returns -1 (as photon does not reach the end of the capillary)
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.0;
-	test = polycap_photon_launch(photon, description, &error);
+	test = polycap_photon_launch(photon, &error);
 	assert(test == -1);
 	
 	//This works and returns 0 (photon reached end of capillary)
@@ -230,7 +245,7 @@ void test_polycap_photon_launch() {
 	photon->start_direction.x = 0.;
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.0;
-	test = polycap_photon_launch(photon, description, &error);
+	test = polycap_photon_launch(photon, &error);
 	assert(test == 0);
 	
 

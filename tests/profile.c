@@ -29,12 +29,15 @@ void test_profile_new() {
 	// test for case that works
 	profile = polycap_profile_new(POLYCAP_PROFILE_CONICAL, 6., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL); //profile should not be NULL
+	polycap_profile_free(profile);
 
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 6., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL); //profile should not be NULL
+	polycap_profile_free(profile);
 
 	profile = polycap_profile_new(POLYCAP_PROFILE_PARABOLOIDAL, 6., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL); //profile should not be NULL
+	polycap_profile_free(profile);
 }
 
 void test_profile_new_from_file() {
@@ -62,6 +65,7 @@ void test_profile_new_from_file() {
 	profile = polycap_profile_new_from_file("this-file-does-not-exist", "this-file-also-does-not-exist", "neither-does-this-one", &error);
 	assert(profile == NULL); // this will still be NULL
 	assert(polycap_error_matches(error, POLYCAP_ERROR_IO));
+	polycap_clear_error(&error);
 }
 
 int main(int argc, char *argv[]) {

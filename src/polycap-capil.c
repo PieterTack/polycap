@@ -189,7 +189,7 @@ double polycap_refl(double e, double theta, double density, double scatf, double
 }
 
 //===========================================
-int polycap_capil_reflect(polycap_photon *photon, polycap_description *description, double alfa, polycap_error **error)
+int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_error **error)
 {
 	int i, iesc=0;
 	double d_esc;  //distance in capillary at which photon escaped divided by propagation vector in z direction
@@ -208,6 +208,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_description *descripti
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: photon must not be NULL");
 		return -1;
 	}
+	polycap_description *description = photon->description;
 	if (description == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: description must not be NULL");
 		return -1;
@@ -337,7 +338,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 			alfa = M_PI_2 - alfa;
 //			w0 = photon->weight[0];
 			
-			iesc = polycap_capil_reflect(photon, description, alfa, error);
+			iesc = polycap_capil_reflect(photon, alfa, error);
 
 			if(iesc != -2){
 //				w1 = photon->weight[0];

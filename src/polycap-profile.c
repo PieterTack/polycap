@@ -174,6 +174,8 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 				for(i=0;i<=nmax;i++){
 					profile->z[i] = length/nmax*i; //z coordinates, from 0 to length
 					profile->cap[i] = (rad_int_downstream-rad_int_upstream)/length*profile->z[i] + rad_int_upstream; //single capillary shape always conical
+				}
+				for(i=0;i<=nmax;i++){
 					profile->ext[i] = sqrt(b*b-(b*b*profile->z[nmax-i]*profile->z[nmax-i])/(a*a))+k;
 				}
 			}
