@@ -3,6 +3,7 @@ import polycap
 import numpy as np
 import os
 import sys
+#import matplotlib.pyplot as plt
 
 class TestPolycapRng(unittest.TestCase):
     def test_rng_without_seed(self):
@@ -126,7 +127,7 @@ class TestPolycapSource(unittest.TestCase):
 
     def test_source_good_get_transmission_efficiencies(self):
         source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0)
-        efficiencies = source.get_transmission_efficiencies(-1, 5.0, 1000)
+        efficiencies = source.get_transmission_efficiencies(-1, np.linspace(1, 25.0, 250), 10000)
         efficiencies.write_hdf5("temp-py.h5")
         self.assertTrue(os.path.exists("temp-py.h5"))
         os.remove("temp-py.h5")
@@ -138,6 +139,12 @@ class TestPolycapSource(unittest.TestCase):
         self.assertIs(data[1], data2[1])
         
         self.assertEqual(sys.getrefcount(data[0]), 4)
+
+        #fig = plt.figure()
+        #ax = fig.add_subplot(111)
+        #ax.plot(*data, color='r')
+        #plt.draw()
+        #plt.show()
 
         data = data[0]
         del(efficiencies)

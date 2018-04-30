@@ -15,6 +15,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	double src_rad, phi; //distance from source centre along angle phi from x axis
 	double src_start_x, src_start_y;
 	polycap_photon *photon;
+	int i;
 
 	// Argument sanity check
 	if (source == NULL) {
@@ -37,6 +38,12 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	if (n_energies < 1) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: n_energies must be greater than 0");
 		return NULL;
+	}
+	for(i=0; i< n_energies; i++){
+		if (energies[i] < 1. || energies[i] > 100.) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: energies[i] must be greater than 1 and less than 100");
+			return NULL;
+		}
 	}
 
 	// Obtain photon start coordinates
@@ -285,7 +292,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 		return NULL;
 	}
 	if (description->open_area < 0 || description->open_area > 1){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->open_area must be greater than 0 and smaller than 1");
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->open_area must be greater than 0 and less than 1");
 		polycap_source_free(source);
 		return NULL;
 	}
@@ -296,7 +303,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	}
 	for(i=0; i<description->nelem; i++){
 		if (description->iz[i] < 1 || description->iz[i] > 94){
-			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->iz[i] must be greater than 0 and smaller than 94");
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->iz[i] must be greater than 0 and less than 94");
 			polycap_source_free(source);
 			return NULL;
 		}
@@ -324,24 +331,30 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 
 	// argument sanity check
 	if (source == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies: source cannot be NULL");
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: source cannot be NULL");
 		return NULL;
 	}
 	polycap_description *description = source->description;
 	if (description == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies: description cannot be NULL");
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: description cannot be NULL");
 		return NULL;
 	}
 	if (n_energies < 1) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies: n_energies must be greater than or equal to 1");
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: n_energies must be greater than or equal to 1");
 		return NULL;
 	}
 	if (energies == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies: energies cannot be NULL");
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: energies cannot be NULL");
 		return NULL;
 	}
+	for(i=0; i< n_energies; i++){
+		if (energies[i] < 1. || energies[i] > 100.) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: energies[i] must be greater than 1 and less than 100");
+			return NULL;
+		}
+	}
 	if (n_photons < 1) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies: n_photons must be greater than 1");
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: n_photons must be greater than 1");
 		return NULL;
 	}
 
@@ -353,7 +366,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	// Prepare arrays to save results
 	sum_weights = malloc(sizeof(double)*n_energies);
 	if(sum_weights == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for sum_weights -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for sum_weights -> %s", strerror(errno));
 		return NULL;
 	}
 	for(i=0; i<n_energies; i++) sum_weights[i] = 0.;
@@ -361,20 +374,20 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	// Assign polycap_transmission_efficiencies memory
 	efficiencies = calloc(1, sizeof(polycap_transmission_efficiencies));
 	if(efficiencies == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies -> %s", strerror(errno));
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->energies = malloc(sizeof(double)*n_energies);
 	if(efficiencies->energies == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->energies -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->energies -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->efficiencies = malloc(sizeof(double)*n_energies);
 	if(efficiencies->efficiencies == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->efficiencies -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->efficiencies -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
@@ -383,84 +396,84 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	//Assign image coordinate array (initial) memory
 	efficiencies->images = calloc(1, sizeof(struct _polycap_images));
 	if(efficiencies->images == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_start_coords[0] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_coords[0] == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[0] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_start_coords[1] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_coords[1] == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[1] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->src_start_coords[0] = malloc(sizeof(double));
 	if(efficiencies->images->src_start_coords[0] == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[0] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->src_start_coords[1] = malloc(sizeof(double));
 	if(efficiencies->images->src_start_coords[1] == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[1] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_start_dir[0] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_dir[0] == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[0] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_start_dir[1] = malloc(sizeof(double));
 	if(efficiencies->images->pc_start_dir[1] == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[1] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_exit_coords[0] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_exit_coords[0] == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_coords[0] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_coords[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_exit_coords[1] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_exit_coords[1] == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_coords[1] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_coords[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_exit_dir[0] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_exit_dir[0] == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[0] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->pc_exit_dir[1] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_exit_dir[1] == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
 	efficiencies->images->exit_coord_weights = malloc(sizeof(double)*n_photons*n_energies);
 	if(efficiencies->images->exit_coord_weights == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
@@ -514,17 +527,19 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	for(j=0; j < n_photons; j++){
 		do{
 			// Create photon structure
-			photon = polycap_source_get_photon(source, rng, n_energies, energies, error);
+			photon = polycap_source_get_photon(source, rng, n_energies, energies, NULL);
 			// Launch photon
 			photon->i_refl = 0; //set reflections to 0
-			iesc = polycap_photon_launch(photon, error);
+			iesc = polycap_photon_launch(photon, NULL);
 			//if iesc == -1 here a new photon should be simulated/started.
 			//if iesc == 0 check whether photon is in PC exit window
 			if(iesc == 0) {
-				iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, error);
+				iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
 				if(iesc == 0){
 					iesc = -1;
-				} else iesc = 0;
+				} else {
+					iesc = 0;
+				}
 			}
 			//Register succesfully started photon, as well as save start coordinates and direction
 			//TODO: reduce or remove this critical block

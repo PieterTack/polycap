@@ -180,7 +180,7 @@ cdef class TransmissionEfficiencies:
         return (self.energies_np, self.efficiencies_np)
 
 
-    # factory method -> these objects cannot be newed, as they are produced via polycap_description_get_transmission_efficiencies
+    # factory method -> these objects cannot be newed, as they are produced via polycap_source_get_transmission_efficiencies
     @staticmethod
     cdef create(polycap_transmission_efficiencies *trans_eff):
         if trans_eff is NULL:
@@ -372,6 +372,7 @@ cdef class Source:
             <double*> np.PyArray_DATA(energies),
             n_photons,
             &error)
+        set_exception(error)
 
         return TransmissionEfficiencies.create(transmission_efficiencies)
 
