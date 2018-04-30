@@ -27,6 +27,11 @@ cdef extern from "xraylib.h":
     int SymbolToAtomicNumber(const char *symbol)
     void xrlFree(void *)
 
+cdef extern from "config.h" nogil:
+    char *version "VERSION"
+
+__version__ = version
+
 error_map = {
     POLYCAP_ERROR_MEMORY: MemoryError,
     POLYCAP_ERROR_INVALID_ARGUMENT: ValueError,

@@ -150,4 +150,5 @@ class TestPolycapSource(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    print("version: {}".format(polycap.__version__))
     unittest.main(verbosity=2)
