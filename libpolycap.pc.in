@@ -1,0 +1,14 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@/polycap
+
+Name: polycap
+Description: A library to calculate X-ray transmission efficiency profiles for polycapillaries
+Version: @VERSION@
+Requires.private: gsl libxrl >= 3.3.0 @EASYRNG_PC@
+Requires:
+Conflicts:
+Libs: -L${libdir} -lpolycap
+Libs.private: @H5CC_LIBS@
+Cflags: -I${includedir} @OPENMP_CFLAGS@
