@@ -322,7 +322,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 // -Does not make photon image arrays (yet)
 // -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
 // -Polarised dependant reflectivity and change in electric field vector missing
-polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, size_t n_energies, double *energies, int n_photons, polycap_error **error)
+polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, size_t n_energies, double *energies, int n_photons, polycap_progress_monitor *progress_monitor, polycap_error **error)
 {
 	int i, j;
 	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0;
@@ -332,6 +332,10 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	// argument sanity check
 	if (source == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: source cannot be NULL");
+		return NULL;
+	}
+	if (progress_monitor != NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: progress_monitor must be NULL as polycap_progress_monitor currently has no implementation");
 		return NULL;
 	}
 	polycap_description *description = source->description;

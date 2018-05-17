@@ -6,6 +6,7 @@
 #include "polycap-description.h"
 #include "polycap-rng.h"
 #include "polycap-transmission-efficiencies.h"
+#include "polycap-progress-monitor.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +37,14 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 polycap_source* polycap_source_new_from_file(const char *filename, polycap_error **error);
 
 // for a given array of energies, and a full polycap_description, get the transmission efficiencies. efficiencies will be allocated by us, and needs to be freed with polycap_transmission_efficiencies_free
-polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, size_t n_energies, double *energies, int n_photons, polycap_error **error);
+polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
+	polycap_source *source,
+	int max_threads,
+	size_t n_energies,
+	double *energies,
+	int n_photons,
+	polycap_progress_monitor *progress_monitor,
+	polycap_error **error);
 
 const polycap_description* polycap_source_get_description(polycap_source *source);
 

@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	// Perform calculations	
 	printf("Starting calculations...\n");
 	// TODO: add a command-line option to override the number of threads
-	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, n_energies, energies, n_photons, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, n_energies, energies, n_photons, NULL, &error);
 	if (efficiencies == NULL) {
 		fprintf(stderr, "%s\n", error->message);
 		return 1;

@@ -371,6 +371,7 @@ cdef class Source:
             energies.size,
             <double*> np.PyArray_DATA(energies),
             n_photons,
+            NULL, # polycap_progress_monitor
             &error)
         set_exception(error)
 

@@ -10,7 +10,19 @@ polycap_la_LDFLAGS += $(PYTHON_LDFLAGS)
 endif
 endif
 
-cython_sources = error.pxd rng.pxd profile.pxd transmission_efficiencies.pxd description.pxd photon.pxd source.pxd polycap.pyx
+NULL=
+
+cython_sources = \
+	error.pxd \
+	rng.pxd \
+	profile.pxd \
+	transmission_efficiencies.pxd \
+	description.pxd \
+	photon.pxd \
+	source.pxd \
+	progress_monitor.pxd \
+	polycap.pyx \
+	$(NULL)
 
 polycap-python.c: $(cython_sources)
 	$(CYTHON) -X boundscheck=False,wraparound=False,cdivision=True -I${top_srcdir}/include -o ${builddir}/polycap-python.c ${srcdir}/polycap.pyx

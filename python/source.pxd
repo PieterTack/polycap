@@ -3,6 +3,7 @@ from photon cimport polycap_photon
 from description cimport polycap_description
 from rng cimport polycap_rng
 from transmission_efficiencies cimport polycap_transmission_efficiencies
+from progress_monitor cimport polycap_progress_monitor
 
 cdef extern from "polycap-source.h" nogil:
     ctypedef struct polycap_source
@@ -35,6 +36,7 @@ cdef extern from "polycap-source.h" nogil:
         size_t n_energies,
         double *energies,
         int n_photons,
+        polycap_progress_monitor *progress_monitor,
         polycap_error **error)
 
     const polycap_description* polycap_source_get_description(polycap_source *source)
