@@ -252,8 +252,8 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 	int i, iesc=0;
 	double cap_rad0, cap_rad1;
 	polycap_vector3 cap_coord0, cap_coord1;
-	polycap_vector3 *photon_coord, photon_dir;
-	polycap_vector3 *surface_norm; //surface normal of capillary at interaction point
+	polycap_vector3 photon_coord, photon_dir;
+	polycap_vector3 surface_norm; //surface normal of capillary at interaction point
 	double alfa; //angle between capillary normal at interaction point and photon direction before interaction
 	polycap_vector3 photon_coord_rel; //relative coordinates of new interaction point compared to previous interaction
 	double d_travel; //distance between interactions
@@ -281,24 +281,11 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 		return -1;
 	}
 	
-
-	photon_coord = malloc(sizeof(polycap_vector3));
-	if(photon_coord == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_trace: could not allocate memory for photon_coord -> %s", strerror(errno));
-		return -1;
-	}
-	surface_norm = malloc(sizeof(polycap_vector3));
-	if(surface_norm == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_trace: could not allocate memory for surface_norm -> %s", strerror(errno));
-		free(photon_coord);
-		return -1;
-	}
-
 	//calculate next intersection point
 	if(photon->i_refl == 0) *ix = 0;
-	photon_coord->x = photon->exit_coords.x;
-	photon_coord->y = photon->exit_coords.y;
-	photon_coord->z = photon->exit_coords.z;
+	photon_coord.x = photon->exit_coords.x;
+	photon_coord.y = photon->exit_coords.y;
+	photon_coord.z = photon->exit_coords.z;
 	photon_dir.x = photon->exit_direction.x;
 	photon_dir.y = photon->exit_direction.y;
 	photon_dir.z = photon->exit_direction.z;
@@ -311,7 +298,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 		cap_coord1.y = cap_y[i];
 		cap_coord1.z = description->profile->z[i];
 		cap_rad1 = description->profile->cap[i];
-		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, photon_coord, photon_dir, surface_norm, &alfa, error);
+		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, &photon_coord, photon_dir, &surface_norm, &alfa, error);
 		if(iesc == 0){
 			*ix = i-1;
 			break;
@@ -321,16 +308,16 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 	if(iesc != 0){
 		iesc = 1;
 	} else { //iesc == 0, so broke out of above for loop and thus found next interaction point
-		photon_coord_rel.x = photon_coord->x - photon->exit_coords.x;
-		photon_coord_rel.y = photon_coord->y - photon->exit_coords.y;
-		photon_coord_rel.z = photon_coord->z - photon->exit_coords.z;
+		photon_coord_rel.x = photon_coord.x - photon->exit_coords.x;
+		photon_coord_rel.y = photon_coord.y - photon->exit_coords.y;
+		photon_coord_rel.z = photon_coord.z - photon->exit_coords.z;
 		d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));
 		photon->d_travel += d_travel;
 
 		//store new interaction coordiantes in apprpriate array
-		photon->exit_coords.x = photon_coord->x;
-		photon->exit_coords.y = photon_coord->y;
-		photon->exit_coords.z = photon_coord->z;
+		photon->exit_coords.x = photon_coord.x;
+		photon->exit_coords.y = photon_coord.y;
+		photon->exit_coords.z = photon_coord.z;
 		if(fabs(cos(alfa)) >1.0){
 			printf("COS(alfa) > 1\n");
 			iesc = -1;
@@ -344,18 +331,15 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 //				w1 = photon->weight[0];
 //				calc->absorb[*ix] = calc->absorb[*ix] + w0 - w1;
 
-				photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(alfa) * surface_norm->x;
-				photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(alfa) * surface_norm->y;
-				photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(alfa) * surface_norm->z;
+				photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(alfa) * surface_norm.x;
+				photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(alfa) * surface_norm.y;
+				photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(alfa) * surface_norm.z;
 				polycap_norm(&photon->exit_direction);
 				photon->i_refl++;
 			}
 		}
 	}
 
-
-	free(photon_coord);
-	free(surface_norm);
 	return iesc;
 }
 
