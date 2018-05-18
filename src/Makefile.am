@@ -1,8 +1,20 @@
 
+NULL=
+
 lib_LTLIBRARIES = libpolycap.la
-libpolycap_la_SOURCES = polycap-profile.c polycap-description.c polycap-source.c polycap-photon.c polycap-capil.c polycap-transmission-efficiencies.c polycap-private.h polycap-rng.c polycap-error.c
-libpolycap_la_CPPFLAGS = @easyRNG_CFLAGS@ @gsl_CFLAGS@ @xraylib_CFLAGS@ -I$(top_srcdir)/include @H5CC_CFLAGS@
-libpolycap_la_LIBADD = @easyRNG_LIBS@ @gsl_LIBS@ @xraylib_LIBS@ @H5CC_LIBS@ -lm
+libpolycap_la_SOURCES = \
+	polycap-profile.c \
+	polycap-description.c \
+	polycap-source.c \
+	polycap-photon.c \
+	polycap-capil.c \
+	polycap-transmission-efficiencies.c \
+	polycap-private.h \
+	polycap-rng.c \
+	polycap-error.c \
+	$(NULL)
+libpolycap_la_CPPFLAGS = @easyRNG_CFLAGS@ @gsl_CFLAGS@ @xraylib_CFLAGS@ -I$(top_srcdir)/include @HDF5_CFLAGS@
+libpolycap_la_LIBADD = @easyRNG_LIBS@ @gsl_LIBS@ @xraylib_LIBS@ @HDF5_LIBS@ -lm
 libpolycap_la_CFLAGS = @OPENMP_CFLAGS@
 libpolycap_la_LDFLAGS = @OPENMP_CFLAGS@ @LDFLAGS_LIBPOLYCAP@
 
