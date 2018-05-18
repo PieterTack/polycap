@@ -8,6 +8,7 @@
 #include "polycap-photon.h"
 #include "polycap-rng.h"
 #include "polycap-transmission-efficiencies.h"
+#include "polycap-progress-monitor.h"
 
 //Define constants
 #define HC 1.23984193E-7 //h*c [keV*cm]

@@ -165,13 +165,13 @@ void test_polycap_source_get_transmission_efficiencies() {
 
 	//Something that shouldn't work
 	polycap_clear_error(&error);
-	polycap_transmission_efficiencies *efficiencies = polycap_source_get_transmission_efficiencies(NULL, -1, -1, NULL, -1, &error);
+	polycap_transmission_efficiencies *efficiencies = polycap_source_get_transmission_efficiencies(NULL, -1, -1, NULL, -1, NULL, &error);
 	assert(efficiencies == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//This should work
 	polycap_clear_error(&error);
-	efficiencies = polycap_source_get_transmission_efficiencies(source, 1, 1, &energies, 5, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, 1, 1, &energies, 5, NULL, &error);
 	assert(efficiencies != NULL);
 
 	// Try writing
