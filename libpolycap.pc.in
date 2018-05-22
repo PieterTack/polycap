@@ -10,5 +10,5 @@ Requires.private: gsl libxrl >= 3.3.0 @EASYRNG_PC@
 Requires:
 Conflicts:
 Libs: -L${libdir} -lpolycap
-Libs.private: @H5CC_LIBS@
+Libs.private: @HDF5_LIBS@
 Cflags: -I${includedir} @OPENMP_CFLAGS@
