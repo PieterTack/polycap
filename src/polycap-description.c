@@ -13,7 +13,7 @@
 #include <errno.h>
 
 //===========================================
-char *polycap_read_input_line(FILE *fptr, polycap_error **error)
+HIDDEN char *polycap_read_input_line(FILE *fptr, polycap_error **error)
 {
 	char *strPtr;
 	unsigned int j = 0;
@@ -47,7 +47,7 @@ char *polycap_read_input_line(FILE *fptr, polycap_error **error)
 	return realloc(strPtr, sizeof(char)*j);
 }
 //===========================================
-void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error)
+HIDDEN void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error)
 {
 	int i;
 	double sum = 0;

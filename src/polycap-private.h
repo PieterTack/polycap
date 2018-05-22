@@ -13,6 +13,18 @@
 #define DELTA 1.e-10
 #define BINSIZE 20.e-4 /* cm */
 
+#ifdef TEST_BUILD
+  #define STATIC 
+  #define HIDDEN
+  // additional prototypes for the tests
+  int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa, polycap_error **error);
+  double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error);
+  int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_error **error);
+#else
+  #define STATIC static
+  #define HIDDEN __attribute__((visibility("hidden")))
+#endif
+
 #ifdef HAVE_EASYRNG
   #include <easy_rng.h>
   #include <easy_randist.h>
@@ -129,9 +141,6 @@ double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2);
 int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, polycap_error **error);
 char *polycap_read_input_line(FILE *fptr, polycap_error **error);
 void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error);
-int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa, polycap_error **error);
-double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error);
-int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_error **error);
 void polycap_photon_scatf(polycap_photon *photon, polycap_error **error);
 
 
