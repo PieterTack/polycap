@@ -135,14 +135,6 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_y must be greater than 0");
 		return NULL;
 	}
-	if (&src_sigx == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_sigx cannot be NULL");
-		return NULL;
-	}
-	if (&src_sigy == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_sigy cannot be NULL");
-		return NULL;
-	}
 
 	source = malloc(sizeof(polycap_source));
 	if(source == NULL){
@@ -283,16 +275,6 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 		polycap_source_free(source);
 		return NULL;
 	}
-//	if (source->src_sigx < 0.0){
-//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: source_temp->src_sigx must be greater than 0.0");
-//		polycap_source_free(source);
-//		return NULL;
-//	}
-//	if (source->src_sigy < 0.0){
-//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: source_temp->src_sigy must be greater than 0.0");
-//		polycap_source_free(source);
-//		return NULL;
-//	}
 	if (description->n_cap < 1){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->n_cap must be greater than 1");
 		polycap_source_free(source);
