@@ -11,7 +11,7 @@
 #include <xraylib.h>
 
 //===========================================
-void polycap_photon_scatf(polycap_photon *photon, polycap_error **error)
+HIDDEN void polycap_photon_scatf(polycap_photon *photon, polycap_error **error)
 {
 	int i, j;
 	double totmu, scatf;
@@ -161,7 +161,7 @@ polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng
 }
 
 //===========================================
-int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord, polycap_error **error)
+HIDDEN int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord, polycap_error **error)
 {
 	double hex_edge_norm1[2], hex_edge_norm2[2], hex_edge_norm3[3]; //normal vectors of edges of the hexagonal polycap shape
 	double d_cen2hexedge; //distance between polycap centre and edges (along edge norm)
@@ -194,7 +194,7 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 }
 
 //===========================================
-void polycap_norm(polycap_vector3 *vect)
+HIDDEN void polycap_norm(polycap_vector3 *vect)
 {
 	double sum = 0;
 
@@ -208,7 +208,7 @@ void polycap_norm(polycap_vector3 *vect)
 }
 
 //===========================================
-double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2)
+HIDDEN double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2)
 {
 	double sum = 0;
 

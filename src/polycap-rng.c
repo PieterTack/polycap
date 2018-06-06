@@ -46,16 +46,17 @@ void polycap_rng_free(polycap_rng *rng) {
 }
 
 /* private */
-polycap_rng * polycap_rng_alloc(const polycap_rng_type * T) {
+HIDDEN polycap_rng * polycap_rng_alloc(const polycap_rng_type * T) {
 	polycap_rng *rng = calloc(1, sizeof(polycap_rng));
 	rng->_rng = _polycap_rng_alloc(T);
 	return rng;
 }
 
-void polycap_rng_set(const polycap_rng * r, unsigned long int s) {
+HIDDEN void polycap_rng_set(const polycap_rng * r, unsigned long int s) {
 	_polycap_rng_set(r, s);
 }
-double polycap_rng_uniform(const polycap_rng * r) {
+
+HIDDEN double polycap_rng_uniform(const polycap_rng * r) {
 	return _polycap_rng_uniform(r);
 }
 

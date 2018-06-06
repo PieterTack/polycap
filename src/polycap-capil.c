@@ -11,7 +11,7 @@
 
 //===========================================
 // calculates the intersection point coordinates of the photon trajectory and a given linear segment of the capillary wall
-int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa, polycap_error **error)
+STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa, polycap_error **error)
 {
 	double disc, solution1, solution2, sol_final; //discriminant and solutions of formed quadratic equation
 	polycap_vector3 photon_coord_rel, cap_coord1_rel; //coordinates of previous photon interaction and current point capillary axis, with previous point capillary axis set as origin [0,0,0]
@@ -151,7 +151,7 @@ int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1
 }
 
 //===========================================
-double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error){
+STATIC double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error) {
 	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
 	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
 	double complex rtot; //reflectivity
@@ -189,7 +189,7 @@ double polycap_refl(double e, double theta, double density, double scatf, double
 }
 
 //===========================================
-int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_error **error)
+STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_error **error)
 {
 	int i, iesc=0;
 	double d_esc;  //distance in capillary at which photon escaped divided by propagation vector in z direction
@@ -247,7 +247,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_error **e
 
 //===========================================
 // trace photon through capillary
-int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, polycap_error **error)
+HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, polycap_error **error)
 {
 	int i, iesc=0;
 	double cap_rad0, cap_rad1;

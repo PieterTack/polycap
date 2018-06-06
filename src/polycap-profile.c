@@ -7,7 +7,7 @@
 #include <errno.h>
 
 //===========================================
-bool polynomialfit(int obs, int degree, 
+STATIC bool polynomialfit(int obs, int degree, 
 		   double *dx, double *dy, double *store) /* n, p */
 {
   gsl_multifit_linear_workspace *ws;
