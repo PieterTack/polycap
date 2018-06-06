@@ -256,7 +256,7 @@ int polycap_photon_launch(polycap_photon *photon, polycap_error **error)
 	polycap_photon_scatf(photon, error);
 
 	//define polycapillary-to-photonsource axis 
-	//!!NOTE:this has to be changed. Now we assume all sources are in a straight line with PC central axis!!
+	//!!TODO:this has to be changed. Now we assume all sources are in a straight line with PC central axis!!
 	//e.g. no PC tilt
 	central_axis.x = 0;
 	central_axis.y = 0;

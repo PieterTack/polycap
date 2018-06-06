@@ -77,7 +77,9 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	src_start_coords.x = src_start_x;
 	src_start_coords.y = src_start_y;
 	src_start_coords.z = 0;
-	if((source->src_sigx * source->src_sigy) < 1.e-20){ //uniform distribution over PC entrance
+	// if source->src_sigx or source->src_sigy are negative, assume uniform distribution over PC entrance
+	// otherwise, photon direction vector is within +- sigx or sigy
+	if( source->src_sigx < 0. || source->src_sigy < 0.){ //uniform distribution over PC entrance
 		start_direction.x = start_coords.x - src_start_x;
 		start_direction.y = start_coords.y - src_start_y;
 		start_direction.z = source->d_source;
