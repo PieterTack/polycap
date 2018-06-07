@@ -15,6 +15,7 @@ typedef struct _polycap_description                 polycap_description;
 
 // get a new polycap_description by providing all its properties... perhaps a simpler variant of this function could be defined that would only set the most important parameters and use defaults for the others??
 polycap_description* polycap_description_new(
+	polycap_profile *profile,
 	double sig_rough,
 	double sig_wave,
 	double corr_length,
@@ -23,7 +24,6 @@ polycap_description* polycap_description_new(
 	int iz[],
 	double wi[],
 	double density,
-	polycap_profile *profile,
 	polycap_error **error);
 
 // get the polycap_profile from a polycap_description

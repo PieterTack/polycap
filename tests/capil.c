@@ -91,7 +91,7 @@ void test_polycap_capil_reflect() {
 	polycap_photon *photon;
 	
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
-	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
+	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	start_coords.x = 0.;
 	start_coords.y = 0.;
 	start_coords.z = 0.;
@@ -167,7 +167,7 @@ void test_polycap_capil_trace() {
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
 	polycap_clear_error(&error);
-	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
+	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 	polycap_clear_error(&error);
 	start_coords.x = 0.;

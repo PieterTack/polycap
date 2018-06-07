@@ -78,7 +78,7 @@ HIDDEN void polycap_description_check_weight(size_t nelem, double wi[], polycap_
 
 //===========================================
 // get a new polycap_description by providing all its properties
-polycap_description* polycap_description_new(double sig_rough, double sig_wave, double corr_length, int64_t n_cap, unsigned int nelem, int iz[], double wi[], double density, polycap_profile *profile, polycap_error **error)
+polycap_description* polycap_description_new(polycap_profile *profile, double sig_rough, double sig_wave, double corr_length, int64_t n_cap, unsigned int nelem, int iz[], double wi[], double density, polycap_error **error)
 {
 	int i;
 	polycap_description *description;

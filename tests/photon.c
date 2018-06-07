@@ -37,7 +37,7 @@ void test_polycap_photon_scatf() {
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
 	polycap_clear_error(&error);
-	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
+	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
 	assert(photon != NULL);
@@ -100,7 +100,7 @@ void test_polycap_photon_new() {
 	polycap_profile *profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
 	polycap_clear_error(&error);
-	polycap_description *description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
+	polycap_description *description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1, &energies, &error);
 	assert(photon != NULL);
@@ -216,7 +216,7 @@ void test_polycap_photon_launch() {
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
 	polycap_clear_error(&error);
-	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
+	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
 	assert(photon != NULL);
