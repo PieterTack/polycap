@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	}
 
 	//Write output
-	if (!polycap_transmission_efficiencies_write_hdf5(source, efficiencies, filename, &error)) {
+	if (!polycap_transmission_efficiencies_write_hdf5(efficiencies, filename, &error)) {
 		fprintf(stderr, "%s\n", error->message);
 		return 1;
 	}

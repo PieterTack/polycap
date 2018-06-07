@@ -121,6 +121,7 @@ struct _polycap_transmission_efficiencies
   double *energies;
   double *efficiencies;
   struct _polycap_images *images;
+  polycap_source *source;
   };
 
 struct _polycap_images

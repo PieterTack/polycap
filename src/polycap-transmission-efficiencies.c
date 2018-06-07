@@ -278,7 +278,7 @@ static bool polycap_h5_write_dataset(hid_t file, int rank, hsize_t *dim, char *d
 }
 //===========================================
 // Write efficiencies output in a hdf5 file
-bool polycap_transmission_efficiencies_write_hdf5(polycap_source *source, polycap_transmission_efficiencies *efficiencies, const char *filename, polycap_error **error) {
+bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficiencies *efficiencies, const char *filename, polycap_error **error) {
 	hid_t file, PC_Exit_id, PC_Start_id, Input_id;
 	hsize_t n_energies_temp, dim[2];
 	double *data_temp;
@@ -428,35 +428,35 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_source *source, polyca
 	//Make Input group
 	Input_id = H5Gcreate2(file, "/Input", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	//Copy direction data to temporary array for straightforward HDF5 writing
-	data_temp = malloc(sizeof(double)*source->description->profile->nmax*2);
+	data_temp = malloc(sizeof(double)*efficiencies->source->description->profile->nmax*2);
 	if(data_temp == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 		return false;
 	}
-	for(j=0;j<source->description->profile->nmax;j++){
-		data_temp[j] = source->description->profile->z[j];
-		data_temp[j+source->description->profile->nmax] = source->description->profile->ext[j];
+	for(j=0;j<efficiencies->source->description->profile->nmax;j++){
+		data_temp[j] = efficiencies->source->description->profile->z[j];
+		data_temp[j+efficiencies->source->description->profile->nmax] = efficiencies->source->description->profile->ext[j];
 	}
 	//Define temporary dataset dimension
 	dim[0] = 2;
-	dim[1] = source->description->profile->nmax;
+	dim[1] = efficiencies->source->description->profile->nmax;
 	if (!polycap_h5_write_dataset(file, 2, dim, "/Input/PC_Shape", data_temp,"[cm,cm]", error))
 		return false;
 	//Free data_temp
 	free(data_temp);
 	//Copy direction data to temporary array for straightforward HDF5 writing
-	data_temp = malloc(sizeof(double)*source->description->profile->nmax*2);
+	data_temp = malloc(sizeof(double)*efficiencies->source->description->profile->nmax*2);
 	if(data_temp == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 		return false;
 	}
-	for(j=0;j<source->description->profile->nmax;j++){
-		data_temp[j] = source->description->profile->z[j];
-		data_temp[j+source->description->profile->nmax] = source->description->profile->cap[j];
+	for(j=0 ; j < efficiencies->source->description->profile->nmax ; j++){
+		data_temp[j] = efficiencies->source->description->profile->z[j];
+		data_temp[j+ efficiencies->source->description->profile->nmax] = efficiencies->source->description->profile->cap[j];
 	}
 	//Define temporary dataset dimension
 	dim[0] = 2;
-	dim[1] = source->description->profile->nmax;
+	dim[1] = efficiencies->source->description->profile->nmax;
 	if (!polycap_h5_write_dataset(file, 2, dim, "/Input/Cap_Shape", data_temp,"[cm,cm]", error))
 		return false;
 	//Free data_temp

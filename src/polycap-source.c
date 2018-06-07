@@ -471,6 +471,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		free(sum_weights);
 		return NULL;
 	}
+	efficiencies->source = source;
 
 //	// use cancelled as global variable to indicate that the OpenMP loop was aborted due to an error
 //	bool cancelled = false;	
