@@ -91,8 +91,8 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 		start_direction.z = 1.;
 		//now propagate photon towards polycap at position source->d_source
 		//This has a significant likelyhood the photons will miss the polycap and are thus not transmitted!!
-		start_coords.x = src_start_coords.x + start_direction.x * source->d_source;
-		start_coords.y = src_start_coords.y + start_direction.y * source->d_source;
+		start_coords.x = src_start_coords.x + start_direction.x * source->d_source / start_direction.z;
+		start_coords.y = src_start_coords.y + start_direction.y * source->d_source / start_direction.z;
 	}
 	start_coords.z = 0.;
 	polycap_norm(&start_direction);

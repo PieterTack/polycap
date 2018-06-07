@@ -278,8 +278,8 @@ static bool polycap_h5_write_dataset(hid_t file, int rank, hsize_t *dim, char *d
 }
 //===========================================
 // Write efficiencies output in a hdf5 file
-bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficiencies *efficiencies, const char *filename, polycap_error **error) {
-	hid_t file;
+bool polycap_transmission_efficiencies_write_hdf5(polycap_source *source, polycap_transmission_efficiencies *efficiencies, const char *filename, polycap_error **error) {
+	hid_t file, PC_Exit_id, PC_Start_id, Input_id;
 	hsize_t n_energies_temp, dim[2];
 	double *data_temp;
 	int j;
@@ -313,6 +313,8 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		return false;
 
 	//Write simulated polycap start coordinates
+	//Create PC_Start group
+	PC_Start_id = H5Gcreate2(file, "/PC_Start", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	//Copy coordiante data to temporary array for straightforward HDF5 writing
 	data_temp = malloc(sizeof(double)*efficiencies->images->i_start*2);
 	if(data_temp == NULL){
@@ -327,7 +329,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Define temporary dataset dimension
 	dim[0] = 2;
 	dim[1] = efficiencies->images->i_start;
-	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Start_Coordinates", data_temp,"cm", error))
+	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Start/Coordinates", data_temp,"[cm,cm]", error))
 		return false;
 	//Free data_temp
 	free(data_temp);
@@ -348,13 +350,15 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Define temporary dataset dimension
 	dim[0] = 2;
 	dim[1] = efficiencies->images->i_start;
-	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Start_Direction", data_temp,"cm", error))
+	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Start/Direction", data_temp,"[cm,cm]", error))
 		return false;
 	//Free data_temp
 	free(data_temp);
 
 	//Write simulated polycap exit coordinates
-	//Copy coordiante data to temporary array for straightforward HDF5 writing
+	//Create PC_Exit group
+	PC_Exit_id = H5Gcreate2(file, "/PC_Exit", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	//Copy coordinate data to temporary array for straightforward HDF5 writing
 	data_temp = malloc(sizeof(double)*efficiencies->images->i_exit*2);
 	if(data_temp == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
@@ -368,7 +372,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Define temporary dataset dimension
 	dim[0] = 2;
 	dim[1] = efficiencies->images->i_exit;
-	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Exit_Coordinates", data_temp,"cm", error))
+	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Exit/Coordinates", data_temp,"[cm,cm]", error))
 		return false;
 
 	//Free data_temp
@@ -388,7 +392,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Define temporary dataset dimension
 	dim[0] = 2;
 	dim[1] = efficiencies->images->i_exit;
-	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Exit_Direction", data_temp,"cm", error))
+	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Exit/Direction", data_temp,"[cm,cm]", error))
 		return false;
 	//Free data_temp
 	free(data_temp);
@@ -407,7 +411,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Define temporary dataset dimension
 	dim[0] = 2;
 	dim[1] = efficiencies->images->i_start;
-	if (!polycap_h5_write_dataset(file, 2, dim, "/Source_Start_Coordinates", data_temp,"cm", error))
+	if (!polycap_h5_write_dataset(file, 2, dim, "/Source_Start_Coordinates", data_temp,"[cm,cm]", error))
 		return false;
 
 	//Free data_temp
@@ -417,8 +421,56 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Define temporary dataset dimension
 	dim[1] = efficiencies->n_energies;
 	dim[0] = efficiencies->images->i_exit;
-	if (!polycap_h5_write_dataset(file, 2, dim, "/Exit_Coordinate_Weights", efficiencies->images->exit_coord_weights,"a.u.", error))
+	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Exit/Weights", efficiencies->images->exit_coord_weights,"[keV,a.u.]", error))
 		return false;
+
+	//Write Input parameters
+	//Make Input group
+	Input_id = H5Gcreate2(file, "/Input", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	//Copy direction data to temporary array for straightforward HDF5 writing
+	data_temp = malloc(sizeof(double)*source->description->profile->nmax*2);
+	if(data_temp == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
+		return false;
+	}
+	for(j=0;j<source->description->profile->nmax;j++){
+		data_temp[j] = source->description->profile->z[j];
+		data_temp[j+source->description->profile->nmax] = source->description->profile->ext[j];
+	}
+	//Define temporary dataset dimension
+	dim[0] = 2;
+	dim[1] = source->description->profile->nmax;
+	if (!polycap_h5_write_dataset(file, 2, dim, "/Input/PC_Shape", data_temp,"[cm,cm]", error))
+		return false;
+	//Free data_temp
+	free(data_temp);
+	//Copy direction data to temporary array for straightforward HDF5 writing
+	data_temp = malloc(sizeof(double)*source->description->profile->nmax*2);
+	if(data_temp == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
+		return false;
+	}
+	for(j=0;j<source->description->profile->nmax;j++){
+		data_temp[j] = source->description->profile->z[j];
+		data_temp[j+source->description->profile->nmax] = source->description->profile->cap[j];
+	}
+	//Define temporary dataset dimension
+	dim[0] = 2;
+	dim[1] = source->description->profile->nmax;
+	if (!polycap_h5_write_dataset(file, 2, dim, "/Input/Cap_Shape", data_temp,"[cm,cm]", error))
+		return false;
+	//Free data_temp
+	free(data_temp);
+	
+
+
+	//Close Group access
+	if (H5Gclose(PC_Exit_id) < 0)
+		set_exception(error);
+	if (H5Gclose(PC_Start_id) < 0)
+		set_exception(error);
+	if (H5Gclose(Input_id) < 0)
+		set_exception(error);
 
 	//Close file
 	if (H5Fclose(file) < 0)
