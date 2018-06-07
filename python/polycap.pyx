@@ -132,6 +132,7 @@ cdef class Description:
 
         cdef polycap_error *error = NULL
         self.description = polycap_description_new(
+            profile.profile,
             sig_rough,
             sig_wave,
             corr_length,
@@ -140,7 +141,6 @@ cdef class Description:
             <int*> np.PyArray_DATA(iz),
             <double*> np.PyArray_DATA(wi),
             density,
-            profile.profile,
             &error)
         set_exception(error)
 

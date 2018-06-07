@@ -149,7 +149,7 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 	source->src_sigy = src_sigy;
 	source->src_shiftx = src_shiftx;
 	source->src_shifty = src_shifty;
-	source->description = polycap_description_new(description->sig_rough, description->sig_wave, description->corr_length, description->n_cap, description->nelem, description->iz, description->wi, description->density, description->profile, NULL);
+	source->description = polycap_description_new(description->profile, description->sig_rough, description->sig_wave, description->corr_length, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
 
 	return source;
 }

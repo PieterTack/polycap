@@ -28,7 +28,7 @@ void test_polycap_source_get_photon() {
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
 	polycap_clear_error(&error);
-	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
+	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 	source = polycap_source_new(description, 0.05, 0.1, 0.1, 0.2, 0.2, 0., 0., &error);
 	assert(source != NULL);
@@ -97,7 +97,7 @@ void test_polycap_source_new_from_file() {
 	double wi[2]={53.0,47.0};
 	polycap_profile *profile2 = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9, 0.2065, 0.0585, 0.00035, 9.9153e-05, 1000, 0.5, &error);
 	assert(profile2 != NULL);
-	polycap_description *description2 = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile2, &error);
+	polycap_description *description2 = polycap_description_new(profile2, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description2 != NULL);
 	polycap_profile_free(profile2);
 	polycap_source *source2 = polycap_source_new(description2, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, &error);
@@ -156,7 +156,7 @@ void test_polycap_source_get_transmission_efficiencies() {
 
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
-	description = polycap_description_new(0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, profile, &error);
+	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 	polycap_profile_free(profile);
 	source = polycap_source_new(description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, &error);
