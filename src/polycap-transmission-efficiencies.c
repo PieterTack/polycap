@@ -1,3 +1,17 @@
+/*
+ * Copyright (C) 2018 Pieter Tack, Tom Schoonjans and Laszlo Vincze
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * */
+
 #include "polycap-private.h"
 #include <string.h>
 #include <stdlib.h>
@@ -444,6 +458,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		return false;
 	//Free data_temp
 	free(data_temp);
+
 	//Copy direction data to temporary array for straightforward HDF5 writing
 	data_temp = malloc(sizeof(double)*efficiencies->source->description->profile->nmax*2);
 	if(data_temp == NULL){
@@ -462,6 +477,43 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Free data_temp
 	free(data_temp);
 	
+	//Write ncap and other input parameters
+	n_energies_temp = 1;
+	data_temp = malloc(sizeof(double));
+	if(data_temp == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
+		return false;
+	}
+	*data_temp = (double)efficiencies->source->description->n_cap;
+	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/N_Capillaries", data_temp,"a.u.", error))
+		return false;
+	free(data_temp);
+	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/Surface_Roughness", &efficiencies->source->description->sig_rough,"Angstrom", error))
+		return false;
+	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/Sig_Wave", &efficiencies->source->description->sig_wave,"Angstrom", error))
+		return false; //NOTE: perhaps remove this parameters if not used and does not make sense
+	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/Corr_Length", &efficiencies->source->description->corr_length,"Angstrom", error))
+		return false; //NOTE: perhaps remove this parameters if not used and does not make sense
+	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/Open_Area", &efficiencies->source->description->open_area,"a.u.", error))
+		return false;
+	dim[0] = 2;
+	dim[1] = efficiencies->source->description->nelem;
+	data_temp = malloc(sizeof(double)*efficiencies->source->description->nelem*2);
+	if(data_temp == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
+		return false;
+	}
+	for(j=0 ; j < efficiencies->source->description->nelem ; j++){
+		data_temp[j] = efficiencies->source->description->iz[j];
+		data_temp[j+ efficiencies->source->description->nelem] = efficiencies->source->description->wi[j];
+	}
+	if (!polycap_h5_write_dataset(file, 2, dim, "/Input/PC_Composition", data_temp,"[Z,w%]", error))
+		return false;
+	free(data_temp);
+	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/PC_Density", &efficiencies->source->description->density,"g/cm3", error))
+		return false;
+	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/Src_PC_Dist", &efficiencies->source->d_source,"cm", error))
+		return false;
 
 
 	//Close Group access
