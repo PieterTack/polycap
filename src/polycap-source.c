@@ -26,7 +26,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	polycap_vector3 start_coords, start_direction, start_electric_vector, src_start_coords;
 	double r; //random number
 	int boundary_check = 0;
-	double src_rad, phi; //distance from source centre along angle phi from x axis
+	double phi; //random polar angle phi from source x axis 
 	double src_start_x, src_start_y, max_rad;
 	polycap_photon *photon;
 	int i;
@@ -62,13 +62,6 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 
 
 	// Obtain point from source as photon origin, determining photon start_direction
-//	r = polycap_rng_uniform(rng);
-//	phi = 2.0*M_PI*fabs(r);
-//	r = polycap_rng_uniform(rng);
-//	src_rad = sqrt((1./(((tan(phi)*tan(phi))/(source->src_y*source->src_y))+(1./(source->src_x*source->src_x))))+(source->src_y*source->src_y)*(1.-(((1./(((tan(phi)*tan(phi))/(source->src_y*source->src_y))+(1./(source->src_x*source->src_x)))))/(source->src_x*source->src_x)))) * sqrt(fabs(r)); //sqrt(r) to simulate source intensity distribution (originally src_rad * r/sqrt(r) )
-//	src_start_x = src_rad * cos(phi) + source->src_shiftx;
-//	src_start_y = src_rad * sin(phi) + source->src_shifty;
-
 	// Calculate random phi angle from inverse cumulative distribution function
 	r = polycap_rng_uniform(rng);
 	phi = atan(source->src_y/source->src_x * tan(2.0*M_PI*r/4.));
