@@ -334,6 +334,8 @@ int polycap_photon_launch(polycap_photon *photon, polycap_error **error)
 		//iesc == -2, which means this photon has reached its final point (weight[0] <1e-4)
 			//in old program a new photon is simulated at this point
 		//alternatively, iesc can be 1 due to not finding intersection point, as the photon reached the end of the capillary
+		//TODO: for halo effect likely an option has to be added here to check if photon traveled through capillary wall
+			//In this case the new capillary shape should be defined and reflecting process should proceed etc.
 			break;
 		}
 	}
