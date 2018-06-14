@@ -75,9 +75,9 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	r = polycap_rng_uniform(rng);
 	if(r < 0.25)
 		phi = phi;
-	if((r >= 0.25) & (r < 0.5))
+	if((r >= 0.25) && (r < 0.5))
 		phi = M_PI - phi;
-	if((r >= 0.5) & (r < 0.75))
+	if((r >= 0.5) && (r < 0.75))
 		phi = M_PI + phi;
 	if(r >= 0.75)
 		phi = -1.0 * phi;
