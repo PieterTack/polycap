@@ -36,8 +36,6 @@ cdef extern from "polycap-source.h" nogil:
     polycap_photon* polycap_source_get_photon(
         polycap_source *source,
         polycap_rng *rng,
-        size_t n_energies,
-        double *energies,
         polycap_error **error)
 
     polycap_source* polycap_source_new_from_file(const char *filename, polycap_error **error)

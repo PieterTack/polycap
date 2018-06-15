@@ -71,6 +71,21 @@ HIDDEN void polycap_photon_scatf(polycap_photon *photon, polycap_error **error)
 		}
 	}
 
+	//calculate scatter factors and absorption coefficients
+	//calculate amu and scatf for each energy
+	photon->amu = malloc(sizeof(double)*photon->n_energies);
+	if(photon->amu == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_scatf: could not allocate memory for photon->amu -> %s", strerror(errno));
+		polycap_photon_free(photon);
+		return;
+	}
+	photon->scatf = malloc(sizeof(double)*photon->n_energies);
+	if(photon->scatf == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_scatf: could not allocate memory for photon->scatf -> %s", strerror(errno));
+		polycap_photon_free(photon);
+		return;
+	}
+
 	for(i=0; i<photon->n_energies; i++){
 		totmu = 0;
 		scatf = 0;
@@ -86,7 +101,7 @@ HIDDEN void polycap_photon_scatf(polycap_photon *photon, polycap_error **error)
 
 //===========================================
 // construct a new polycap_photon with its initial position, direction, electric field vector
-polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng *rng, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, size_t n_energies, double *energies, polycap_error **error)
+polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng *rng, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, polycap_error **error)
 {
 	polycap_photon *photon;
 	int i;
@@ -100,20 +115,12 @@ polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: rng cannot be NULL");
 		return NULL;
 	}
-	if (energies == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: energies cannot be NULL");
-		return NULL;
-	}
 	if (start_coords.z < 0.) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: start_coords.z must be greater than 0");
 		return NULL;
 	}
 	if (start_direction.z < 0.) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: start_direction.z must be greater than 0");
-		return NULL;
-	}
-	if (n_energies < 1) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: n_energies must be greater than 0");
 		return NULL;
 	}
 	
@@ -124,19 +131,6 @@ polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon -> %s", strerror(errno));
 		return NULL;
 	}
-	photon->n_energies = n_energies;
-	photon->energies = malloc(sizeof(double)*photon->n_energies);
-	if(photon->energies == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon->energies -> %s", strerror(errno));
-		polycap_photon_free(photon);
-		return NULL;
-	}
-	photon->weight = malloc(sizeof(double)*photon->n_energies);
-	if(photon->weight == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon->weight -> %s", strerror(errno));
-		polycap_photon_free(photon);
-		return NULL;
-	}
 
 	//assign *rng pointer
 	photon->rng = rng;
@@ -144,10 +138,6 @@ polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng
 	photon->description = description;
 
 	//fill rest of structure
-	for(i=0; i<photon->n_energies; i++){
-		photon->energies[i] = energies[i];
-		photon->weight[i] = 1.;
-	}
 	photon->start_coords = start_coords;
 	photon->exit_coords = start_coords;
 	photon->start_direction = start_direction;
@@ -155,21 +145,6 @@ polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng
 	photon->start_electric_vector = start_electric_vector;
 	photon->exit_electric_vector = start_electric_vector;
 	photon->d_travel = 0;
-
-	//calculate amu and scatf for each energy
-	photon->amu = malloc(sizeof(double)*photon->n_energies);
-	if(photon->amu == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon->amu -> %s", strerror(errno));
-		polycap_photon_free(photon);
-		return NULL;
-	}
-	photon->scatf = malloc(sizeof(double)*photon->n_energies);
-	if(photon->scatf == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon->scatf -> %s", strerror(errno));
-		polycap_photon_free(photon);
-		return NULL;
-	}
-	
 
 	return photon;
 }
@@ -233,7 +208,7 @@ HIDDEN double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2)
 
 //===========================================
 // simulate a single photon for a given polycap_description
-int polycap_photon_launch(polycap_photon *photon, polycap_error **error)
+int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *energies, polycap_error **error)
 {
 	polycap_vector3 central_axis;
 	double weight;
@@ -251,6 +226,20 @@ int polycap_photon_launch(polycap_photon *photon, polycap_error **error)
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon cannot be NULL");
 		return -1;
 	}
+	if (energies == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: energies cannot be NULL");
+		return -1;
+	}
+	if (n_energies < 1) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: n_energies must be greater than 0");
+		return -1;
+	}
+	for(i=0; i< n_energies; i++){
+		if (energies[i] < 1. || energies[i] > 100.) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: energies[i] must be greater than 1 and less than 100");
+			return -1;
+		}
+	}
 
 	polycap_description *description = photon->description;
 
@@ -258,6 +247,26 @@ int polycap_photon_launch(polycap_photon *photon, polycap_error **error)
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: description cannot be NULL");
 		return -1;
 	}
+
+	//fill in energy array and initiate weights
+	photon->n_energies = n_energies;
+	photon->energies = malloc(sizeof(double)*photon->n_energies);
+	if(photon->energies == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->energies -> %s", strerror(errno));
+		polycap_photon_free(photon);
+		return -1;
+	}
+	photon->weight = malloc(sizeof(double)*photon->n_energies);
+	if(photon->weight == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->weight -> %s", strerror(errno));
+		polycap_photon_free(photon);
+		return -1;
+	}
+	for(i=0; i<photon->n_energies; i++){
+		photon->energies[i] = energies[i];
+		photon->weight[i] = 1.;
+	}
+	photon->i_refl = 0; //set reflections to 0
 
 	//check if photon->start_coord are within hexagonal polycap boundaries
 	photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords, error);

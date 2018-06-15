@@ -118,9 +118,15 @@ void test_polycap_capil_reflect() {
 	// Create new rng
 	rng = polycap_rng_new_with_seed(20000);
 
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
+	photon->n_energies = 1.;
+	photon->energies = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->energies != NULL);
+	polycap_clear_error(&error);
+	photon->energies[0] = energies;
+	photon->i_refl = 0;
 	//calculate attenuation coefficients and scattering factors
 	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
@@ -196,9 +202,15 @@ void test_polycap_capil_trace() {
 	// Create new rng
 	rng = polycap_rng_new_with_seed(20000);
 
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
+	photon->n_energies = 1.;
+	photon->energies = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->energies != NULL);
+	polycap_clear_error(&error);
+	photon->energies[0] = energies;
+	photon->i_refl = 0;
 	//calculate attenuation coefficients and scattering factors
 	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
@@ -233,9 +245,15 @@ void test_polycap_capil_trace() {
 	start_direction.x = 0.0;
 	start_direction.y = 0.0;
 	start_direction.z = 1.0;
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
+	photon->n_energies = 1.;
+	photon->energies = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->energies != NULL);
+	polycap_clear_error(&error);
+	photon->energies[0] = energies;
+	photon->i_refl = 0;
 	test = polycap_capil_trace(ix, photon, description, cap, cap, &error);
 	assert(test == 1);
 	assert(photon->i_refl == 0);

@@ -45,7 +45,7 @@ polycap_source* polycap_source_new(
 void polycap_source_free(polycap_source *source);
 
 // construct a new random polycap_photon 
-polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *rng, size_t n_energies, double *energies, polycap_error **error);
+polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *rng, polycap_error **error);
 
 // load polycap_description from Laszlo's file. This will recursively call the appropriate polycap_profile_new_* routines. Again here a XML variant could be useful...
 polycap_source* polycap_source_new_from_file(const char *filename, polycap_error **error);

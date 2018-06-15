@@ -20,7 +20,7 @@
 
 //===========================================
 // Obtain a photon structure from source and polycap description
-polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *rng, size_t n_energies, double *energies, polycap_error **error)
+polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *rng, polycap_error **error)
 {
 	double n_shells; //amount of capillary shells in polycapilary
 	polycap_vector3 start_coords, start_direction, start_electric_vector, src_start_coords;
@@ -44,20 +44,6 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	if (rng == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: rng cannot be NULL");
 		return NULL;
-	}
-	if (energies == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: energies cannot be NULL");
-		return NULL;
-	}
-	if (n_energies < 1) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: n_energies must be greater than 0");
-		return NULL;
-	}
-	for(i=0; i< n_energies; i++){
-		if (energies[i] < 1. || energies[i] > 100.) {
-			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: energies[i] must be greater than 1 and less than 100");
-			return NULL;
-		}
 	}
 
 
@@ -131,7 +117,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	polycap_norm(&start_electric_vector);
 
 	// Create photon structure
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, n_energies, energies, error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, error);
 	photon->src_start_coords = src_start_coords;
 
 	return photon;
@@ -545,10 +531,9 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	for(j=0; j < n_photons; j++){
 		do{
 			// Create photon structure
-			photon = polycap_source_get_photon(source, rng, n_energies, energies, NULL);
+			photon = polycap_source_get_photon(source, rng, NULL);
 			// Launch photon
-			photon->i_refl = 0; //set reflections to 0
-			iesc = polycap_photon_launch(photon, NULL);
+			iesc = polycap_photon_launch(photon, n_energies, energies, NULL);
 			//if iesc == -1 here a new photon should be simulated/started.
 			//if iesc == 0 check whether photon is in PC exit window
 			if(iesc == 0) {

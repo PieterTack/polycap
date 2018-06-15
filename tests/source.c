@@ -26,7 +26,6 @@ void test_polycap_source_get_photon() {
 	polycap_description *description;
 	polycap_source *source;
 	polycap_rng *rng;
-	double energies = 10.;
 	double rad_ext_upstream = 0.2065;
 	double rad_ext_downstream = 0.0585;
 	double rad_int_upstream = 0.00035;
@@ -49,17 +48,15 @@ void test_polycap_source_get_photon() {
 
 	//this won't work
 	polycap_clear_error(&error);
-	photon = polycap_source_get_photon(NULL, NULL, -1, NULL, &error);
+	photon = polycap_source_get_photon(NULL, NULL, &error);
 	assert(photon == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//This should work
 	polycap_clear_error(&error);
 	polycap_clear_error(&error);
-	photon = polycap_source_get_photon(source, rng, 1, &energies, &error);
+	photon = polycap_source_get_photon(source, rng, &error);
 	assert(photon != NULL);
-	assert(photon->n_energies == 1);
-	assert(fabs(photon->energies[0] - 10.) < 1.e-5);
 	assert(fabs(photon->src_start_coords.x) <= 0.1);
 	assert(fabs(photon->src_start_coords.y) <= 0.1);
 	assert(photon->src_start_coords.z == 0.);
