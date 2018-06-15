@@ -104,7 +104,6 @@ HIDDEN void polycap_photon_scatf(polycap_photon *photon, polycap_error **error)
 polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng *rng, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, polycap_error **error)
 {
 	polycap_photon *photon;
-	int i;
 
 	//argument sanity check
 	if (description == NULL) {

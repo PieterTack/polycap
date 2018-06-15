@@ -29,7 +29,6 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	double phi; //random polar angle phi from source x axis 
 	double src_start_x, src_start_y, max_rad;
 	polycap_photon *photon;
-	int i;
 
 	// Argument sanity check
 	if (source == NULL) {

@@ -21,7 +21,6 @@
 void test_polycap_photon_scatf() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
 	int iz[2]={8,14};
-	int iesc;
 	double wi[2]={53.0,47.0};
 	polycap_profile *profile;
 	polycap_description *description;
@@ -84,7 +83,6 @@ void test_polycap_photon_scatf() {
 
 void test_polycap_photon_new() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
-	double energies = 10.0;
 	polycap_rng *rng;
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
