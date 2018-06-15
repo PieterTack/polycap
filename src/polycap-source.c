@@ -505,6 +505,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	polycap_photon *photon;
 	int iesc=-1, k;
 	double *weights;
+	double *weights_temp;
 	//polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
 
 	weights = malloc(sizeof(double)*n_energies);
@@ -532,7 +533,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			// Create photon structure
 			photon = polycap_source_get_photon(source, rng, NULL);
 			// Launch photon
-			iesc = polycap_photon_launch(photon, n_energies, energies, NULL);
+			iesc = polycap_photon_launch(photon, n_energies, energies, &weights_temp, NULL);
 			//if iesc == -1 here a new photon should be simulated/started.
 			//if iesc == 0 check whether photon is in PC exit window
 			if(iesc == 0) {
@@ -574,7 +575,8 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 
 		//save photon->weight in thread unique array
 		for(k=0; k<n_energies; k++){
-			weights[k] += photon->weight[k];
+			weights[k] += weights_temp[k];
+//			weights[k] += photon->weight[k];
 			efficiencies->images->exit_coord_weights[k+j*n_energies] = photon->weight[k];
 		}
 		//save photon exit coordinates and propagation vector

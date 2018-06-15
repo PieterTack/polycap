@@ -207,7 +207,7 @@ HIDDEN double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2)
 
 //===========================================
 // simulate a single photon for a given polycap_description
-int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *energies, polycap_error **error)
+int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *energies, double **weights, polycap_error **error)
 {
 	polycap_vector3 central_axis;
 	double weight;
@@ -239,13 +239,19 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 			return -1;
 		}
 	}
+	if (weights == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: weights cannot be NULL");
+		return -1;
+	}
 
 	polycap_description *description = photon->description;
-
 	if (description == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: description cannot be NULL");
 		return -1;
 	}
+
+	*weights = malloc(sizeof(double)*n_energies);
+
 
 	//fill in energy array and initiate weights
 	photon->n_energies = n_energies;
@@ -348,7 +354,10 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		}
 	}
 
+	//Store photon->weight in weights array
+	*weights = photon->weight;
 
+	//Free alloced memory
 	free(cap_x);
 	free(cap_y);
 	if(iesc == -2){

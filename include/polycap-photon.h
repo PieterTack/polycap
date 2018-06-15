@@ -47,6 +47,7 @@ int polycap_photon_launch(
 	polycap_photon *photon, 
 	size_t n_energies,
 	double *energies,
+	double **weights,
 	polycap_error **error);
 
 // get exit coordinates
