@@ -1,3 +1,17 @@
+/*
+ * Copyright (C) 2018 Pieter Tack, Tom Schoonjans and Laszlo Vincze
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * */
+
 #include "polycap-private.h"
 #include <stdlib.h>
 #include <math.h>
@@ -12,8 +26,8 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	polycap_vector3 start_coords, start_direction, start_electric_vector, src_start_coords;
 	double r; //random number
 	int boundary_check = 0;
-	double src_rad, phi; //distance from source centre along angle phi from x axis
-	double src_start_x, src_start_y;
+	double phi; //random polar angle phi from source x axis 
+	double src_start_x, src_start_y, max_rad;
 	polycap_photon *photon;
 	int i;
 
@@ -48,12 +62,22 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 
 
 	// Obtain point from source as photon origin, determining photon start_direction
+	// Calculate random phi angle from inverse cumulative distribution function
 	r = polycap_rng_uniform(rng);
-	phi = 2.0*M_PI*fabs(r);
+	phi = atan(source->src_y/source->src_x * tan(2.0*M_PI*r/4.));
 	r = polycap_rng_uniform(rng);
-	src_rad = sqrt((1./(((tan(phi)*tan(phi))/(source->src_y*source->src_y))+(1./(source->src_x*source->src_x))))+(source->src_y*source->src_y)*(1.-(((1./(((tan(phi)*tan(phi))/(source->src_y*source->src_y))+(1./(source->src_x*source->src_x)))))/(source->src_x*source->src_x)))) * sqrt(fabs(r)); //sqrt(r) to simulate source intensity distribution (originally src_rad * r/sqrt(r) )
-	src_start_x = src_rad * cos(phi) + source->src_shiftx;
-	src_start_y = src_rad * sin(phi) + source->src_shifty;
+	if((r >= 0.25) && (r < 0.5))
+		phi = M_PI - phi;
+	if((r >= 0.5) && (r < 0.75))
+		phi = M_PI + phi;
+	if(r >= 0.75)
+		phi = -1.0 * phi;
+	// Calculate max radius in polar coordinates
+	max_rad = source->src_x*source->src_y / sqrt((source->src_y*cos(phi))*(source->src_y*cos(phi)) + (source->src_x*sin(phi))*(source->src_x*sin(phi)));
+	r = polycap_rng_uniform(rng);
+	src_start_x = sqrt(r) * max_rad * cos(phi) + source->src_shiftx;
+	src_start_y = sqrt(r) * max_rad * sin(phi) + source->src_shifty;
+
 	src_start_coords.x = src_start_x;
 	src_start_coords.y = src_start_y;
 	src_start_coords.z = 0;
@@ -91,8 +115,8 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 		start_direction.z = 1.;
 		//now propagate photon towards polycap at position source->d_source
 		//This has a significant likelyhood the photons will miss the polycap and are thus not transmitted!!
-		start_coords.x = src_start_coords.x + start_direction.x * source->d_source;
-		start_coords.y = src_start_coords.y + start_direction.y * source->d_source;
+		start_coords.x = src_start_coords.x + start_direction.x * source->d_source / start_direction.z;
+		start_coords.y = src_start_coords.y + start_direction.y * source->d_source / start_direction.z;
 	}
 	start_coords.z = 0.;
 	polycap_norm(&start_direction);
@@ -471,6 +495,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		free(sum_weights);
 		return NULL;
 	}
+	efficiencies->source = source;
 
 //	// use cancelled as global variable to indicate that the OpenMP loop was aborted due to an error
 //	bool cancelled = false;	
@@ -552,7 +577,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				efficiencies->images->pc_start_dir[1] = realloc(efficiencies->images->pc_start_dir[1], sizeof(double)*sum_istart);
 				efficiencies->images->pc_start_dir[0][sum_istart-1] = photon->start_direction.x;
 				efficiencies->images->pc_start_dir[1][sum_istart-1] = photon->start_direction.y;
-				} else sum_not_entered++;
+				} else sum_not_entered++; //TODO: check the difference between simulated and estimated open area, likely to do with counting photons that got absorbed in PC here as well...
 			}
 			if(iesc == -1) polycap_photon_free(photon); //Free photon here as a new one will be simulated
 		} while(iesc == -1);
