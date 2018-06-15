@@ -344,8 +344,7 @@ cdef class Source:
             polycap_source_free(self.source)
 
     def get_photon(self,
-        Rng rng not None,
-        object energies not None):
+        Rng rng not None):
 
         cdef polycap_error *error = NULL
         cdef polycap_photon *photon = polycap_source_get_photon(
@@ -354,7 +353,7 @@ cdef class Source:
             &error)
         set_exception(error)
 
-        rv = Photon(None, None, None, None, None, None, ignore=True)
+        rv = Photon(None, None, None, None, None, ignore=True)
         rv.photon = photon
 
         return rv

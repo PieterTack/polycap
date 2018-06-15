@@ -124,8 +124,11 @@ void test_polycap_capil_reflect() {
 	photon->n_energies = 1.;
 	photon->energies = malloc(sizeof(double)*photon->n_energies);
 	assert(photon->energies != NULL);
+	photon->weight = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->weight != NULL);
 	polycap_clear_error(&error);
 	photon->energies[0] = energies;
+	photon->weight[0] = 1.0;
 	photon->i_refl = 0;
 	//calculate attenuation coefficients and scattering factors
 	polycap_photon_scatf(photon, &error);
@@ -208,8 +211,11 @@ void test_polycap_capil_trace() {
 	photon->n_energies = 1.;
 	photon->energies = malloc(sizeof(double)*photon->n_energies);
 	assert(photon->energies != NULL);
+	photon->weight = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->weight != NULL);
 	polycap_clear_error(&error);
 	photon->energies[0] = energies;
+	photon->weight[0] = 1.0;
 	photon->i_refl = 0;
 	//calculate attenuation coefficients and scattering factors
 	polycap_photon_scatf(photon, &error);
@@ -251,8 +257,11 @@ void test_polycap_capil_trace() {
 	photon->n_energies = 1.;
 	photon->energies = malloc(sizeof(double)*photon->n_energies);
 	assert(photon->energies != NULL);
+	photon->weight = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->weight != NULL);
 	polycap_clear_error(&error);
 	photon->energies[0] = energies;
+	photon->weight[0] = 1.0;
 	photon->i_refl = 0;
 	test = polycap_capil_trace(ix, photon, description, cap, cap, &error);
 	assert(test == 1);
