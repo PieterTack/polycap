@@ -160,7 +160,7 @@ void test_polycap_source_get_transmission_efficiencies() {
 	polycap_source *source;
 	int iz[2]={8,14};
 	double wi[2]={53.0,47.0};
-	double energies = 10.0;
+	double energies[7]={1,5,10,15,20,25,30};
 	double rad_ext_upstream = 0.2065;
 	double rad_ext_downstream = 0.0585;
 	double rad_int_upstream = 0.00035;
@@ -185,8 +185,22 @@ void test_polycap_source_get_transmission_efficiencies() {
 
 	//This should work
 	polycap_clear_error(&error);
-	efficiencies = polycap_source_get_transmission_efficiencies(source, 1, 1, &energies, 5, NULL, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, 1, 7, energies, 5, NULL, &error);
 	assert(efficiencies != NULL);
+	polycap_transmission_efficiencies_free(efficiencies);
+
+	//Now we test actual values
+	//This will take a while...
+	polycap_clear_error(&error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, 1, 7, energies, 5000, NULL, &error);
+	assert(efficiencies != NULL);
+	assert(fabs(efficiencies->efficiencies[0] - 0.354) <= 0.005); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - 0.295) <= 0.005); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - 0.117) <= 0.005); //10 keV
+	assert(fabs(efficiencies->efficiencies[3] - 0.045) <= 0.005); //15 keV
+	assert(fabs(efficiencies->efficiencies[4] - 0.021) <= 0.005); //20 keV
+	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.005); //25 keV
+	assert(fabs(efficiencies->efficiencies[6] - 0.007) <= 0.005); //30 keV
 
 	// Try writing
 	assert(!polycap_transmission_efficiencies_write_hdf5(efficiencies, NULL, &error));
