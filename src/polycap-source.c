@@ -591,6 +591,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		}
 		//free photon structure (new one created for each for loop instance)
 		polycap_photon_free(photon);
+		free(weights_temp);
 	} //for(j=0; j < n_photons; j++)
 
 	#pragma omp critical

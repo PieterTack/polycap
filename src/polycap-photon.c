@@ -250,9 +250,6 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		return -1;
 	}
 
-	*weights = malloc(sizeof(double)*n_energies);
-
-
 	//fill in energy array and initiate weights
 	photon->n_energies = n_energies;
 	photon->energies = malloc(sizeof(double)*photon->n_energies);
@@ -355,7 +352,8 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	}
 
 	//Store photon->weight in weights array
-	*weights = photon->weight;
+	*weights = malloc(sizeof(double)*n_energies);
+	memcpy(*weights, photon->weight, sizeof(double)*n_energies);
 
 	//Free alloced memory
 	free(cap_x);

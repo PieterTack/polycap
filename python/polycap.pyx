@@ -300,8 +300,9 @@ cdef class Photon:
             raise ValueError("energies must be a 1D array")
 
         cdef polycap_error *error = NULL
+        cdef double *weights = NULL
            
-        rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &error)
+        rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, &error)
         set_exception(error)
         return rv
 

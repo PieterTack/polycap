@@ -200,6 +200,7 @@ void test_polycap_photon_within_pc_boundary() {
 
 void test_polycap_photon_launch() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
+	double *weights;
 	int test;
 	double energies = 10.0;
 	polycap_rng *rng;
@@ -239,7 +240,7 @@ void test_polycap_photon_launch() {
 	polycap_clear_error(&error);
 
 	//This should not work
-	test = polycap_photon_launch(NULL, 1., &energies, &error);
+	test = polycap_photon_launch(NULL, 1., &energies, NULL, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
@@ -247,7 +248,7 @@ void test_polycap_photon_launch() {
 	//Additionally, amu and scatf will not have been initialised yet
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.21;
-	test = polycap_photon_launch(photon, 1., &energies, &error);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
 	assert(photon->n_energies == 1);
 	assert(fabs(photon->energies[0] - 10.) < 1e-5);
 	assert(photon->amu == NULL);
@@ -258,7 +259,7 @@ void test_polycap_photon_launch() {
 	//This works but returns -1 (as photon does not reach the end of the capillary)
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.0;
-	test = polycap_photon_launch(photon, 1., &energies, &error);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
 	assert(photon->n_energies == 1);
 	assert(fabs(photon->energies[0] - 10.) < 1e-5);
 	assert(photon->amu != NULL);
@@ -270,14 +271,16 @@ void test_polycap_photon_launch() {
 	photon->start_direction.x = 0.;
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.0;
-	test = polycap_photon_launch(photon, 1., &energies, &error);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
 	assert(photon->n_energies == 1);
 	assert(fabs(photon->energies[0] - 10.) < 1e-5);
 	assert(photon->amu != NULL);
 	assert(photon->scatf != NULL);
 	assert(test == 0);
+	//assert that &weights holds same info as photon->weights
+	assert(weights[0] == photon->weight[0]);
 	
-
+	free(weights);
 	polycap_photon_free(photon);
 	polycap_description_free(description);
 	polycap_profile_free(profile);
