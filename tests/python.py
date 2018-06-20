@@ -97,14 +97,15 @@ class TestPolycapPhoton(unittest.TestCase):
         start_direction = ( 0.005, -0.005, 0.1)
         start_electric_vector = (0.5, 0.5, 0.)
         photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector)
-        self.assertEqual(-1, photon.launch(10.0))
+        self.assertIsNone(photon.launch(10.0))
 
     def test_photon_good_coords(self):
         start_coords = (0., 0. , 0.)
-        start_direction = ( 0, 0, 1.0)
+        start_direction = (0, 0, 1.0)
         start_electric_vector = (0.5, 0.5, 0.)
         photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector)
-        self.assertEqual(0, photon.launch(10.0))
+        weights = photon.launch(10.0)
+        self.assertIsInstance(weights, np.ndarray)
         self.assertIsInstance(photon.get_exit_coords(), tuple)
         self.assertIsInstance(photon.get_exit_direction(), tuple)
         self.assertIsInstance(photon.get_exit_electric_vector(), tuple)

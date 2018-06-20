@@ -304,7 +304,17 @@ cdef class Photon:
            
         rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, &error)
         set_exception(error)
-        return rv
+        if rv == -1:
+            return None
+
+        # copy weights to numpy array, free and return
+        cdef np.npy_intp dims[1]
+        dims[0] = energies.size 
+        weights_np = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        memcpy(np.PyArray_DATA(weights_np), weights, sizeof(double) * energies.size)
+        polycap_free(weights)
+
+        return weights_np
 
     def get_exit_coords(self):
         return vector2tuple(polycap_photon_get_exit_coords(self.photon))
