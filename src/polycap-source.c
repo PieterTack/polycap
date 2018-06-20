@@ -564,7 +564,10 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				efficiencies->images->pc_start_dir[1][sum_istart-1] = photon->start_direction.y;
 				} else sum_not_entered++; //TODO: check the difference between simulated and estimated open area, likely to do with counting photons that got absorbed in PC here as well...
 			}
-			if(iesc == -1) polycap_photon_free(photon); //Free photon here as a new one will be simulated
+			if(iesc == -1) {
+				polycap_photon_free(photon); //Free photon here as a new one will be simulated
+				free(weights_temp);
+			}
 		} while(iesc == -1);
 
 		if(thread_id == 0 && (double)i/((double)n_photons/(double)max_threads/10.) >= 1.){
