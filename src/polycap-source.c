@@ -579,8 +579,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		//save photon->weight in thread unique array
 		for(k=0; k<n_energies; k++){
 			weights[k] += weights_temp[k];
-//			weights[k] += photon->weight[k];
-			efficiencies->images->exit_coord_weights[k+j*n_energies] = photon->weight[k];
+			efficiencies->images->exit_coord_weights[k+j*n_energies] = weights_temp[k];
 		}
 		//save photon exit coordinates and propagation vector
 		efficiencies->images->pc_exit_coords[0][j] = photon->exit_coords.x;

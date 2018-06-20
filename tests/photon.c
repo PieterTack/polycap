@@ -274,8 +274,6 @@ void test_polycap_photon_launch() {
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(test == 0);
-	//assert that &weights holds same info as photon->weights
-	assert(weights[0] == photon->weight[0]);
 	
 	free(weights);
 	polycap_photon_free(photon);
