@@ -566,7 +566,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			}
 			if(iesc == -1) {
 				polycap_photon_free(photon); //Free photon here as a new one will be simulated
-				free(weights_temp);
+//				free(weights_temp);
 			}
 		} while(iesc == -1);
 

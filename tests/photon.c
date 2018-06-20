@@ -250,7 +250,6 @@ void test_polycap_photon_launch() {
 	photon->start_coords.x = 0.21;
 	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
 	assert(photon->n_energies == 1);
-	assert(fabs(photon->energies[0] - 10.) < 1e-5);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(test == -1);
@@ -260,10 +259,9 @@ void test_polycap_photon_launch() {
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.0;
 	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
+	assert(photon->amu == NULL);
+	assert(photon->scatf == NULL);
 	assert(photon->n_energies == 1);
-	assert(fabs(photon->energies[0] - 10.) < 1e-5);
-	assert(photon->amu != NULL);
-	assert(photon->scatf != NULL);
 	assert(test == -1);
 	
 	//This works and returns 0 (photon reached end of capillary)
@@ -273,9 +271,8 @@ void test_polycap_photon_launch() {
 	photon->start_direction.z = 1.0;
 	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
 	assert(photon->n_energies == 1);
-	assert(fabs(photon->energies[0] - 10.) < 1e-5);
-	assert(photon->amu != NULL);
-	assert(photon->scatf != NULL);
+	assert(photon->amu == NULL);
+	assert(photon->scatf == NULL);
 	assert(test == 0);
 	//assert that &weights holds same info as photon->weights
 	assert(weights[0] == photon->weight[0]);

@@ -358,6 +358,26 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//Free alloced memory
 	free(cap_x);
 	free(cap_y);
+	//Also free photon->amu, photon->scatf, photon->weight and photon->energy
+	//in case polycap_photon_launch would be called twice on same photon (without intermittant photon freeing)
+	if (photon->energies){
+		free(photon->energies);
+		photon->energies = NULL;
+	}
+	if (photon->weight){
+		free(photon->weight);
+		photon->weight = NULL;
+	}
+	if (photon->amu){
+		free(photon->amu);
+		photon->amu = NULL;
+	}
+	if (photon->scatf){
+		free(photon->scatf);
+		photon->scatf = NULL;
+	}
+
+
 	if(iesc == -2){
 		return -1; //return -1 if photon did not reach end of capillary
 	} else {
