@@ -12,6 +12,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+/** \file polycap-error.h
+ *  \brief API for dealing with errors in polycap
+ *
+ *  This header contains all functions and definitions that are necessary to create, manipulate and free the error objects that are produced by polycap.
+ *  In the vast majority of cases, the user will not have to instantiate errors, but instead will obtain an error object by passing a reference to a `polycap_error` pointer that was initialized to \c NULL, to a function that supports it. Consider the following example that will demonstrate this feature.
+ *
+ *  \code{.c}
+ *  polycap_profile *profile;
+ *  polycap_error *error = NULL;
+ *
+ *  profile = polycap_profile_new(POLYCAP_PROFILE_CONICAL, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, &error);
+ *
+ *  if (err != NULL) {
+ *      // in this case profile will be NULL!
+ *      fprintf(stderr, "Some error occurred: %s", error->message);
+ *      // deal with error...
+ *      ...
+ *      // free error
+ *      polycap_clear_error(&error);
+ *  } 
+ *  \endcode
+ *
+ *  \note the polycap_error API is strongly based on [GError](https://developer.gnome.org/glib/stable/glib-Error-Reporting.html), as implemented in Glib. The user is recommended to have a look at the GError documentation for more information.
+ *  \note there is no equivalent for this header in the Python API since whenever a function produces an error, the corresponding \c polycap_error instance will be converted into an appropriate exception, which will subsequently be raised.
+ */
+
 #ifndef POLYCAP_ERROR_H
 #define POLYCAP_ERROR_H
 
@@ -25,41 +51,47 @@ extern "C" {
 /*
  *  This file is mostly copy-pasted from GLib's polycap_error methods...
  */ 
-
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 #if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ > 4)
 #define GNUC_PRINTF( format_idx, arg_idx )    \
   __attribute__((__format__ (__printf__, format_idx, arg_idx)))
 #else /* !__GNUC__ */
 #define GNUC_PRINTF( format_idx, arg_idx )
 #endif /* !__GNUC__ */
+#endif
 
-enum polycap_error_code {
-	POLYCAP_ERROR_MEMORY, /* set in case of a memory allocation problem */
-	POLYCAP_ERROR_INVALID_ARGUMENT, /* set in case an invalid argument gets passed to a routine */
-	POLYCAP_ERROR_IO, /* set in case an error involving input/output occurred */
-	POLYCAP_ERROR_OPENMP, /* set in case an error involving OpenMP occurred */
-	POLYCAP_ERROR_TYPE, /* set in case an error involving type conversion occurred (HDF5 related) */
-	POLYCAP_ERROR_UNSUPPORTED, /* set in case an unsupported feature has been requested */
-	POLYCAP_ERROR_RUNTIME, /* set in case an unexpected runtime error occurred */
-};
-
-
-/**
- * polycap_error:
- * @code: error code, e.g. %POLYCAP_ERROR_MEMORY
- * @message: human-readable informative error message
+/** Codes to indicate the type of the error
  *
- * The `polycap_error` structure contains information about
- * an error that has occurred.
  */
-typedef struct _polycap_error polycap_error;
-
-struct _polycap_error
-{
-  enum polycap_error_code code;
-  char *message;
+enum polycap_error_code {
+	POLYCAP_ERROR_MEMORY, ///< set in case of a memory allocation problem
+	POLYCAP_ERROR_INVALID_ARGUMENT, ///< set in case an invalid argument gets passed to a routine
+	POLYCAP_ERROR_IO, ///< set in case an error involving input/output occurred
+	POLYCAP_ERROR_OPENMP, ///< set in case an error involving OpenMP occurred
+	POLYCAP_ERROR_TYPE, ///< set in case an error involving type conversion occurred (HDF5 related)
+	POLYCAP_ERROR_UNSUPPORTED, ///< set in case an unsupported feature has been requested
+	POLYCAP_ERROR_RUNTIME, ///< set in case an unexpected runtime error occurred
 };
 
+
+/** Struct containing information about an error.
+ * 
+ * Typically the user will not have to deal with allocating and populating these structs,
+ * as task will be accomplished by the polycap API. However, when such a struct is no longer required,
+ * it is the user's responsability to free the memory using either polycap_error_free() or polycap_clear_error().
+ */
+typedef struct {
+  enum polycap_error_code code; ///< this maps to an integer that will indicate the kind of error was encountered. 
+  char *message; ///< a detailed error message
+} polycap_error;
+
+/** Creates a new polycap_error with the given code , and a message formatted with format 
+ *
+ * \param code error code
+ * \param format printf()-style format for error message
+ * \param ... parameters for message format
+ * \returns a new polycap_error
+ */
 polycap_error* polycap_error_new(enum polycap_error_code code, const char *format, ...) GNUC_PRINTF (2, 3);
 
 polycap_error* polycap_error_new_literal(enum polycap_error_code code, const char *message);
@@ -85,3 +117,4 @@ void polycap_clear_error(polycap_error **err);
 #endif
 
 #endif
+
