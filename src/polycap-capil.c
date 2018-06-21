@@ -238,6 +238,9 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 		//reflectivity according to Fresnel expression
 		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
 
+		//TODO: for halo effect one should calculate here the distance traveled through the capillary wall d_esc
+			//essentially figure out which capillary index the photon's moving to (trickiest point), then determine 'intersection point' 
+			//when entering that capillary and determine distance between two points
 //		w_leak = (1.-rtot) * photon->weight[i] * exp(-1.*d_esc * photon->amu[i]);
 //		leak[i] = leak[i] + w_leak;
 //		if(i == 0){ //NOTE: essentially do this for each energy to obtain photon flux image for each energy

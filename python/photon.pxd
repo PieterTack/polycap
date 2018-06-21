@@ -29,11 +29,9 @@ cdef extern from "polycap-photon.h" nogil:
         polycap_vector3 start_coords,
         polycap_vector3 start_direction,
         polycap_vector3 start_electric_vector,
-        size_t n_energies,
-        double *energies,
         polycap_error **error)
 
-    int polycap_photon_launch(polycap_photon *photon, polycap_error **error)
+    int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *energies, double **weights, polycap_error **error)
 
     polycap_vector3 polycap_photon_get_exit_coords(polycap_photon *photon)
 

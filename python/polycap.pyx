@@ -246,7 +246,6 @@ cdef class Photon:
         object start_coords,
         object start_direction,
         object start_electric_vector,
-        object energies,
         bool ignore=False
         ):
         cdef polycap_vector3 start_coords_pc
@@ -275,11 +274,6 @@ cdef class Photon:
             if len(start_electric_vector.shape) != 1 or start_electric_vector.size != 3:
                 raise ValueError("start_electric_vector must have exactly three elements")
 
-            energies = np.asarray(energies, dtype=np.double)
-            energies = np.atleast_1d(energies)
-            if len(energies.shape) != 1:
-                raise ValueError("energies must be a 1D array")
-           
             start_coords_pc = np2vector(start_coords)
             start_direction_pc = np2vector(start_direction)
             start_electric_vector_pc = np2vector(start_electric_vector)
@@ -290,8 +284,6 @@ cdef class Photon:
                 start_coords_pc,
                 start_direction_pc,
                 start_electric_vector_pc,
-                energies.size,
-                <double*> np.PyArray_DATA(energies),
                 &error)
             set_exception(error)
 
@@ -299,11 +291,30 @@ cdef class Photon:
         if self.photon is not NULL:
             polycap_photon_free(self.photon)
 
-    def launch(self):
+    def launch(self,
+        object energies not None):
+
+        energies = np.asarray(energies, dtype=np.double)
+        energies = np.atleast_1d(energies)
+        if len(energies.shape) != 1:
+            raise ValueError("energies must be a 1D array")
+
         cdef polycap_error *error = NULL
-        rv = polycap_photon_launch(self.photon, &error)
+        cdef double *weights = NULL
+           
+        rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, &error)
         set_exception(error)
-        return rv
+        if rv == 0:
+            return None
+
+        # copy weights to numpy array, free and return
+        cdef np.npy_intp dims[1]
+        dims[0] = energies.size 
+        weights_np = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        memcpy(np.PyArray_DATA(weights_np), weights, sizeof(double) * energies.size)
+        polycap_free(weights)
+
+        return weights_np
 
     def get_exit_coords(self):
         return vector2tuple(polycap_photon_get_exit_coords(self.photon))
@@ -344,24 +355,16 @@ cdef class Source:
             polycap_source_free(self.source)
 
     def get_photon(self,
-        Rng rng not None,
-        object energies not None):
-
-        energies = np.asarray(energies, dtype=np.double)
-        energies = np.atleast_1d(energies)
-        if len(energies.shape) != 1:
-            raise ValueError("energies must be a 1D array")
+        Rng rng not None):
 
         cdef polycap_error *error = NULL
         cdef polycap_photon *photon = polycap_source_get_photon(
             self.source,
             rng.rng,
-            energies.size,
-            <double*> np.PyArray_DATA(energies),
             &error)
         set_exception(error)
 
-        rv = Photon(None, None, None, None, None, None, ignore=True)
+        rv = Photon(None, None, None, None, None, ignore=True)
         rv.photon = photon
 
         return rv

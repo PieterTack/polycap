@@ -20,7 +20,7 @@
 
 //===========================================
 // Obtain a photon structure from source and polycap description
-polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *rng, size_t n_energies, double *energies, polycap_error **error)
+polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *rng, polycap_error **error)
 {
 	double n_shells; //amount of capillary shells in polycapilary
 	polycap_vector3 start_coords, start_direction, start_electric_vector, src_start_coords;
@@ -29,7 +29,6 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	double phi; //random polar angle phi from source x axis 
 	double src_start_x, src_start_y, max_rad;
 	polycap_photon *photon;
-	int i;
 
 	// Argument sanity check
 	if (source == NULL) {
@@ -44,20 +43,6 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	if (rng == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: rng cannot be NULL");
 		return NULL;
-	}
-	if (energies == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: energies cannot be NULL");
-		return NULL;
-	}
-	if (n_energies < 1) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: n_energies must be greater than 0");
-		return NULL;
-	}
-	for(i=0; i< n_energies; i++){
-		if (energies[i] < 1. || energies[i] > 100.) {
-			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_photon: energies[i] must be greater than 1 and less than 100");
-			return NULL;
-		}
 	}
 
 
@@ -131,7 +116,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	polycap_norm(&start_electric_vector);
 
 	// Create photon structure
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, n_energies, energies, error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, error);
 	photon->src_start_coords = src_start_coords;
 
 	return photon;
@@ -518,8 +503,9 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	int thread_id = omp_get_thread_num();
 	polycap_rng *rng;
 	polycap_photon *photon;
-	int iesc=-1, k;
+	int iesc=0, k;
 	double *weights;
+	double *weights_temp;
 	//polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
 
 	weights = malloc(sizeof(double)*n_energies);
@@ -545,25 +531,25 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	for(j=0; j < n_photons; j++){
 		do{
 			// Create photon structure
-			photon = polycap_source_get_photon(source, rng, n_energies, energies, NULL);
+			photon = polycap_source_get_photon(source, rng, NULL);
 			// Launch photon
-			photon->i_refl = 0; //set reflections to 0
-			iesc = polycap_photon_launch(photon, NULL);
-			//if iesc == -1 here a new photon should be simulated/started.
-			//if iesc == 0 check whether photon is in PC exit window
-			if(iesc == 0) {
+			iesc = polycap_photon_launch(photon, n_energies, energies, &weights_temp, NULL);
+			//if iesc == 0 here a new photon should be simulated/started.
+			//if iesc == 1 check whether photon is in PC exit window
+			//if iesc == -1 some error occured
+			if(iesc == 1) {
 				iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
-				if(iesc == 0){
-					iesc = -1;
-				} else {
-					iesc = 0;
-				}
+//				if(iesc == 0){
+//					iesc = -1;
+//				} else {
+//					iesc = 0;
+//				}
 			}
 			//Register succesfully started photon, as well as save start coordinates and direction
 			//TODO: reduce or remove this critical block
 			#pragma omp critical
 			{
-			if(iesc != -1){
+			if(iesc == 1){
 				sum_istart++;
 				efficiencies->images->src_start_coords[0] = realloc(efficiencies->images->src_start_coords[0], sizeof(double)*sum_istart);
 				efficiencies->images->src_start_coords[1] = realloc(efficiencies->images->src_start_coords[1], sizeof(double)*sum_istart);
@@ -577,10 +563,14 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				efficiencies->images->pc_start_dir[1] = realloc(efficiencies->images->pc_start_dir[1], sizeof(double)*sum_istart);
 				efficiencies->images->pc_start_dir[0][sum_istart-1] = photon->start_direction.x;
 				efficiencies->images->pc_start_dir[1][sum_istart-1] = photon->start_direction.y;
-				} else sum_not_entered++; //TODO: check the difference between simulated and estimated open area, likely to do with counting photons that got absorbed in PC here as well...
 			}
-			if(iesc == -1) polycap_photon_free(photon); //Free photon here as a new one will be simulated
-		} while(iesc == -1);
+			if(iesc == 0) sum_not_entered++; //TODO: check the difference between simulated and estimated open area, likely to do with counting photons that got absorbed in PC here as well...
+			}
+			if(iesc != 1) {
+				polycap_photon_free(photon); //Free photon here as a new one will be simulated
+				free(weights_temp);
+			}
+		} while(iesc == 0 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
 
 		if(thread_id == 0 && (double)i/((double)n_photons/(double)max_threads/10.) >= 1.){
 			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(n_photons/max_threads)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
@@ -590,8 +580,8 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 
 		//save photon->weight in thread unique array
 		for(k=0; k<n_energies; k++){
-			weights[k] += photon->weight[k];
-			efficiencies->images->exit_coord_weights[k+j*n_energies] = photon->weight[k];
+			weights[k] += weights_temp[k];
+			efficiencies->images->exit_coord_weights[k+j*n_energies] = weights_temp[k];
 		}
 		//save photon exit coordinates and propagation vector
 		efficiencies->images->pc_exit_coords[0][j] = photon->exit_coords.x;
@@ -605,6 +595,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		}
 		//free photon structure (new one created for each for loop instance)
 		polycap_photon_free(photon);
+		free(weights_temp);
 	} //for(j=0; j < n_photons; j++)
 
 	#pragma omp critical

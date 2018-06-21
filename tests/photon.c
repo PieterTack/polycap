@@ -53,9 +53,14 @@ void test_polycap_photon_scatf() {
 	polycap_clear_error(&error);
 	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
+	photon->n_energies = 1.;
+	photon->energies = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->energies != NULL);
+	polycap_clear_error(&error);
+	photon->energies[0] = energies;
 
 	//This won't work
 	polycap_clear_error(&error);
@@ -65,6 +70,8 @@ void test_polycap_photon_scatf() {
 	//This should work
 	polycap_clear_error(&error);
 	polycap_photon_scatf(photon, &error);
+	assert(photon->amu != NULL);
+	assert(photon->scatf != NULL);
 	assert(fabs(photon->scatf[0] - 0.503696) < 1.e-5);
 	assert(fabs(photon->amu[0] - 42.544635) < 1.e-3);
 
@@ -76,7 +83,6 @@ void test_polycap_photon_scatf() {
 
 void test_polycap_photon_new() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
-	double energies = 10.0;
 	polycap_rng *rng;
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
@@ -97,7 +103,7 @@ void test_polycap_photon_new() {
 
 
 	//This won't work
-	photon = polycap_photon_new(NULL, NULL, start_coords, start_direction, start_electric_vector, -1, NULL, &error);
+	photon = polycap_photon_new(NULL, NULL, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
@@ -116,7 +122,7 @@ void test_polycap_photon_new() {
 	polycap_clear_error(&error);
 	polycap_description *description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1, &energies, &error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	assert( photon->start_coords.x == start_coords.x);
 	assert( photon->start_coords.y == start_coords.y);
@@ -137,10 +143,6 @@ void test_polycap_photon_new() {
 	assert( photon->exit_electric_vector.y == start_electric_vector.y);
 	assert( photon->exit_electric_vector.z == start_electric_vector.z);
 	assert(photon->d_travel == 0);
-	assert(photon->n_energies == 1);
-	assert(fabs(photon->energies[0] - 10.) < 1e-5);
-	assert(photon->amu != NULL);
-	assert(photon->scatf != NULL);
 
 	//While we're at it, also test the polycap_photon_get functions
 	polycap_vector3 test_vect;
@@ -198,6 +200,7 @@ void test_polycap_photon_within_pc_boundary() {
 
 void test_polycap_photon_launch() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
+	double *weights;
 	int test;
 	double energies = 10.0;
 	polycap_rng *rng;
@@ -232,37 +235,47 @@ void test_polycap_photon_launch() {
 	polycap_clear_error(&error);
 	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, 1., &energies, &error);
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 
 	//This should not work
-	test = polycap_photon_launch(NULL, &error);
+	test = polycap_photon_launch(NULL, 1., &energies, NULL, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
-	//This works but returns -1 (as photon was not in PC to begin with)
+	//This works but returns 0 (as photon was not in PC to begin with)
+	//Additionally, amu and scatf will not have been initialised yet
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.21;
-	test = polycap_photon_launch(photon, &error);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
+	assert(photon->n_energies == 1);
+	assert(photon->amu == NULL);
+	assert(photon->scatf == NULL);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 	
-	//This works but returns -1 (as photon does not reach the end of the capillary)
+	//This works but returns 0 (as photon does not reach the end of the capillary)
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.0;
-	test = polycap_photon_launch(photon, &error);
-	assert(test == -1);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
+	assert(photon->amu == NULL);
+	assert(photon->scatf == NULL);
+	assert(photon->n_energies == 1);
+	assert(test == 0);
 	
-	//This works and returns 0 (photon reached end of capillary)
+	//This works and returns 1 (photon reached end of capillary)
 	polycap_clear_error(&error);
 	photon->start_direction.x = 0.;
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.0;
-	test = polycap_photon_launch(photon, &error);
-	assert(test == 0);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
+	assert(photon->n_energies == 1);
+	assert(photon->amu == NULL);
+	assert(photon->scatf == NULL);
+	assert(test == 1);
 	
-
+	free(weights);
 	polycap_photon_free(photon);
 	polycap_description_free(description);
 	polycap_profile_free(profile);

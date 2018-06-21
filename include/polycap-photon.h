@@ -40,12 +40,15 @@ polycap_photon* polycap_photon_new(
 	polycap_vector3 start_coords,
 	polycap_vector3 start_direction,
 	polycap_vector3 start_electric_vector,
-	size_t n_energies,
-	double *energies,
 	polycap_error **error); //give full energy range as for each photon a full spectrum transmission is simulated
 
 // simulate a single photon for a given polycap_description
-int polycap_photon_launch(polycap_photon *photon, polycap_error **error);
+int polycap_photon_launch(
+	polycap_photon *photon, 
+	size_t n_energies,
+	double *energies,
+	double **weights,
+	polycap_error **error);
 
 // get exit coordinates
 polycap_vector3 polycap_photon_get_exit_coords(polycap_photon *photon);

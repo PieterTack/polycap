@@ -90,21 +90,22 @@ class TestPolycapPhoton(unittest.TestCase):
         start_direction = ( 0.005, -0.005, 0.1)
         start_electric_vector = (0.5, 0.5, 0.)
         with self.assertRaises(ValueError):
-            photon = polycap.Photon(None, polycap.Rng(), start_coords, start_direction, start_electric_vector, 10.0)
+            photon = polycap.Photon(None, polycap.Rng(), start_coords, start_direction, start_electric_vector)
 
     def test_photon_bad_coords(self):
         start_coords = (0., 0. , 0.)
         start_direction = ( 0.005, -0.005, 0.1)
         start_electric_vector = (0.5, 0.5, 0.)
-        photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector, 10.0)
-        self.assertEqual(-1, photon.launch())
+        photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector)
+        self.assertIsNone(photon.launch(10.0))
 
     def test_photon_good_coords(self):
         start_coords = (0., 0. , 0.)
-        start_direction = ( 0, 0, 1.0)
+        start_direction = (0, 0, 1.0)
         start_electric_vector = (0.5, 0.5, 0.)
-        photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector, 10.0)
-        self.assertEqual(0, photon.launch())
+        photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector)
+        weights = photon.launch(10.0)
+        self.assertIsInstance(weights, np.ndarray)
         self.assertIsInstance(photon.get_exit_coords(), tuple)
         self.assertIsInstance(photon.get_exit_direction(), tuple)
         self.assertIsInstance(photon.get_exit_electric_vector(), tuple)
@@ -118,19 +119,9 @@ class TestPolycapSource(unittest.TestCase):
         with self.assertRaises(ValueError):
             source = polycap.Source(TestPolycapPhoton.description, -1,-1,-1,-1,-1,0.3,0.3)
 
-    def test_source_bad_get_photon(self):
+    def test_source_get_photon(self):
         source = polycap.Source(TestPolycapPhoton.description, 0.05, 0.1, 0.1, 0.2, 0.2, 0., 0.)
-    
-        with self.assertRaises(TypeError):
-            photon = source.get_photon(TestPolycapSource.rng, None)
-
-    def test_source_good_get_photon(self):
-        source = polycap.Source(TestPolycapPhoton.description, 0.05, 0.1, 0.1, 0.2, 0.2, 0., 0.)
-
-        photon = source.get_photon(TestPolycapSource.rng, 10.0) # scalar
-        photon = source.get_photon(TestPolycapSource.rng, [10.0]) # list
-        photon = source.get_photon(TestPolycapSource.rng, (10.0)) # tuple
-        photon = source.get_photon(TestPolycapSource.rng, np.array(10)) # numpy array
+        photon = source.get_photon(TestPolycapSource.rng)
 
     def test_source_bad_get_transmission_efficiencies(self):
         source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0)
