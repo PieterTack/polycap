@@ -251,6 +251,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	}
 
 	//fill in energy array and initiate weights
+	*weights = malloc(sizeof(double)*n_energies);
 	photon->n_energies = n_energies;
 	photon->energies = malloc(sizeof(double)*photon->n_energies);
 	if(photon->energies == NULL){
@@ -308,7 +309,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//Check whether photon start coordinate is within capillary (within capillary center at distance < capillary radius)
 	d_ph_capcen = sqrt( (photon->start_coords.x-capx_0)*(photon->start_coords.x-capx_0) + (photon->start_coords.y-capy_0)*(photon->start_coords.y-capy_0) );
 	if(d_ph_capcen > description->profile->cap[0]){
-		return -1; //simulates new photon
+		return 0; //simulates new photon
 	}
 
 	//define selected capillary axis X and Y coordinates
@@ -352,7 +353,6 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	}
 
 	//Store photon->weight in weights array
-	*weights = malloc(sizeof(double)*n_energies);
 	memcpy(*weights, photon->weight, sizeof(double)*n_energies);
 
 	//Free alloced memory
@@ -379,9 +379,9 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 
 
 	if(iesc == -2){
-		return -1; //return -1 if photon did not reach end of capillary
+		return 0; //return 0 if photon did not reach end of capillary
 	} else {
-		return 0; //if photon reached end of capillary, return 0
+		return 1; //if photon reached end of capillary, return 1
 	}
 }
 

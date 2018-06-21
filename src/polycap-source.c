@@ -503,7 +503,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	int thread_id = omp_get_thread_num();
 	polycap_rng *rng;
 	polycap_photon *photon;
-	int iesc=-1, k;
+	int iesc=0, k;
 	double *weights;
 	double *weights_temp;
 	//polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
@@ -534,21 +534,22 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			photon = polycap_source_get_photon(source, rng, NULL);
 			// Launch photon
 			iesc = polycap_photon_launch(photon, n_energies, energies, &weights_temp, NULL);
-			//if iesc == -1 here a new photon should be simulated/started.
-			//if iesc == 0 check whether photon is in PC exit window
-			if(iesc == 0) {
+			//if iesc == 0 here a new photon should be simulated/started.
+			//if iesc == 1 check whether photon is in PC exit window
+			//if iesc == -1 some error occured
+			if(iesc == 1) {
 				iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
-				if(iesc == 0){
-					iesc = -1;
-				} else {
-					iesc = 0;
-				}
+//				if(iesc == 0){
+//					iesc = -1;
+//				} else {
+//					iesc = 0;
+//				}
 			}
 			//Register succesfully started photon, as well as save start coordinates and direction
 			//TODO: reduce or remove this critical block
 			#pragma omp critical
 			{
-			if(iesc != -1){
+			if(iesc == 1){
 				sum_istart++;
 				efficiencies->images->src_start_coords[0] = realloc(efficiencies->images->src_start_coords[0], sizeof(double)*sum_istart);
 				efficiencies->images->src_start_coords[1] = realloc(efficiencies->images->src_start_coords[1], sizeof(double)*sum_istart);
@@ -562,13 +563,14 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				efficiencies->images->pc_start_dir[1] = realloc(efficiencies->images->pc_start_dir[1], sizeof(double)*sum_istart);
 				efficiencies->images->pc_start_dir[0][sum_istart-1] = photon->start_direction.x;
 				efficiencies->images->pc_start_dir[1][sum_istart-1] = photon->start_direction.y;
-				} else sum_not_entered++; //TODO: check the difference between simulated and estimated open area, likely to do with counting photons that got absorbed in PC here as well...
 			}
-			if(iesc == -1) {
+			if(iesc == 0) sum_not_entered++; //TODO: check the difference between simulated and estimated open area, likely to do with counting photons that got absorbed in PC here as well...
+			}
+			if(iesc != 1) {
 				polycap_photon_free(photon); //Free photon here as a new one will be simulated
-//				free(weights_temp);
+				free(weights_temp);
 			}
-		} while(iesc == -1);
+		} while(iesc == 0 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
 
 		if(thread_id == 0 && (double)i/((double)n_photons/(double)max_threads/10.) >= 1.){
 			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(n_photons/max_threads)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
