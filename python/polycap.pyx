@@ -124,13 +124,13 @@ cdef class Description:
     cdef object profile_py
 
     def __cinit__(self, 
+        Profile profile,
         double sig_rough,
         double sig_wave,
         double corr_length,
         int64_t n_cap,
         dict composition,
-        double density,
-        Profile profile):
+        double density):
         if profile is None:
             raise ValueError("profile cannot be None")
         if len(composition) == 0:
