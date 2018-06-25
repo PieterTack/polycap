@@ -12,6 +12,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+/** \file polycap-rng.h
+ * \brief API for dealing with polycap_rng
+ *
+ * This header contains all functions and definitions that are necessary to create, manipulate and free polycap_rng used by polycap.
+ *
+ */
+
 #ifndef POLYCAP_RNG_H
 #define POLYCAP_RNG_H
 
@@ -23,15 +30,29 @@ extern "C" {
 #endif
 
 struct _polycap_rng; // our rng struct, which will be mapped to either gsl_rng or easy_rng
+/** Struct containing a rng
+ *  *
+ *   * When this struct is no longer required, it is the user's responsability to free the memory using polycap_rng_free().
+ *    */
 typedef struct _polycap_rng                         polycap_rng;
 
-//get a new rng with seed from /dev/urandom or rand_s
+/* Create a new rng with seed from /dev/urandom or rand_s
+ *
+ * \returns a new polycap_rng
+ */
 polycap_rng* polycap_rng_new(void);
 
-// get a new rng with seed provided by caller
+/* get a new rng with seed provided by caller
+ *
+ * \param seed a seed provided by the caller
+ * \returns a new polycap_rng
+ */
 polycap_rng* polycap_rng_new_with_seed(unsigned long int seed);
 
-// free the rng
+/* free a polycap_rng structure
+ *
+ * \param a polycap_rng
+ */
 void polycap_rng_free(polycap_rng *rng);
 
 #ifdef __cplusplus

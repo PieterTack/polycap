@@ -12,6 +12,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+/** \file polycap-photon.c
+ * \brief API for dealing with polycap_photon structures
+ *
+ * This header contains all functions and definitions that are necessary to create, manipulate and free polycap_photon structures that are used by polycap
+ */
+
 #ifndef POLYCAP_PHOTON_H
 #define POLYCAP_PHOTON_H
 
@@ -24,10 +30,12 @@
 extern "C" {
 #endif
 
+/** Struct describing a 3 dimensional vector where x and y are horizontal and vertical directions compared to the polycapillary respectively, and z is the direction along the polycapillary length
+ */
 typedef struct {
-	double x;
-	double y;
-	double z;
+	double x; ///< horizontal X-axis vector contribution
+	double y; ///< vertical Y-axis vector contribution
+	double z; ///< Z-axis (perpendicular to X and Y) vector contribution
 } polycap_vector3;
 
 
@@ -35,18 +43,40 @@ struct _polycap_leaks;
 typedef struct _polycap_leaks                       polycap_leaks;	
 
 struct _polycap_photon;
+/** Struct containing information about the simulated photon such as position and direction, energy and transmission weights.
+ *
+ * When this struct is no longer required, it is the user's responsability to free the memory using polycap_photon_free().
+ */
 typedef struct _polycap_photon                      polycap_photon;
 
-// construct a new polycap_photon with its initial position, direction, electric field vector and energy
+/** Creates a new polycap_photon with its initial position, direction and electric field vector.
+ *
+ * \param description a polycap_description
+ * \param rng a random number generator pointer
+ * \param start_coords photon start coordinates
+ * \param start_direction photon start direction
+ * \param start_electric_vector photon start electric field vector
+ * \param error Struct containing information about an error
+ * \returns a new polycap_photon
+ */
 polycap_photon* polycap_photon_new(
 	polycap_description *description,
 	polycap_rng *rng,
 	polycap_vector3 start_coords,
 	polycap_vector3 start_direction,
 	polycap_vector3 start_electric_vector,
-	polycap_error **error); //give full energy range as for each photon a full spectrum transmission is simulated
+	polycap_error **error);
 
-// simulate a single photon for a given polycap_description
+/** Simulate a single photon trajectory for a given polycap_description. For each single photon the transmission efficiency for all energies is calculated
+ *
+ * Weights memory is allocated by this function and should be freed by the user.
+ *
+ * \param photon a polycap_photon
+ * \param n_energies the amount of discrete energies for which the transmission efficiency will be calculated
+ * \param energies an array containing the discrete energies for which the transmission efficiency will be calculated
+ * \param weights an array that will contain the transmission efficiency values
+ * \returns an int: 0 if photon was absorbed by the polycapillary, 1 if photon reached the end of the polycapillary, -1 on error
+ */
 int polycap_photon_launch(
 	polycap_photon *photon, 
 	size_t n_energies,
@@ -55,16 +85,31 @@ int polycap_photon_launch(
 	bool leak_calc,
 	polycap_error **error);
 
-// get exit coordinates
+/** Retrieve exit coordinates from a polycap_photon
+ * 
+ * \param photon a polycap_photon
+ * \returns exit coordinates
+ */
 polycap_vector3 polycap_photon_get_exit_coords(polycap_photon *photon);
 
-// get exit direction
+/** Retrieve exit direction vector from a polycap_photon
+ * 
+ * \param photon a polycap_photon
+ * \returns exit direction vector
+ */
 polycap_vector3 polycap_photon_get_exit_direction(polycap_photon *photon);
 
-// get exit electric vector
+/** Retrieve exit electric field vector from a polycap_photon
+ * 
+ * \param photon a polycap_photon
+ * \returns exit electric field vector
+ */
 polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
 
-// free a polycap_photon
+/** Free a polycap_photon
+ * 
+ * \param photon a polycap_photon
+ */
 void polycap_photon_free(polycap_photon *photon);
 
 #ifdef __cplusplus
