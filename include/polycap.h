@@ -12,6 +12,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+/** \file polycap.h
+ * \brief polycap API
+ *
+ * This header contains all other header files that are necessary to run polycap.
+ */
+
 #ifndef POLYCAP_H
 #define POLYCAP_H
 
@@ -25,10 +31,10 @@
 #include "polycap-progress-monitor.h"
 
 //Define constants
-#define HC 1.23984193E-7 //h*c [keV*cm]
-#define N_AVOG 6.022098e+23 //Avogadro constant
-#define R0 2.8179403227e-13 //classical electron radius [cm]
-#define EPSILON 1.0e-30
+#define HC 1.23984193E-7 ///< h*c [keV*cm]
+#define N_AVOG 6.022098e+23 ///< Avogadro constant
+#define R0 2.8179403227e-13 ///< classical electron radius [cm]
+#define EPSILON 1.0e-30 ///< a number close to zero
 
 #ifdef __cplusplus
 extern "C" {

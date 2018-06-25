@@ -12,6 +12,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+/** \file polycap-profile.h
+ * \brief API for dealing with polycap_profile
+ *
+ * This header contains all functions and definitions that are necessary to create, manipulate and free a polycap_profile structure that is used by polycap.
+ */
+
 #ifndef POLYCAP_PROFILE_H
 #define POLYCAP_PROFILE_H
 
@@ -21,18 +27,45 @@
 extern "C" {
 #endif
 
+/** Codes to indicate the type of polycapillary external shape
+ *
+ * In each case, the single capillary shape is assumed conical around the central capillary axis
+ *
+ * Conical shape: the external profile shape is a straight line between the polycapillary entrance and exit radii.
+ *
+ * Paraboloidal shape: a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
+ *
+ * Ellipsoidal shape: an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
+ *
+ */
 enum _polycap_profile_type {
-	POLYCAP_PROFILE_CONICAL,
-	POLYCAP_PROFILE_PARABOLOIDAL,
-	POLYCAP_PROFILE_ELLIPSOIDAL,
+	POLYCAP_PROFILE_CONICAL, ///< Conical external shape
+	POLYCAP_PROFILE_PARABOLOIDAL, ///< Paraboloidal external shape
+	POLYCAP_PROFILE_ELLIPSOIDAL, ///< Ellipsoidal external shape
 };
 
 struct _polycap_profile;
 
 typedef enum   _polycap_profile_type                polycap_profile_type;
+/** Struct containing information about a polycapillary profile shape
+ *  *
+ *   * When this struct is no longer required, it is the user's responsability to free the memory using polycap_profile_free().
+ *    */
 typedef struct _polycap_profile                     polycap_profile;
 
-// get a new profile for a given type with properties
+/** Create a new profile for a given profile type with supplied polycapillary properties
+ *
+ * \param type an integer or type that indicates the profile type
+ * \param length the polycapillary length, as measured along the central axis [cm]
+ * \param rad_ext_upstream external upstream polycapillary radius (photons stream from upstream to downstream) [cm]
+ * \param rad_ext_downstream external downstream polycapillary radius (photons stream from upstream to downstream) [cm]
+ * \param rad_int_upstream internal upstream capillary radius (photons stream from upstream to downstream) [cm]
+ * \param rad_int_downstream internal downstream capillary radius (photons stream from upstream to downstream) [cm]
+ * \param focal_dist_upstream focal distance upstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
+ * \param focal_dist_downstream focal distance downstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
+ * \param error Struct containing information about an error
+ * \returns a new polycap_profile
+ */
 polycap_profile* polycap_profile_new(
 	polycap_profile_type type,
 	double length,
@@ -44,15 +77,27 @@ polycap_profile* polycap_profile_new(
 	double focal_dist_downstream,
 	polycap_error **error);
 
-// get a new profile from Laszlo's ASCII files
-// perhaps it would be a good idea to define a new filetype that would combine these three into a single file? Best to use something like XML for convenience... this could then be polycap_profile_new_from_xml
+//TODO: perhaps it would be a good idea to define a new filetype that would combine these three into a single file? Best to use something like XML for convenience... this could then be polycap_profile_new_from_xml
+/** Create a new profile given ASCII files correponding to the old polycap program format.
+ *
+ * Each file contains a 2 column data set, preceded by the amount of rows in the data set. The first column contains the Z-coordinate, running from 0 to polycappillary length, and the second column contains the corresponding radius. The Z-coordinates should be the same over all files.
+ * In case of the central axis file a 3 column data set is expected, where the second and third column represent the X and Y coordinates of the polycapillary axis respectively.
+ *
+ * \param single_cap_profile_file filename of an ASCII file containing the single capillary radii [cm]. Default extension is *.prf
+ * \param central_axis_file filename of an ASCII file containing the central polycapillary axis coordinates [cm]. Default extension is *.axs.
+ * \param external_shape_file filename of and ASCII file containing the external polycapillary radii [cm]. Default extension is *.ext
+ * \returns a new polycap_profile
+ */
 polycap_profile* polycap_profile_new_from_file(
 	const char *single_cap_profile_file,
 	const char *central_axis_file,
 	const char *external_shape_file,
 	polycap_error **error);
 
-// free the polycap_profile structure and its associated data
+/** Free the polycap_profile structure and its associated data
+ *
+ * \param profile a polycap_profile
+ */
 void polycap_profile_free(polycap_profile *profile);
 
 #ifdef __cplusplus

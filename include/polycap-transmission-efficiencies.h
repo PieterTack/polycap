@@ -12,6 +12,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+/** \file polycap-transmission-efficiencies.h
+ * \brief API for dealing with polycap_transmisson_efficiencies as used by polycap
+ *
+ *
+ */
+
 #ifndef POLYCAP_TRANSEFF_H
 #define POLYCAP_TRANSEFF_H
 
