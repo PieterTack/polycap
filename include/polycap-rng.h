@@ -29,14 +29,14 @@
 extern "C" {
 #endif
 
-struct _polycap_rng; // our rng struct, which will be mapped to either gsl_rng or easy_rng
+struct _polycap_rng;
 /** Struct containing a rng
- *  *
- *   * When this struct is no longer required, it is the user's responsability to free the memory using polycap_rng_free().
- *    */
+ * 
+ * The polycap_rng struct is  mapped to either gsl_rng or easy_rng. When this struct is no longer required, it is the user's responsability to free the memory using polycap_rng_free().
+ */
 typedef struct _polycap_rng                         polycap_rng;
 
-/* Create a new rng with seed from /dev/urandom or rand_s
+/* Create a new rng with seed from `/dev/urandom` or `rand_s`
  *
  * \returns a new polycap_rng
  */

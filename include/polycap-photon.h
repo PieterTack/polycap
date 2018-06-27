@@ -12,7 +12,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
-/** \file polycap-photon.c
+/** \file polycap-photon.h
  * \brief API for dealing with polycap_photon structures
  *
  * This header contains all functions and definitions that are necessary to create, manipulate and free polycap_photon structures that are used by polycap
@@ -73,7 +73,7 @@ polycap_photon* polycap_photon_new(
  *
  * \param photon a polycap_photon
  * \param n_energies the amount of discrete energies for which the transmission efficiency will be calculated
- * \param energies an array containing the discrete energies for which the transmission efficiency will be calculated
+ * \param energies an array containing the discrete energies for which the transmission efficiency will be calculated [keV]
  * \param weights an array that will contain the transmission efficiency values
  * \returns an int: 0 if photon was absorbed by the polycapillary, 1 if photon reached the end of the polycapillary, -1 on error
  */

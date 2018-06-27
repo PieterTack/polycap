@@ -98,7 +98,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
  * \param source a polycap_source
  * \param max_threads the amount of threads to use. Set to -1 to use the maximum available amount of threads.
  * \param n_energies the amount of discrete energies for which the transmission efficiency will be calculated
- * \param energies an array containing the discrete energies for which the transmission efficiency will be calculated
+ * \param energies an array containing the discrete energies for which the transmission efficiency will be calculated [keV]
  * \param n_photons the amount of photons to simulate that reach the polycapillary end
  * \param progress_monitor a polycap_progress_monitor
  * \param error Struct containing information about an error
