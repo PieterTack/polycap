@@ -35,7 +35,7 @@ extern "C" {
  *
  * Paraboloidal shape: a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
  *
- * Ellipsoidal shape: an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
+ * Ellipsoidal shape: an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
  *
  */
 enum _polycap_profile_type {
