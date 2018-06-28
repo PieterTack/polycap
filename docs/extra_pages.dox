@@ -1,5 +1,40 @@
 /** \mainpage
  *
+ * **Polycap** is a library for C with Python bindings that allows for the simulation of X-ray photons in poly- and monocapillary optics with multi-core processing abilities.
+ * This code allows for the study of the influence of the capillary shape, its deviations, surface roughness, reflector material, X-ray energy, source size, distance and divergence on
+ * the optic's efficiency, working distance and focal spot size.
+ *
+ * For each simulated photon, characterized by a three dimensional position, direction and electric field vector, the transmission efficiency through the optic is calculated
+ * as a result of a series of reflections within the capillary optic. Additionally, each transmitted photon is characterized by its exit coordinate, direction and electric field vector
+ * as well as traveled photon path length within the polycapillary optic. These parameters are saved in an HDF5 output file.
+ *
+ * At each photon - capillary wall interaction the reflectivity is determined by the Fresnel equation:
+ * \f[
+	R_{f}(\theta,E) = \left| 
+		\frac{\theta - \sqrt{\theta^{2} - 2\delta(E)}}{\theta + \sqrt{\theta^{2} - 2\delta(E)}}
+		\right|^{2}
+   \f]
+ * with \f$\theta\f$ the glancing angle of the incident radiation and  \f$\delta\f$ defined as \f$\delta = \alpha - i\beta\f$ with
+ *\f[
+	\alpha = \left(\frac{hc}{E}\right)^{2}
+		\frac{N_{A}r_{0}\rho}{2\pi}
+		\sum\limits_{j=1}^N \frac{w_{j}}{A_{j}} (Z_{j} + f_{j}^{'})
+	\\
+	\beta = \left(\frac{hc}{E}\right)^{2}
+		\frac{N_{A}r_{0}\rho}{2\pi}
+		\sum\limits_{j=1}^N \frac{w_{j}}{A_{j}} f_{j}^{"} = \frac{hc}{4\pi} \frac{\mu_{L}}{E}
+  \f]
+ * Here \f$h\f$ is Planck's constant, \f$c\f$ the light velocity, \f$E\f$ the photon energy, \f$N_{A}\f$ Avogadro's number, \f$r_{0}\f$ the classical electron radius, \f$\rho\f$ the material density, \f$N\f$ the number of elements with weight fraction \f$w_{j}\f$, \f$A_{j}\f$ the atomic weight, \f$Z_{j}\f$ the atomic number and \f$f_{j}\f$ the atomic scattering for element \f$j\f$ and \f$\mu_{L}\f$ the linear attenuation coefficient.
+ * By propagating the photon through the capillary and determining the reflectivity at each point a final transmission efficiency, exit coordinate and direction is obtained.
+ * This process can then be repeated for multiple photons as a means to simulate an X-ray source with known distance, size and divergence propagating through the capillary optic.
+ *
+ * \authors Pieter Tack, Tom Schoonjans, Laszlo Vincze
+ *
+ * \page installation_instructions Installation instructions
+ *  
+ * \section requirements Requirements
+ * \subsection easyrng easyRNG
+ * **Polycap** makes use of **easyRNG** when it is installed on the user's device. Alternatively, it will make use of GSL.
  * **easyRNG** is a simple library for C and Fortran providing access to several pseudo-random
  * number generators and pseudo-random number distributions.
  *
@@ -11,11 +46,6 @@
  * 
  * The main reason to use this library over GSL or FGSL is its license. While GSL and FGSL are covered by the GNU General Public License version 3, easyRNG is available under the 3-clause BSD license, allowing for use in closed-source/commercial software packages.
  *
- * \author Tom Schoonjans
- *
- * \page installation_instructions Installation instructions
- *  
- * \section requirements Requirements
  * **easyRNG** can only be installed provided the following dependencies are
  * present on your system:
  * - A C++ compiler with full support of the C++11 standard. Compilers known to do the job are recent versions of GCC and clang.
@@ -24,7 +54,7 @@
  * - Optional: GNU Scientific library. When present a test will be run benchmarking easyRNG's C API against GSL.
  * - Optional: Fortran bindings to the GNU Scientific library (FGSL). When present a test will be run benchmarking easyRNG's Fortran API against FGSL.
  *  
- * \section downloading Downloading the software
+ * \subsubsection downloading Downloading easyRNG
  * The source code release tarballs are hosted on the Github repository, in the [releases section](https://github.com/tschoonj/easyRNG/releases).
  * Just get the latest tarball and run the following commands:
  *
@@ -36,89 +66,17 @@
  *       make install
  *
  *  This procedure is known to work on Linux, Mac OS X and Windows (using [msys2](https://msys2.github.io/))
- *  \subsection homebrew Homebrew                                                                                     
- *  Homebrew users can install easyRNG via my tap:
- *  
- *  > `brew install tschoonj/tap/easyrng`
  *
- *  \subsection linux Linux
- *  \subsubsection rhel Fedora, Centos and Scientific Linux
- *  To facilitate the installation on RPM based Linux distributions, the package includes a spec file which can be used to produce RPM packages for linux distributions that support them (Fedora, Red Hat etc). The developers have built 64-bit RPM packages of easyRNG for the officially supported Fedora and Redhat EL/CentOS/Scientific Linux 7 distributions. These can be downloaded from the RPM repository that is hosted by the X-ray Microspectroscopy and Imaging research group of Ghent University. Access to this repository can be obtained as follows for Fedora distros:
- *
- * > `su -c 'rpm -Uvh http://lvserver.ugent.be/yum/xmi-repo-key-fedora.noarch.rpm'`
- *
- * for Red Hat EL 7 based distributions:
- *
- * > `su -c 'rpm -Uvh http://lvserver.ugent.be/yum/xmi-repo-key-7.0-1.el7.noarch.rpm'`
- *
- * The easyRNG packages themselves can then be downloaded using yum (or \c dnf which is increasingly being used nowadays):
- *
- * > `su -c 'yum install easyRNG easyRNG-devel easyRNG-doc'`
- *
- * Updates can be installed in a similar way:
- *
- * > `su -c 'yum update easyRNG easyRNG-devel easyRNG-doc'`
- *
- * \subsubsection debian Debian and Ubuntu
- *
- * Packages were created for Debian and Ubuntu. Currently the following flavors are supported: Debian Jessie and Stretch, and several Ubuntu versions .
- * In order to access these packages using your favorite package manager, execute the following command to import my public key:
- *
- * > `curl http://xmi-apt.tomschoonjans.eu/xmi.packages.key | sudo apt-key add -`
- *
- * Next, add the package download location corresponding to your distribution to the /etc/apt/sources.list file (as root):
- *
- *
- * Debian Jessie:
- *
- *       deb http://xmi-apt.tomschoonjans.eu/debian jessie stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/debian jessie stable
- *
- * Debian Stretch:
- *
- *       deb http://xmi-apt.tomschoonjans.eu/debian stretch stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/debian stretch stable
- *
- * Ubuntu Trusty 14.04:
- *
- *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable
- *
- * Ubuntu Xenial 16.04:
+ *  \subsection downloading Downloading the software
  * 
- *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu xenial stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu xenial stable
- *
- * Ubuntu Zesty 17.04:
- *
- *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu zesty stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu zesty stable
- *
- * Ubuntu Artful 17.10:
- *
- *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu artful stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu artful stable
- *
- * Ubuntu Bionic 18.04:
- *
- *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu bionic stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu bionic stable
- *
- * When the sources.list file contains the correct download locations, update the apt cache by running:
- *
- * > `sudo apt-get update`
- *
- * After this, one can install easyRNG by executing the following command:
- *
- * > `sudo apt-get install libeasyrng libeasyrng-dev libeasyrng-doc`
  *
  *  \subsection head Github repository
  *                                                                                                                    
  *  People interested in running the latest development version will have to clone the Github repository.             
  *  Make sure you have the above mentioned dependencies installed, as well as the GNU autotools (autoconf, automake and libtool).
  *
- *       git clone git@github.com:tschoonj/easyRNG.git                                                             
- *       cd easyRNG
+ *       git clone git@github.com:PieterTack/polycap.git                                                             
+ *       cd polycap
  *       autoreconf -i
  *       ./configure
  *       make
