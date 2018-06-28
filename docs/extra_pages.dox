@@ -33,6 +33,52 @@
  * \page installation_instructions Installation instructions
  *  
  * \section requirements Requirements
+ * \subsection xraylib Xraylib
+ * **Polycap** makes use of **Xraylib** to obtain values for the linear attenuation coefficient, as well as atomic scattering factors for the elements in the capillary matrix.
+ * **Xraylib** provides access to some of the most respected databases of physical data in the field of X-rays.
+ * The core of **Xraylib** is a library, written in ANSI C, containing over 40 functions to be used to retrieve data from these databases.
+ * This C library can be directly linked with any program written in C, C++ or Objective-C.
+ * Furthermore, the **Xraylib** package contains bindings to several popular programming languages: Fortran 2003, Perl, Python, Java, IDL, Lua, Ruby, PHP and .NET,
+ * as well as a command-line utility which can be used as a pocket-calculator. See [Spectrochimica Acta B 59 (2004) 1725-1731](https://www.sciencedirect.com/science/article/pii/S0584854704001843?via%3Dihub) and [The xraylib library for X-ray—matter interactions. Recent developments](https://www.sciencedirect.com/science/article/pii/S0584854711001984?via%3Dihub).
+ *
+ * \subsubsection downloading Downloading Xraylib
+ * The latest version of the **Xraylib** source code can be downloaded from the [Downloads](http://lvserver.ugent.be/xraylib/) repository.
+ * 
+ * After downloading the tarball, unpack and compile the source code using the following commands:
+ *
+ *       gunzip xraylib-version.tar.gz
+ *       tar xvf xraylib-version.tar
+ *       cd xraylib-version
+ *       ./configure
+ *       make
+ *       make check
+ *       make install
+ *
+ * More information on the installation can be found on the Github [Installation Instructions](https://github.com/tschoonj/xraylib/wiki/Installation-instructions) page.
+ * 
+ * \subsection hdf5 HDF5
+ * The **HDF5** library is used by **polycap** to save all output information in a single, structured and compact file. This software library runs on a range of computational platforms, from laptops to massively parallel systems, and implements a high-level API with C, C++, Fortran 90, and Java interfaces.
+ * It contains a rich set of integrated performance features that allow for access time and storage space optimizations as well as tools and applications for managing, manipulating, viewing, and analyzing the data in the collection.
+ *
+ * \subsubsection downloading2 Downloading HDF5
+ * The **HDF5** source code can be downloaded from [this](https://support.hdfgroup.org/HDF5/release/obtainsrc.html#conf) source.
+ * 
+ * After downloading and unpacking the code, perform the following commands:
+ *
+ *       cd LocalFSpath
+ *       mkdir build
+ *       cd build
+ *       /path_to_HDF5_source/configure ...
+ *       make
+ *       make check
+ *       make install
+ * 
+ * \subsection openMP OpenMP
+ * The **Polycap** code make use of **OpenMP** for its multi-core processing capabilities.
+ * As such, the compiler used to compile the **Polycap** code must implement **OpenMP** functionality. Check the [OpenMP.org](https://www.openmp.org/resources/openmp-compilers-tools/) website for a complete list of compilers implementing **OpenMP**.
+ *
+ * It is strongly advised to use the [GNU GCC](https://gcc.gnu.org/install/) compiler to compile **Polycap**.
+ * 
  * \subsection easyrng easyRNG
  * **Polycap** makes use of **easyRNG** when it is installed on the user's device. Alternatively, it will make use of GSL.
  * **easyRNG** is a simple library for C and Fortran providing access to several pseudo-random
@@ -54,7 +100,7 @@
  * - Optional: GNU Scientific library. When present a test will be run benchmarking easyRNG's C API against GSL.
  * - Optional: Fortran bindings to the GNU Scientific library (FGSL). When present a test will be run benchmarking easyRNG's Fortran API against FGSL.
  *  
- * \subsubsection downloading Downloading easyRNG
+ * \subsubsection downloading3 Downloading easyRNG
  * The source code release tarballs are hosted on the Github repository, in the [releases section](https://github.com/tschoonj/easyRNG/releases).
  * Just get the latest tarball and run the following commands:
  *
@@ -67,7 +113,7 @@
  *
  *  This procedure is known to work on Linux, Mac OS X and Windows (using [msys2](https://msys2.github.io/))
  *
- *  \subsection downloading Downloading the software
+ *  \subsection downloading4 Downloading the Polycap Software
  * 
  *
  *  \subsection head Github repository
