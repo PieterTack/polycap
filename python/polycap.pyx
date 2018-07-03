@@ -126,8 +126,6 @@ cdef class Description:
     def __cinit__(self, 
         Profile profile,
         double sig_rough,
-        double sig_wave,
-        double corr_length,
         int64_t n_cap,
         dict composition,
         double density):
@@ -146,8 +144,6 @@ cdef class Description:
         self.description = polycap_description_new(
             profile.profile,
             sig_rough,
-            sig_wave,
-            corr_length,
             n_cap,
             len(composition),
             <int*> np.PyArray_DATA(iz),

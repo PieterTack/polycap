@@ -69,21 +69,21 @@ class TestPolycapDescription(unittest.TestCase):
     def test_description_bad_input(self):
         with self.assertRaises(ValueError):
             composition = {"Bad": 53.0, "Ugly": 47.0}
-            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0.0, 0.0, 0, composition, 2.23)
+            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0, composition, 2.23)
         with self.assertRaises(ValueError):
             composition = {"O": 53.0, "Si": 47.0}
-            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0.0, 0.0, 0, composition, 2.23)
+            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0, composition, 2.23)
         with self.assertRaises(ValueError):
             composition = {"O": 53.0, "Si": 47.0}
-            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0.0, 0.0, 0, composition, 2.23)
+            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0, composition, 2.23)
             
     def test_description_good_input(self):
         composition = {"O": 53.0, "Si": 47.0}
-        description = polycap.Description(TestPolycapDescription.profile, 0.0, 0.0, 0.0, 200000, composition, 2.23)
+        description = polycap.Description(TestPolycapDescription.profile, 0.0, 200000, composition, 2.23)
 
 class TestPolycapPhoton(unittest.TestCase):
     composition = {"O": 53.0, "Si": 47.0}
-    description = polycap.Description(TestPolycapDescription.profile, 0.0, 0.0, 0.0, 200000, composition, 2.23)
+    description = polycap.Description(TestPolycapDescription.profile, 0.0, 200000, composition, 2.23)
 
     def test_photon_bad_input(self):
         start_coords = (0., 0. , 0.)

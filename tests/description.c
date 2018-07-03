@@ -72,46 +72,46 @@ void test_polycap_description_new() {
 
 	//some cases that don't work
 	polycap_clear_error(&error);
-	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 0, 2, iz, wi, 2.23, &error);
+	description = polycap_description_new(profile, 0.0, 0, 2, iz, wi, 2.23, &error);
 	assert(description == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	polycap_clear_error(&error);
-	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 0, iz, wi, 2.23, &error);
+	description = polycap_description_new(profile, 0.0, 200000, 0, iz, wi, 2.23, &error);
 	assert(description == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	iz[0] = 0;
 	polycap_clear_error(&error);
-	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz,  wi, 2.23, &error);
+	description = polycap_description_new(profile, 0.0, 200000, 2, iz,  wi, 2.23, &error);
 	assert(description == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	iz[0] = 1000;
 	polycap_clear_error(&error);
-	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz,  wi, 2.23, &error);
+	description = polycap_description_new(profile, 0.0, 200000, 2, iz,  wi, 2.23, &error);
 	assert(description == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	iz[0] = 8;
 	polycap_clear_error(&error);
-	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz,  wi, -1.0, &error);
+	description = polycap_description_new(profile, 0.0, 200000, 2, iz,  wi, -1.0, &error);
 	assert(description == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	polycap_clear_error(&error);
-	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, NULL, wi, 2.23, &error);
+	description = polycap_description_new(profile, 0.0, 200000, 2, NULL, wi, 2.23, &error);
 	assert(description == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	polycap_clear_error(&error);
-	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, NULL, 2.23, &error);
+	description = polycap_description_new(profile, 0.0, 200000, 2, iz, NULL, 2.23, &error);
 	assert(description == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//This should work
 	polycap_clear_error(&error);
-	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
+	description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 
 	assert(polycap_description_get_profile(description) == polycap_description_get_profile(description));

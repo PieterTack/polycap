@@ -490,10 +490,6 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	free(data_temp);
 	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/Surface_Roughness", &efficiencies->source->description->sig_rough,"Angstrom", error))
 		return false;
-	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/Sig_Wave", &efficiencies->source->description->sig_wave,"Angstrom", error))
-		return false; //NOTE: perhaps remove this parameters if not used and does not make sense
-	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/Corr_Length", &efficiencies->source->description->corr_length,"Angstrom", error))
-		return false; //NOTE: perhaps remove this parameters if not used and does not make sense
 	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Input/Open_Area", &efficiencies->source->description->open_area,"a.u.", error))
 		return false;
 	dim[0] = 2;

@@ -20,8 +20,6 @@ cdef extern from "polycap-description.h" nogil:
     polycap_description* polycap_description_new(
         polycap_profile *profile,
         double sig_rough,
-        double sig_wave,
-        double corr_length,
         int64_t n_cap,
         unsigned int nelem,
         int iz[],

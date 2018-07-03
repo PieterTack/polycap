@@ -158,7 +158,7 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 	source->src_sigy = src_sigy;
 	source->src_shiftx = src_shiftx;
 	source->src_shifty = src_shifty;
-	source->description = polycap_description_new(description->profile, description->sig_rough, description->sig_wave, description->corr_length, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
+	source->description = polycap_description_new(description->profile, description->sig_rough, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
 
 	return source;
 }
@@ -208,7 +208,6 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 
 	// TODO: fscanf return value checks
 	fscanf(fptr,"%lf", &description->sig_rough);
-	fscanf(fptr,"%lf %lf", &description->sig_wave, &description->corr_length);
 	fscanf(fptr,"%lf", &source->d_source);
 	fscanf(fptr,"%lf %lf", &source->src_x, &source->src_y);
 	fscanf(fptr,"%lf %lf", &source->src_sigx, &source->src_sigy);

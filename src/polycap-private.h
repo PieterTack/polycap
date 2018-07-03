@@ -86,8 +86,6 @@ struct _polycap_profile
 struct _polycap_description
   {
   double sig_rough;
-  double sig_wave;
-  double corr_length;
   int64_t n_cap;
   double open_area;
   unsigned int nelem;
