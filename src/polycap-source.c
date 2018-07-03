@@ -167,7 +167,7 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 polycap_source* polycap_source_new_from_file(const char *filename, polycap_error **error)
 {
 	FILE *fptr;
-	int i;
+	int i, filecheck;
 	polycap_description *description;
 	polycap_source *source;
 	double e_start, e_final, delta_e;
@@ -206,13 +206,42 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 		return NULL;
 	}
 
-	// TODO: fscanf return value checks
-	fscanf(fptr,"%lf", &description->sig_rough);
-	fscanf(fptr,"%lf", &source->d_source);
-	fscanf(fptr,"%lf %lf", &source->src_x, &source->src_y);
-	fscanf(fptr,"%lf %lf", &source->src_sigx, &source->src_sigy);
-	fscanf(fptr,"%lf %lf", &source->src_shiftx, &source->src_shifty);
-	fscanf(fptr,"%u", &description->nelem);
+	filecheck = fscanf(fptr,"%lf", &description->sig_rough);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &description->sig_rough -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%lf", &source->d_source);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->d_source -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%lf %lf", &source->src_x, &source->src_y);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->src_x or &source->src_y -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%lf %lf", &source->src_sigx, &source->src_sigy);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->src_sigx or &source->src_sigy -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%lf %lf", &source->src_shiftx, &source->src_shifty);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->src_shiftx or &source->src_shifty -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%u", &description->nelem);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &description->nelem -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
 
 	description->iz = malloc(sizeof(int)*description->nelem);
 	if(description->iz == NULL){
