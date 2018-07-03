@@ -17,13 +17,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <omp.h> /* openmp header */
 
 //===========================================
 int main(int argc, char *argv[])
 {	
 	polycap_source *source;
 	polycap_transmission_efficiencies *efficiencies;
-	int i;
+	int i, nthreads=-1;
 	size_t n_energies = 291;
 	int n_photons = 50000;
 	double *energies;
@@ -35,6 +36,14 @@ int main(int argc, char *argv[])
 		printf("Usage: polycap input-file should be supplied.\n");
 		exit(0);
 		}
+
+	//Check nthreads if sufficient arguments were supplied
+	if(argc >= 3){
+		nthreads = atoi(argv[2]);
+		if(nthreads < 1 || nthreads > omp_get_max_threads() ){
+			nthreads = omp_get_max_threads();
+		}
+	}
 
 	// Read input file and define source structure
 	source = polycap_source_new_from_file(argv[1], &error);
@@ -55,8 +64,7 @@ int main(int argc, char *argv[])
 
 	// Perform calculations	
 	printf("Starting calculations...\n");
-	// TODO: add a command-line option to override the number of threads
-	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, n_energies, energies, n_photons, NULL, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, nthreads, n_energies, energies, n_photons, NULL, &error);
 	if (efficiencies == NULL) {
 		fprintf(stderr, "%s\n", error->message);
 		return 1;
