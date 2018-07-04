@@ -351,8 +351,8 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, size_t n_energies, double *energies, int n_photons, polycap_progress_monitor *progress_monitor, polycap_error **error)
 {
 	int i, j;
-	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0;
-	int64_t *istart_temp, *not_entered_temp;
+	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0, sum_not_transmitted=0;
+	int64_t *istart_temp, *not_entered_temp, *not_transmitted_temp;
 	double *sum_weights;
 	polycap_transmission_efficiencies *efficiencies;
 
@@ -414,9 +414,15 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for not_entered_temp -> %s", strerror(errno));
 		return NULL;
 	}
+	not_transmitted_temp = malloc(sizeof(int64_t)*max_threads);
+	if(not_transmitted_temp == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for not_transmitted_temp -> %s", strerror(errno));
+		return NULL;
+	}
 	for(i=0; i < max_threads; i++){
 		istart_temp[i] = 0;
 		not_entered_temp[i] = 0;
+		not_transmitted_temp[i] = 0;
 	}
 
 	// Assign polycap_transmission_efficiencies memory
@@ -580,8 +586,9 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			photon = polycap_source_get_photon(source, rng, NULL);
 			// Launch photon
 			iesc = polycap_photon_launch(photon, n_energies, energies, &weights_temp, NULL);
-			//if iesc == 0 here a new photon should be simulated/started.
-			//if iesc == 1 check whether photon is in PC exit window
+			//if iesc == 0 here a new photon should be simulated/started as the photon was absorbed within it.
+			//if iesc == 1 check whether photon is in PC exit window as photon reached end of PC
+			//if iesc == 2 a new photon should be simulated/started as the photon did not enter the PC (hit the glass walls)
 			//if iesc == -1 some error occured
 			if(iesc == 1) {
 				iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
@@ -596,14 +603,15 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				efficiencies->images->pc_start_dir[0][j] = photon->start_direction.x;
 				efficiencies->images->pc_start_dir[1][j] = photon->start_direction.y;
 			}
-			if(iesc == 0)
-				not_entered_temp[thread_id]++; //TODO: check the difference between simulated and estimated open area, likely to do with counting photons that got absorbed in PC here as well...
-								//This number also contains the photon that did enter the PC but were absorbed before it got out! (--> should not contribute to open area)
+			if(iesc == 0) //photon did not reach end of PC
+				not_transmitted_temp[thread_id]++;
+			if(iesc == 2) //photon never entered PC (hit capillary wall instead of opening)
+				not_entered_temp[thread_id]++;
 			if(iesc != 1) {
 				polycap_photon_free(photon); //Free photon here as a new one will be simulated
 				free(weights_temp);
 			}
-		} while(iesc == 0 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
+		} while(iesc == 0 || iesc == 2 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
 
 		if(thread_id == 0 && (double)i/((double)n_photons/(double)max_threads/10.) >= 1.){
 			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(n_photons/max_threads)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
@@ -646,7 +654,11 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	for(i=0; i < max_threads; i++){
 		sum_istart += istart_temp[i];
 		sum_not_entered += not_entered_temp[i];
+		sum_not_transmitted += not_transmitted_temp[i];
 	}
+	free(istart_temp);
+	free(not_entered_temp);
+	free(not_transmitted_temp);
 	
 	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_istart);
 	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_istart/(sum_istart+sum_not_entered));

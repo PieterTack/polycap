@@ -309,7 +309,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//Check whether photon start coordinate is within capillary (within capillary center at distance < capillary radius)
 	d_ph_capcen = sqrt( (photon->start_coords.x-capx_0)*(photon->start_coords.x-capx_0) + (photon->start_coords.y-capy_0)*(photon->start_coords.y-capy_0) );
 	if(d_ph_capcen > description->profile->cap[0]){
-		return 0; //simulates new photon
+		return 2; //simulates new photon
 	}
 
 	//define selected capillary axis X and Y coordinates
