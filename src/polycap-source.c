@@ -352,6 +352,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 {
 	int i, j;
 	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0;
+	int64_t *istart_temp, *not_entered_temp;
 	double *sum_weights;
 	polycap_transmission_efficiencies *efficiencies;
 
@@ -399,7 +400,24 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for sum_weights -> %s", strerror(errno));
 		return NULL;
 	}
-	for(i=0; i<n_energies; i++) sum_weights[i] = 0.;
+	for(i=0; i < n_energies; i++)
+		sum_weights[i] = 0.;
+
+	// Thread specific started photon counter
+	istart_temp = malloc(sizeof(int64_t)*max_threads);
+	if(istart_temp == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for istart_temp -> %s", strerror(errno));
+		return NULL;
+	}
+	not_entered_temp = malloc(sizeof(int64_t)*max_threads);
+	if(not_entered_temp == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for not_entered_temp -> %s", strerror(errno));
+		return NULL;
+	}
+	for(i=0; i < max_threads; i++){
+		istart_temp[i] = 0;
+		not_entered_temp[i] = 0;
+	}
 
 	// Assign polycap_transmission_efficiencies memory
 	efficiencies = calloc(1, sizeof(polycap_transmission_efficiencies));
@@ -431,42 +449,42 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->pc_start_coords[0] = malloc(sizeof(double));
+	efficiencies->images->pc_start_coords[0] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_start_coords[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->pc_start_coords[1] = malloc(sizeof(double));
+	efficiencies->images->pc_start_coords[1] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_start_coords[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->src_start_coords[0] = malloc(sizeof(double));
+	efficiencies->images->src_start_coords[0] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->src_start_coords[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->src_start_coords[1] = malloc(sizeof(double));
+	efficiencies->images->src_start_coords[1] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->src_start_coords[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->pc_start_dir[0] = malloc(sizeof(double));
+	efficiencies->images->pc_start_dir[0] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_start_dir[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->pc_start_dir[1] = malloc(sizeof(double));
+	efficiencies->images->pc_start_dir[1] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_start_dir[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
@@ -567,33 +585,20 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			//if iesc == -1 some error occured
 			if(iesc == 1) {
 				iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
-//				if(iesc == 0){
-//					iesc = -1;
-//				} else {
-//					iesc = 0;
-//				}
 			}
 			//Register succesfully started photon, as well as save start coordinates and direction
-			//TODO: reduce or remove this critical block
-			#pragma omp critical
-			{
 			if(iesc == 1){
-				sum_istart++;
-				efficiencies->images->src_start_coords[0] = realloc(efficiencies->images->src_start_coords[0], sizeof(double)*sum_istart);
-				efficiencies->images->src_start_coords[1] = realloc(efficiencies->images->src_start_coords[1], sizeof(double)*sum_istart);
-				efficiencies->images->src_start_coords[0][sum_istart-1] = photon->src_start_coords.x;
-				efficiencies->images->src_start_coords[1][sum_istart-1] = photon->src_start_coords.y;
-				efficiencies->images->pc_start_coords[0] = realloc(efficiencies->images->pc_start_coords[0], sizeof(double)*sum_istart);
-				efficiencies->images->pc_start_coords[1] = realloc(efficiencies->images->pc_start_coords[1], sizeof(double)*sum_istart);
-				efficiencies->images->pc_start_coords[0][sum_istart-1] = photon->start_coords.x;
-				efficiencies->images->pc_start_coords[1][sum_istart-1] = photon->start_coords.y;
-				efficiencies->images->pc_start_dir[0] = realloc(efficiencies->images->pc_start_dir[0], sizeof(double)*sum_istart);
-				efficiencies->images->pc_start_dir[1] = realloc(efficiencies->images->pc_start_dir[1], sizeof(double)*sum_istart);
-				efficiencies->images->pc_start_dir[0][sum_istart-1] = photon->start_direction.x;
-				efficiencies->images->pc_start_dir[1][sum_istart-1] = photon->start_direction.y;
+				istart_temp[thread_id]++;
+				efficiencies->images->src_start_coords[0][j] = photon->src_start_coords.x;
+				efficiencies->images->src_start_coords[1][j] = photon->src_start_coords.y;
+				efficiencies->images->pc_start_coords[0][j] = photon->start_coords.x;
+				efficiencies->images->pc_start_coords[1][j] = photon->start_coords.y;
+				efficiencies->images->pc_start_dir[0][j] = photon->start_direction.x;
+				efficiencies->images->pc_start_dir[1][j] = photon->start_direction.y;
 			}
-			if(iesc == 0) sum_not_entered++; //TODO: check the difference between simulated and estimated open area, likely to do with counting photons that got absorbed in PC here as well...
-			}
+			if(iesc == 0)
+				not_entered_temp[thread_id]++; //TODO: check the difference between simulated and estimated open area, likely to do with counting photons that got absorbed in PC here as well...
+								//This number also contains the photon that did enter the PC but were absorbed before it got out! (--> should not contribute to open area)
 			if(iesc != 1) {
 				polycap_photon_free(photon); //Free photon here as a new one will be simulated
 				free(weights_temp);
@@ -637,6 +642,12 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 //	if (cancelled)
 //		return NULL;
 
+	//add all started photons together
+	for(i=0; i < max_threads; i++){
+		sum_istart += istart_temp[i];
+		sum_not_entered += not_entered_temp[i];
+	}
+	
 	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_istart);
 	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_istart/(sum_istart+sum_not_entered));
 
