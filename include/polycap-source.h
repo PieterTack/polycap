@@ -69,16 +69,17 @@ polycap_source* polycap_source_new(
 
 /** free a polycap_source struct
  *
- * \param a polycap_source
+ * \param source a polycap_source instance
  */
 void polycap_source_free(polycap_source *source);
 
 /** Create a new random polycap_photon based on polycap_source
  *
+ * In the event of an error, \c NULL is returned and \c error is set appropriately.
  * \param source a polycap_source
  * \param rng a polycap_rng
- * \param error Struct containing information about an error
- * \returns a new polycap_photon
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns a new polycap_photon, or \c NULL if an error occurred
  */
 polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *rng, polycap_error **error);
 
