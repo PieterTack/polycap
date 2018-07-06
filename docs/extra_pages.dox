@@ -33,45 +33,21 @@
  * \page installation_instructions Installation instructions
  *  
  * \section requirements Requirements
- * \subsection xraylib Xraylib
- * **Polycap** makes use of **Xraylib** to obtain values for the linear attenuation coefficient, as well as atomic scattering factors for the elements in the capillary matrix.
- * **Xraylib** provides access to some of the most respected databases of physical data in the field of X-rays.
- * The core of **Xraylib** is a library, written in ANSI C, containing over 40 functions to be used to retrieve data from these databases.
+ * \subsection xraylib xraylib
+ * **Polycap** makes use of **xraylib** to obtain values for the linear attenuation coefficient, as well as atomic scattering factors for the elements in the capillary matrix.
+ * **xraylib** provides access to some of the most respected databases of physical data in the field of X-rays.
+ * The core of **xraylib** is a library, written in ANSI C, containing over 40 functions to be used to retrieve data from these databases.
  * This C library can be directly linked with any program written in C, C++ or Objective-C.
- * Furthermore, the **Xraylib** package contains bindings to several popular programming languages: Fortran 2003, Perl, Python, Java, IDL, Lua, Ruby, PHP and .NET,
- * as well as a command-line utility which can be used as a pocket-calculator. See [Spectrochimica Acta B 59 (2004) 1725-1731](https://www.sciencedirect.com/science/article/pii/S0584854704001843?via%3Dihub) and [The xraylib library for X-ray—matter interactions. Recent developments](https://www.sciencedirect.com/science/article/pii/S0584854711001984?via%3Dihub).
+ * Furthermore, the **xraylib** package contains bindings to several popular programming languages: Fortran 2003, Perl, Python, Java, IDL, Lua, Ruby, PHP and .NET,
+ * as well as a command-line utility which can be used as a pocket-calculator. See [The xraylib library for X-ray—matter interactions. Recent developments](https://www.sciencedirect.com/science/article/pii/S0584854711001984).
  *
- * \subsubsection downloading Downloading Xraylib
- * The latest version of the **Xraylib** source code can be downloaded from the [Downloads](http://lvserver.ugent.be/xraylib/) repository.
- * 
- * After downloading the tarball, unpack and compile the source code using the following commands:
- *
- *       gunzip xraylib-version.tar.gz
- *       tar xvf xraylib-version.tar
- *       cd xraylib-version
- *       ./configure
- *       make
- *       make check
- *       make install
- *
- * More information on the installation can be found on the Github [Installation Instructions](https://github.com/tschoonj/xraylib/wiki/Installation-instructions) page.
+ * Information on obtaining and installing can be found [in the official documentation](https://github.com/tschoonj/xraylib/wiki/Installation-instructions).
  * 
  * \subsection hdf5 HDF5
  * The **HDF5** library is used by **polycap** to save all output information in a single, structured and compact file. This software library runs on a range of computational platforms, from laptops to massively parallel systems, and implements a high-level API with C, C++, Fortran 90, and Java interfaces.
  * It contains a rich set of integrated performance features that allow for access time and storage space optimizations as well as tools and applications for managing, manipulating, viewing, and analyzing the data in the collection.
  *
- * \subsubsection downloading2 Downloading HDF5
- * The **HDF5** source code can be downloaded from [this](https://support.hdfgroup.org/HDF5/release/obtainsrc.html#conf) source.
- * 
- * After downloading and unpacking the code, perform the following commands:
- *
- *       cd LocalFSpath
- *       mkdir build
- *       cd build
- *       /path_to_HDF5_source/configure ...
- *       make
- *       make check
- *       make install
+ * The **HDF5** source code can be downloaded from [this](https://support.hdfgroup.org/HDF5/release/obtainsrc.html#conf) source. However, it should be available using most package managers (apt, yum, dnf, Homebrew, MacPorts, MSYS2 etc).
  * 
  * \subsection openMP OpenMP
  * The **Polycap** code make use of **OpenMP** for its multi-core processing capabilities.
@@ -79,8 +55,12 @@
  *
  * It is strongly advised to use the [GNU GCC](https://gcc.gnu.org/install/) compiler to compile **Polycap**.
  * 
+ * \subsection gsl GNU Scientific Library
+ * TODO
+ *
+ *
  * \subsection easyrng easyRNG
- * **Polycap** makes use of **easyRNG** when it is installed on the user's device. Alternatively, it will make use of GSL.
+ * **Polycap** uses **easyRNG**'s random number generators when present at compilation time. If not, it will make use of the GNU Scientific Library for this purpose.
  * **easyRNG** is a simple library for C and Fortran providing access to several pseudo-random
  * number generators and pseudo-random number distributions.
  *
@@ -92,34 +72,19 @@
  * 
  * The main reason to use this library over GSL or FGSL is its license. While GSL and FGSL are covered by the GNU General Public License version 3, easyRNG is available under the 3-clause BSD license, allowing for use in closed-source/commercial software packages.
  *
- * **easyRNG** can only be installed provided the following dependencies are
- * present on your system:
- * - A C++ compiler with full support of the C++11 standard. Compilers known to do the job are recent versions of GCC and clang.
- * - A C compiler (for running `make check`).
- * - Optional: a Fortran compiler with support of the 2003 standard. If not found then the Fortran bindings will not be built.
- * - Optional: GNU Scientific library. When present a test will be run benchmarking easyRNG's C API against GSL.
- * - Optional: Fortran bindings to the GNU Scientific library (FGSL). When present a test will be run benchmarking easyRNG's Fortran API against FGSL.
- *  
- * \subsubsection downloading3 Downloading easyRNG
  * The source code release tarballs are hosted on the Github repository, in the [releases section](https://github.com/tschoonj/easyRNG/releases).
- * Just get the latest tarball and run the following commands:
  *
- *       tar xfvz easyRNG-x.y.tar.gz
- *       cd easyRNG-x.y
- *       ./configure
- *       make
- *       make check
- *       make install
+ * \subsection python Python bindings
+ * **Polycap** ships with support for Python. In order to generate these at build time, you will need a complete installation of Python, including the headers, as well as Cython and Numpy. These should be easy to install with any package manager. We support both Python 2.7 and 3.x
  *
- *  This procedure is known to work on Linux, Mac OS X and Windows (using [msys2](https://msys2.github.io/))
- *
- *  \subsection downloading4 Downloading the Polycap Software
+ * \section downloading4 Downloading the Polycap Software
  * 
+ * TODO
  *
- *  \subsection head Github repository
+ * \subsection head Github repository
  *                                                                                                                    
- *  People interested in running the latest development version will have to clone the Github repository.             
- *  Make sure you have the above mentioned dependencies installed, as well as the GNU autotools (autoconf, automake and libtool).
+ * People interested in running the latest development version will have to clone the Github repository.             
+ * Make sure you have the above mentioned dependencies installed, as well as the GNU autotools (autoconf, automake and libtool).
  *
  *       git clone git@github.com:PieterTack/polycap.git                                                             
  *       cd polycap
@@ -133,49 +98,24 @@
  * 
  * \section c_usage From C/C++/Objective-C
  *
- * Include the easyRNG headers in your code:
+ * Include the polycap header in your code:
  * \code
- * #include <easy_rng.h> // for the random number generators
- * #include <easy_randist.h> // for the random number distributions
+ * #include <polycap.h>
  * \endcode
  *
  * Assuming your program source file is called \c program.c, compile it with:
  * \code
- * gcc program.c -o program `pkg-config --cflags --libs easyRNG`
+ * gcc program.c -o program `pkg-config --cflags --libs libpolycap`
  * \endcode
  *
- * \section fortran_usage From Fortran
+ * \section python_usage From Python
  *
- * The Fortran bindings' API is mostly identical to the C's. An important exception here is easy_ran_discrete_preproc(), which has one argument less than its C counterpart.
- * Include the easyRNG module in your code:
- * \code{.f90}
- * USE :: easyRNG
+ * Import the polycap module in your code:
+ * \code{.py}
+ * import polycap
  * \endcode
- *
- * Assuming your program source file is called \c program.f90, compile it with:
- * \code
- * gfortran program.f90 -o program `pkg-config --cflags --libs easyRNG`
- * \endcode
- *
- * Make sure to use the exact same Fortran compiler to compile your program as was used to compile easyRNG!
  *
  * \page examples Examples
- * This page contains the code of the tests I have included to validate the program.
- * The code should be quite straightforward to understand. Comments have been added where deemed useful.
- *
- * \tableofcontents
- *
- * \section test1 Test 1: random number generator C API validation
- * \include test1.c
- * \section test2 Test 2: random number generator C API performance test
- * \include test2.c
- * \section test3 Test 3: random number distributions C API accuracy test
- * \include test3.c
- * \section test4 Test 4: random number generator Fortran API validation
- * \include test4.F90
- * \section test5 Test 5: random number generator Fortran API performance test
- * \include test5.F90
- * \section test6 Test 6: random number distributions Fortran API accuracy test
- * \include test6.F90
+ * TODO
  */
 

@@ -40,8 +40,12 @@
 extern "C" {
 #endif
 
-// wrapper around free(), necessary to avoid trouble on Windows with its multiple runtimes...
-void polycap_free(void *);
+/** Wrapper around libc's free(), necessary to avoid trouble on Windows with its multiple runtimes...
+ *
+ * Use this function to free memory allocated by polycap methods that do not have a corresponding free function.
+ * \param data Pointer to the memory block that needs to be free'ed
+ */
+void polycap_free(void *data);
 
 #ifdef __cplusplus
 }

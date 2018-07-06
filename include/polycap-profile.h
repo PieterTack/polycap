@@ -38,15 +38,14 @@ extern "C" {
  * Ellipsoidal shape: an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
  *
  */
-enum _polycap_profile_type {
+typedef enum {
 	POLYCAP_PROFILE_CONICAL, ///< Conical external shape
 	POLYCAP_PROFILE_PARABOLOIDAL, ///< Paraboloidal external shape
 	POLYCAP_PROFILE_ELLIPSOIDAL, ///< Ellipsoidal external shape
-};
+} polycap_profile_type;
 
 struct _polycap_profile;
 
-typedef enum   _polycap_profile_type                polycap_profile_type;
 /** Struct containing information about a polycapillary profile shape
  *  *
  *   * When this struct is no longer required, it is the user's responsability to free the memory using polycap_profile_free().
