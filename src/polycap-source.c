@@ -663,6 +663,10 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_istart);
 	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_istart/(sum_istart+sum_not_entered));
 
+	//TODO: Continue working with simulated open area, as this should be a more honoust comparisson?
+	//This will also influence the efficiencies test output etc...
+//	description->open_area = (double)sum_istart/(sum_istart+sum_not_entered);
+
 	// Complete output structure
 	efficiencies->n_energies = n_energies;
 	efficiencies->images->i_start = sum_istart;
