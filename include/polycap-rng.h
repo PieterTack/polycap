@@ -36,22 +36,22 @@ struct _polycap_rng;
  */
 typedef struct _polycap_rng                         polycap_rng;
 
-/* Create a new rng with seed from `/dev/urandom` or `rand_s`
+/** Create a new rng with seed from `/dev/urandom` or `rand_s`
  *
  * \returns a new polycap_rng
  */
 polycap_rng* polycap_rng_new(void);
 
-/* get a new rng with seed provided by caller
+/** get a new rng with seed provided by caller
  *
  * \param seed a seed provided by the caller
  * \returns a new polycap_rng
  */
 polycap_rng* polycap_rng_new_with_seed(unsigned long int seed);
 
-/* free a polycap_rng structure
+/** free a polycap_rng structure
  *
- * \param a polycap_rng
+ * \param rng a polycap_rng
  */
 void polycap_rng_free(polycap_rng *rng);
 

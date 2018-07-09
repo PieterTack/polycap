@@ -56,8 +56,8 @@ typedef struct _polycap_photon                      polycap_photon;
  * \param start_coords photon start coordinates
  * \param start_direction photon start direction
  * \param start_electric_vector photon start electric field vector
- * \param error Struct containing information about an error
- * \returns a new polycap_photon
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns a new polycap_photon, or \c NULL if an error occurred
  */
 polycap_photon* polycap_photon_new(
 	polycap_description *description,
@@ -75,6 +75,7 @@ polycap_photon* polycap_photon_new(
  * \param n_energies the amount of discrete energies for which the transmission efficiency will be calculated
  * \param energies an array containing the discrete energies for which the transmission efficiency will be calculated [keV]
  * \param weights an array that will contain the transmission efficiency values
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns an int: 0 if photon was absorbed by the polycapillary, 1 if photon reached the end of the polycapillary, -1 on error
  */
 int polycap_photon_launch(

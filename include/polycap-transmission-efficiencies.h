@@ -46,8 +46,8 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
  *
  * \param efficiencies a polycap_transmission_efficiencies struct
  * \param filename a hdf5 file new
- * \param error Struct containing information about an error
- * \returns true or false
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns true or false, or \c NULL if an error occurred
  */
 bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficiencies *efficiencies, const char *filename, polycap_error **error);
 
@@ -57,7 +57,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
  * \param n_energies a variable to contain the amount of simulated photon energies
  * \param energies_arr a variable to contain the simulated photon energies [keV]
  * \param efficiencies_arr a variable to contain the transmission efficiencies array
- * \param error Struct containing information about an error
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns true or false
  */
 bool polycap_transmission_efficiencies_get_data(polycap_transmission_efficiencies *efficiencies, size_t *n_energies, double **energies_arr, double **efficiencies_arr, polycap_error **error);
