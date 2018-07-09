@@ -50,8 +50,8 @@ typedef struct _polycap_source                      polycap_source;
  * \param src_sigy the maximal divergence of photons along the y (vertical) direction [rad]. Negative values in src_sigx or src_sigy represent homogeneous polycapillary optic illumination.
  * \param src_shiftx lateral shift of the source centre along the X (horizontal) direction with respect to the polycapillary optic central axis [cm]
  * \param src_shifty lateral shift of the source centre along the Y (vertical) direction with respect to the polycapillary optic central axis [cm]
- * \param error Struct containing information about an error
- * \returns a new polycap_source
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns a new polycap_source, or \c NULL if an error occurred
  */
 polycap_source* polycap_source_new(
 	polycap_description *description,
@@ -84,8 +84,8 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 /** Load a polycap_description from given ASCII *.inp input file correponding to the old polycap program format.
  *
  * \param filename directory path to an ASCII input file. Default extension *.inp.
- * \param error Struct containing information about an error
- * \returns a new polycap_source
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns a new polycap_source, or \c NULL if an error occurred
  */
 polycap_source* polycap_source_new_from_file(const char *filename, polycap_error **error);
 
@@ -99,7 +99,8 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
  * \param energies an array containing the discrete energies for which the transmission efficiency will be calculated [keV]
  * \param n_photons the amount of photons to simulate that reach the polycapillary end
  * \param progress_monitor a polycap_progress_monitor
- * \param error Struct containing information about an error
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns a new polycap_transmission_efficiencies, or \c NULL if an error occurred
  */
 polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	polycap_source *source,

@@ -62,8 +62,8 @@ typedef struct _polycap_profile                     polycap_profile;
  * \param rad_int_downstream internal downstream capillary radius (photons stream from upstream to downstream) [cm]
  * \param focal_dist_upstream focal distance upstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
  * \param focal_dist_downstream focal distance downstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
- * \param error Struct containing information about an error
- * \returns a new polycap_profile
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns a new polycap_profile, or \c NULL if an error occurred
  */
 polycap_profile* polycap_profile_new(
 	polycap_profile_type type,
@@ -85,7 +85,8 @@ polycap_profile* polycap_profile_new(
  * \param single_cap_profile_file filename of an ASCII file containing the single capillary radii [cm]. Default extension is *.prf
  * \param central_axis_file filename of an ASCII file containing the central polycapillary axis coordinates [cm]. Default extension is *.axs.
  * \param external_shape_file filename of and ASCII file containing the external polycapillary radii [cm]. Default extension is *.ext
- * \returns a new polycap_profile
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns a new polycap_profile, or \c NULL if an error occurred
  */
 polycap_profile* polycap_profile_new_from_file(
 	const char *single_cap_profile_file,

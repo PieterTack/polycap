@@ -51,8 +51,8 @@ typedef struct _polycap_description                 polycap_description;
  * \param iz Array of atomic numbers of the elements present in the capillary matrix
  * \param wi Array of weight percentages of the elements present in the capillary matrix
  * \param density Density of the capillary matrix [g/cm<sup>3</sup>]
- * \param error Struct containing information about an error
- * \returns a new polycap_description
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns a new polycap_description, or \c NULL if an error occurred
  */
 polycap_description* polycap_description_new(
 	polycap_profile *profile,
