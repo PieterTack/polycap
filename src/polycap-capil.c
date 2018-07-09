@@ -228,6 +228,11 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 		return -1;
 	}
 
+	//TODO: for halo effect one should calculate here the distance traveled through the capillary wall d_esc
+		//essentially figure out which capillary index the photon's moving to (trickiest point), then determine 'intersection point'
+		//when entering that capillary and determine distance between two points
+	wall_trace = polycap_capil_trace_wall(photon, &d_travel, &capx_id, &capy_id, error);
+	if(wall_trace == 0) printf("polycap_capil_trace_wall returns 0; this can't be\n");
 
 //	d_esc = (description->profile->z[description->profile->nmax] - photon->exit_coords.z) / photon->exit_direction.z;
 //	if(d_esc < 0) d_esc = description->profile->z[description->profile->nmax];
@@ -237,12 +242,6 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 
 		//reflectivity according to Fresnel expression
 		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
-
-		//TODO: for halo effect one should calculate here the distance traveled through the capillary wall d_esc
-			//essentially figure out which capillary index the photon's moving to (trickiest point), then determine 'intersection point'
-			//when entering that capillary and determine distance between two points
-		wall_trace = polycap_capil_trace_wall(photon, &d_travel, &capx_id, &capy_id, error);
-
 
 //		w_leak = (1.-rtot) * photon->weight[i] * exp(-1.*d_esc * photon->amu[i]);
 //		leak[i] = leak[i] + w_leak;
@@ -336,7 +335,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 		d_ph_capcen = sqrt( (new_photon_coords.x-capx_0)*(new_photon_coords.x-capx_0) + (new_photon_coords.y-capy_0)*(new_photon_coords.y-capy_0) );
 		if(d_ph_capcen > photon->description->profile->cap[z_id]){
 			iesc = 0; //photon not inside capil
-			photon_pos_check == polycap_photon_within_pc_boundary(photon->description->profile->ext[z_id], new_photon_coords, error);
+			photon_pos_check = polycap_photon_within_pc_boundary(photon->description->profile->ext[z_id], new_photon_coords, error);
 			if(photon_pos_check == 0) iesc = 2;
 		} else iesc = 1;
 	} while(iesc == 0 && z_id < photon->description->profile->nmax); //repeat until photon is outside of polycap or within new capillary
@@ -362,6 +361,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 			return 2;
 		return 3;
 	}
+	return 0; //the function should actually never return 0. All (physical) options are covered by return values 1, 2 and 3.
 
 }
 //===========================================
