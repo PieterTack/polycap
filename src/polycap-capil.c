@@ -271,24 +271,15 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 		if(wall_trace == 2 || wall_trace == 3){ //photon reached end of capillary through walls (either on side of polycap through outer wall or at the exit tip within the glass)
 			// Save coordinates/direction and weights in appropriate way
 			// 	A single simulated photon can result in many leaks along the way
-			photon->n_leaks++;
-			if(photon->n_leaks == 1){
-				photon->leaks = malloc(sizeof(polycap_leaks));
-				if(photon->leaks == NULL){
-					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
-					free(w_leak);
-					return -1;	
-				}
-			} else {
-				photon->leaks = realloc(photon->leaks,sizeof(polycap_leaks)*photon->n_leaks);
-				if(photon->leaks == NULL){
-					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
-					free(w_leak);
-					return -1;	
-				}
+			photon->leaks = realloc(photon->leaks, sizeof(polycap_leaks) * ++photon->n_leaks);
+			if(photon->leaks == NULL){
+				polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
+				free(w_leak);
+				return -1;
 			}
 			photon->leaks[photon->n_leaks-1].coords = leak_coords;
 			photon->leaks[photon->n_leaks-1].direction = photon->exit_direction;
+			photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
 			memcpy(photon->leaks[photon->n_leaks-1].weight, w_leak, sizeof(double)*photon->n_energies);
 		}
 		if(wall_trace == 1){ // photon entered new capillary through the capillary walls
@@ -330,7 +321,9 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 		current_polycap_ext = ((photon->description->profile->ext[z_id+1] - photon->description->profile->ext[z_id])/
 			(photon->description->profile->z[z_id+1] - photon->description->profile->z[z_id])) * 
 			(photon->exit_coords.z - photon->description->profile->z[z_id]) + photon->description->profile->ext[z_id];
-	} else current_polycap_ext = photon->description->profile->ext[z_id];
+	} else {
+		current_polycap_ext = photon->description->profile->ext[z_id];
+	}
 	photon_pos_check = polycap_photon_within_pc_boundary(current_polycap_ext, photon->exit_coords, error);
 		//iesc == 0: photon outside of PC boundaries
 		//iesc == 1: photon within PC boundaries

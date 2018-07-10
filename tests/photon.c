@@ -254,6 +254,9 @@ void test_polycap_photon_launch() {
 	assert(photon->scatf == NULL);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
+	polycap_free(weights);
+	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->weight); // this is just to shut up valgrind because we are reusing the photon...
 	
 	//This works but returns 0 (as photon does not reach the end of the capillary)
 	polycap_clear_error(&error);
@@ -263,6 +266,8 @@ void test_polycap_photon_launch() {
 	assert(photon->scatf == NULL);
 	assert(photon->n_energies == 1);
 	assert(test == 0);
+	polycap_free(weights);
+	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...
 	
 	//This works and returns 1 (photon reached end of capillary)
 	polycap_clear_error(&error);
@@ -274,8 +279,8 @@ void test_polycap_photon_launch() {
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(test == 1);
+	polycap_free(weights);
 	
-	free(weights);
 	polycap_photon_free(photon);
 	polycap_description_free(description);
 	polycap_profile_free(profile);
