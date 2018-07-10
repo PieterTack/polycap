@@ -208,10 +208,12 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 	int i, iesc=0, wall_trace=0;
 	double cons1, r_rough;
 	double complex rtot; //reflectivity
-//	double w_leak; //leak weight
+	double *w_leak; //leak weight
 //	double xp, yp; //position on screen where photon will end up if unobstructed
 	int capx_id, capy_id; //indices of neighbouring capillary photon traveled towards
 	double d_travel;  //distance photon traveled through the capillary wall
+	int leak_flag=0;
+	polycap_vector3 leak_coords;
 
 	//argument sanity check
 	if (alfa < 0.){
@@ -228,39 +230,76 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 		return -1;
 	}
 
-	//TODO: for halo effect one should calculate here the distance traveled through the capillary wall d_esc
-		//essentially figure out which capillary index the photon's moving to (trickiest point), then determine 'intersection point'
-		//when entering that capillary and determine distance between two points
-	wall_trace = polycap_capil_trace_wall(photon, &d_travel, &capx_id, &capy_id, error);
-	if(wall_trace == 0) printf("polycap_capil_trace_wall returns 0; this can't be\n");
+	w_leak = malloc(sizeof(double)*photon->n_energies);
+	if(w_leak == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for w_leak -> %s", strerror(errno));
+		return -1;
+	}
 
-//	d_esc = (description->profile->z[description->profile->nmax] - photon->exit_coords.z) / photon->exit_direction.z;
-//	if(d_esc < 0) d_esc = description->profile->z[description->profile->nmax];
+	//for halo effect one calculates here the distance traveled through the capillary wall d_travel
+	wall_trace = polycap_capil_trace_wall(photon, &d_travel, &capx_id, &capy_id, error);
+
+	// Loop over energies tot gain reflection efficiencies (rtot) and check for potential photon leaks
 	for(i=0; i < photon->n_energies; i++){
 		cons1 = (1.01358e0*photon->energies[i])*alfa*description->sig_rough;
 		r_rough = exp(-1.*cons1*cons1);
 
 		//reflectivity according to Fresnel expression
 		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
-
-//		w_leak = (1.-rtot) * photon->weight[i] * exp(-1.*d_esc * photon->amu[i]);
-//		leak[i] = leak[i] + w_leak;
-//		if(i == 0){ //NOTE: essentially do this for each energy to obtain photon flux image for each energy
-//			xp = photon->exit_coords.x + d_esc * photon->exit_direction.x;
-//			yp = photon->exit_coords.y + d_esc * photon->exit_direction.y;
-//			ind_x = (int)floor(xp/BINSIZE)+NSPOT/2;
-//			ind_y = (int)floor(yp/BINSIZE)+NSPOT/2;
-//			if(ind_x < NSPOT && ind_x >= 0){
-//				if(ind_y < NSPOT && ind_y >= 0){
-//					lspot[ind_x][ind_y] = lspot[ind_x][ind_y] + wleak;
-//				}
-//			}
-//		}
 		photon->weight[i] = photon->weight[i] * rtot * r_rough;
+
+		//Check if any of the photons are capable of passing through the wall matrix.
+			//Note this could be a rather high fraction: at 30 keV approx 1.e-2% of photons can travel through 4.7cm of glass...
+		if(wall_trace != 0){
+			w_leak[i] = (1.-rtot) * photon->weight[i] * exp(-1.*d_travel*photon->amu[i]);
+			if(w_leak[i] >= 1.e-4) leak_flag = 1;
+		}
+		
+	}
+
+
+	// save leak coordinates and weights for all energies.
+	if(leak_flag == 1){
+		// Calculate coordinates after reaching through capillary wall
+		leak_coords.x = photon->exit_coords.x + 
+			(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.x;
+		leak_coords.y = photon->exit_coords.y + 
+			(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.y;
+		leak_coords.z = photon->exit_coords.z + 
+			(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.z;
+
+		if(wall_trace == 2 || wall_trace == 3){ //photon reached end of capillary through walls (either on side of polycap through outer wall or at the exit tip within the glass)
+			// Save coordinates/direction and weights in appropriate way
+			// 	A single simulated photon can result in many leaks along the way
+			photon->n_leaks++;
+			if(photon->n_leaks == 1){
+				photon->leaks = malloc(sizeof(polycap_leaks));
+				if(photon->leaks == NULL){
+					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
+					free(w_leak);
+					return -1;	
+				}
+			} else {
+				photon->leaks = realloc(photon->leaks,sizeof(polycap_leaks)*photon->n_leaks);
+				if(photon->leaks == NULL){
+					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
+					free(w_leak);
+					return -1;	
+				}
+			}
+			photon->leaks[photon->n_leaks-1].coords = leak_coords;
+			photon->leaks[photon->n_leaks-1].direction = photon->exit_direction;
+			memcpy(photon->leaks[photon->n_leaks-1].weight, w_leak, sizeof(double)*photon->n_energies);
+		}
+		if(wall_trace == 1){ // photon entered new capillary through the capillary walls
+		// in fact new photon tracing should occur starting at position within the new capillary (if weights are sufficiently high)...			
+		//	TODO: figure out a way how to properly store these 'additional' photons
+		}	
 	}
 
 	if(photon->weight[0] < 1.e-4) iesc=-2;
 
+	free(w_leak);
 	return iesc;
 }
 
@@ -305,7 +344,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	//    10 describes 1 shell (of 7 capillaries), ... due to hexagon stacking
 	n_shells = round(sqrt(12. * photon->description->n_cap - 3.)/6.-0.5);
 
-//THIS STUFF TAKES A HUGE AMOUNT OF CALCULATION TIME... We should figure out a way to speed it up...
+//TODO: THIS STUFF TAKES A HUGE AMOUNT OF CALCULATION TIME... We should figure out a way to speed it up...
 //	perhaps when photon entered new capillary region (ID's different from current one) we can somehow immediately calculate the distance
 //	the photon has to travel to reach there?
 //	AND/OR immediately take into account the transmission weight along the path. If too low, we don't really care where it ends up...

@@ -107,10 +107,19 @@ struct _polycap_source
   double src_shifty;
   };
 
+struct _polycap_leaks
+  {
+  polycap_vector3 coords;
+  polycap_vector3 direction;
+  double *weight;
+  };
+
 struct _polycap_photon
   {
   polycap_rng *rng;
   polycap_description *description;
+  polycap_leaks *leaks;
+  size_t n_leaks;
   polycap_vector3 start_coords;
   polycap_vector3 start_direction;
   polycap_vector3 start_electric_vector;

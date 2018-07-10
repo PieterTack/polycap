@@ -270,6 +270,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		photon->weight[i] = 1.;
 	}
 	photon->i_refl = 0; //set reflections to 0
+	photon->n_leaks = 0; //set leaks to 0
 
 	//check if photon->start_coord are within hexagonal polycap boundaries
 	photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords, error);
@@ -375,6 +376,14 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		free(photon->scatf);
 		photon->scatf = NULL;
 	}
+//	if (photon->leaks->weight){ //TODO: this will likely not be sufficient if there were multiple occasions of leaks... Perhaps good idea to clear these parameters at the start of this function 
+//		free(photon->leaks->weight);
+//		photon->leaks->weight = NULL;
+//	}
+//	if (photon->leaks){
+//		free(photon->leaks);
+//		photon->leaks = NULL;
+//	}
 
 
 	if(iesc == -2){
@@ -409,6 +418,8 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 // free a polycap_photon
 void polycap_photon_free(polycap_photon *photon)
 {
+	int i;
+
 	if (photon == NULL)
 		return;
 	if (photon->energies)
@@ -419,6 +430,14 @@ void polycap_photon_free(polycap_photon *photon)
 		free(photon->amu);
 	if (photon->scatf)
 		free(photon->scatf);
+	//TODO: is this correct?
+	if (photon->leaks){
+		for(i=0; i<photon->n_leaks; i++){
+			if (photon->leaks[i].weight)
+				free(photon->leaks[i].weight);
+		}
+		free(photon->leaks);
+	}
 	free(photon);
 }
 

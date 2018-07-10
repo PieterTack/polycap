@@ -30,6 +30,10 @@ typedef struct {
 	double z;
 } polycap_vector3;
 
+
+struct _polycap_leaks;
+typedef struct _polycap_leaks                       polycap_leaks;	
+
 struct _polycap_photon;
 typedef struct _polycap_photon                      polycap_photon;
 
