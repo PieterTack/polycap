@@ -237,6 +237,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 	}
 
 	//for halo effect one calculates here the distance traveled through the capillary wall d_travel
+	//	TODO: just skip this function if leakage calculations are not wanted
 	wall_trace = polycap_capil_trace_wall(photon, &d_travel, &capx_id, &capy_id, error);
 
 	// Loop over energies tot gain reflection efficiencies (rtot) and check for potential photon leaks
@@ -312,6 +313,8 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	// First check if photon is currently inside the polycapillary (it should be)
 	// 	Figure out current Z-axis index
 	// 	current coordinates are photon->exit_coords
+	if(photon->exit_coords.z >= photon->description->profile->z[photon->description->profile->nmax])
+		return 0; //photon already at end of polycap, so there is no wall to travel through anyway
 	for(i=0; i <= photon->description->profile->nmax; i++){
 		if(photon->description->profile->z[i] < photon->exit_coords.z)
 			z_id = i;
@@ -336,11 +339,6 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	//NOTE: with description->n_cap <7 only a mono-capillary will be simulated.
 	//    10 describes 1 shell (of 7 capillaries), ... due to hexagon stacking
 	n_shells = round(sqrt(12. * photon->description->n_cap - 3.)/6.-0.5);
-
-//TODO: THIS STUFF TAKES A HUGE AMOUNT OF CALCULATION TIME... We should figure out a way to speed it up...
-//	perhaps when photon entered new capillary region (ID's different from current one) we can somehow immediately calculate the distance
-//	the photon has to travel to reach there?
-//	AND/OR immediately take into account the transmission weight along the path. If too low, we don't really care where it ends up...
 
 	// Propagate a step along capillary length and determine whether the photon is inside a capillary
 	// (at this point it shouldn't be: the starting point of this function should be just at the wall edge of a capillary)
@@ -393,7 +391,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 			return 2;
 		return 3;
 	}
-	return 0; //the function should actually never return 0. All (physical) options are covered by return values 1, 2 and 3.
+	return 0; //the function should actually never return 0 here. All (physical) options are covered by return values 1, 2 and 3.
 
 }
 //===========================================
