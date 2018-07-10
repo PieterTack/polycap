@@ -250,7 +250,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 
 		//Check if any of the photons are capable of passing through the wall matrix.
 			//Note this could be a rather high fraction: at 30 keV approx 1.e-2% of photons can travel through 4.7cm of glass...
-		if(wall_trace != 0){
+		if(wall_trace > 0){
 			w_leak[i] = (1.-rtot) * photon->weight[i] * exp(-1.*d_travel*photon->amu[i]);
 			if(w_leak[i] >= 1.e-4) leak_flag = 1;
 		}
