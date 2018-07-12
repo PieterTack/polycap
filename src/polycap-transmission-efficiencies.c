@@ -620,6 +620,18 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 			free(efficiencies->images->pc_exit_dir[1]);
 		if (efficiencies->images->exit_coord_weights)
 			free(efficiencies->images->exit_coord_weights);
+		if (efficiencies->images->leak_coords[0])
+			free(efficiencies->images->leak_coords[0]);
+		if (efficiencies->images->leak_coords[1])
+			free(efficiencies->images->leak_coords[1]);
+		if (efficiencies->images->leak_coords[2])
+			free(efficiencies->images->leak_coords[2]);
+		if (efficiencies->images->leak_dir[0])
+			free(efficiencies->images->leak_dir[0]);
+		if (efficiencies->images->leak_dir[1])
+			free(efficiencies->images->leak_dir[1]);
+		if (efficiencies->images->leak_coord_weights)
+			free(efficiencies->images->leak_coord_weights);
 		free(efficiencies->images);
 	}
 	free(efficiencies);
