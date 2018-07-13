@@ -487,6 +487,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Save weight average as function of energy
 	data_temp = malloc(sizeof(double)*efficiencies->n_energies);
 	for(j=0; j<efficiencies->n_energies; j++){
+		data_temp[j] = 0.0;
 		for(k=0; k<efficiencies->images->i_leak; k++){
 			data_temp[j] += efficiencies->images->leak_coord_weights[k*efficiencies->n_energies+j];
 		}
