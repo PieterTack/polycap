@@ -244,6 +244,15 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		return -1;
 	}
 
+	//free photon->leaks here in case polycap_photon_launch would be called twice on same photon (without intermittant photon freeing)
+	if (photon->leaks){
+		for(i=0; i<photon->n_leaks; i++){
+			if (photon->leaks[i].weight)
+				free(photon->leaks[i].weight);
+		}
+		free(photon->leaks);
+	}
+
 	polycap_description *description = photon->description;
 	if (description == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: description cannot be NULL");
@@ -376,14 +385,6 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		free(photon->scatf);
 		photon->scatf = NULL;
 	}
-//	if (photon->leaks->weight){ //TODO: this will likely not be sufficient if there were multiple occasions of leaks... Perhaps good idea to clear these parameters at the start of this function 
-//		free(photon->leaks->weight);
-//		photon->leaks->weight = NULL;
-//	}
-//	if (photon->leaks){
-//		free(photon->leaks);
-//		photon->leaks = NULL;
-//	}
 
 
 	if(iesc == -2){
@@ -430,7 +431,6 @@ void polycap_photon_free(polycap_photon *photon)
 		free(photon->amu);
 	if (photon->scatf)
 		free(photon->scatf);
-	//TODO: is this correct?
 	if (photon->leaks){
 		for(i=0; i<photon->n_leaks; i++){
 			if (photon->leaks[i].weight)
