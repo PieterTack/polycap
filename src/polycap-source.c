@@ -531,6 +531,13 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		free(sum_weights);
 		return NULL;
 	}
+	efficiencies->images->pc_exit_nrefl = malloc(sizeof(int64_t)*n_photons);
+	if(efficiencies->images->pc_exit_nrefl == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_nrefl -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
 	efficiencies->images->exit_coord_weights = malloc(sizeof(double)*n_photons*n_energies);
 	if(efficiencies->images->exit_coord_weights == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
@@ -597,7 +604,16 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			//if iesc == 2 a new photon should be simulated/started as the photon did not enter the PC (hit the glass walls)
 			//if iesc == -1 some error occured
 			if(iesc == 1) {
-				iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
+				//different check for monocapillary case...
+				if(round(sqrt(12. * photon->description->n_cap - 3.)/6.-0.5) == 0.){ //monocapillary case
+					if(sqrt((photon->exit_coords.x)*(photon->exit_coords.x) + (photon->exit_coords.y)*(photon->exit_coords.y)) > description->profile->ext[description->profile->nmax]){
+						iesc = 0;
+					} else {
+						iesc = 1;
+					}
+				} else { //polycapillary case
+					iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
+				}
 			}
 			//Register succesfully started photon, as well as save start coordinates and direction
 			if(iesc == 1){
@@ -635,6 +651,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		efficiencies->images->pc_exit_coords[1][j] = photon->exit_coords.y;
 		efficiencies->images->pc_exit_dir[0][j] = photon->exit_direction.x;
 		efficiencies->images->pc_exit_dir[1][j] = photon->exit_direction.y;
+		efficiencies->images->pc_exit_nrefl[j] = photon->i_refl;
 
 		#pragma omp critical
 		{
@@ -655,6 +672,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			efficiencies->images->leak_dir[0] = realloc(efficiencies->images->leak_dir[0], sizeof(double)* leak_mem_size);
 			efficiencies->images->leak_dir[1] = realloc(efficiencies->images->leak_dir[1], sizeof(double)* leak_mem_size);
 			efficiencies->images->leak_coord_weights = realloc(efficiencies->images->leak_coord_weights, sizeof(double)*n_energies* leak_mem_size);
+			efficiencies->images->leak_n_refl = realloc(efficiencies->images->leak_n_refl, sizeof(int64_t)* leak_mem_size);
 		}
 		}
 
@@ -667,6 +685,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				efficiencies->images->leak_coords[2][leak_mem_id[thread_id]+k] = photon->leaks[k].coords.z;
 				efficiencies->images->leak_dir[0][leak_mem_id[thread_id]+k] = photon->leaks[k].direction.x;
 				efficiencies->images->leak_dir[1][leak_mem_id[thread_id]+k] = photon->leaks[k].direction.y;
+				efficiencies->images->leak_n_refl[leak_mem_id[thread_id]+k] = photon->leaks[k].n_refl;
 				for(l=0; l<n_energies; l++)
 					efficiencies->images->leak_coord_weights[(leak_mem_id[thread_id]+k)*n_energies+l] = photon->leaks[k].weight[l];
 			}

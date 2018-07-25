@@ -281,11 +281,22 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	photon->i_refl = 0; //set reflections to 0
 	photon->n_leaks = 0; //set leaks to 0
 
+	//calculate amount of shells in polycapillary
+	//NOTE: with description->n_cap <7 only a mono-capillary will be simulated.
+	//    10 describes 1 shell (of 7 capillaries), ... due to hexagon stacking
+	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
 	//check if photon->start_coord are within hexagonal polycap boundaries
-	photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords, error);
-	if(photon_pos_check == 0){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within polycapillary boundaries");
-		return -1;
+	if(n_shells == 0.){ //monocapillary case
+		if(sqrt((photon->start_coords.x)*(photon->start_coords.x) + (photon->start_coords.y)*(photon->start_coords.y)) > description->profile->ext[0]){
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within monocapillary boundaries");
+			return -1;
+		}
+	} else { //polycapillary case
+		photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords, error);
+		if(photon_pos_check == 0){
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within polycapillary boundaries");
+			return -1;
+		}
 	}
 
 	//calculate attenuation coefficients and scattering factors
@@ -300,10 +311,6 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//normalize start_direction
 	polycap_norm(&photon->start_direction);
 
-	//calculate amount of shells in polycapillary
-	//NOTE: with description->n_cap <7 only a mono-capillary will be simulated.
-	//    10 describes 1 shell (of 7 capillaries), ... due to hexagon stacking
-	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
 	if(n_shells == 0.){ //monocapillary case
 		capx_0 = 0;
 		capy_0 = 0;
@@ -355,8 +362,6 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		if(iesc != 0){ //as long as iesc = 0 photon is still reflecting in capillary
 		//iesc == -2, which means this photon has reached its final point (weight[0] <1e-4)
 		//alternatively, iesc can be 1 due to not finding intersection point, as the photon reached the end of the capillary
-		//TODO: for halo effect likely an option has to be added here to check if photon traveled through capillary wall
-			//In this case the new capillary shape should be defined and reflecting process should proceed etc.
 			break;
 		}
 	}

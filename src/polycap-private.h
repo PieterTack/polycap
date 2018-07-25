@@ -112,6 +112,7 @@ struct _polycap_leaks
   polycap_vector3 coords;
   polycap_vector3 direction;
   double *weight;
+  int64_t n_refl;
   };
 
 struct _polycap_photon
@@ -154,11 +155,13 @@ struct _polycap_images
   double *pc_start_dir[2];
   double *pc_exit_coords[2];
   double *pc_exit_dir[2];
+  int64_t *pc_exit_nrefl;
   double *exit_coord_weights;
   int64_t i_leak;
   double *leak_coords[3];
   double *leak_dir[2];
   double *leak_coord_weights;
+  int64_t *leak_n_refl;
   };
 
 int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord, polycap_error **error);
