@@ -365,21 +365,23 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 			//		realistic (poly)capillary shapes; although in confocal mode it's not unlikely...
 			// 	A single simulated photon can result in many leaks along the way
 			photon->n_leaks += phot_temp->n_leaks; //TODO: if iesc_temp != -2 phot_temp reached end of capillary and should thus be stored as well. It would be nice if one could differentiate between photons that only leaked, photons that first leaked and then reflected and photons that first leaked, reflected and then leaked again etc... No idea how to make this clear efficiently.
-			photon->leaks = realloc(photon->leaks, sizeof(polycap_leaks) * photon->n_leaks);
-			if(photon->leaks == NULL){
-				polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
-				polycap_photon_free(phot_temp);
-				free(capx_temp);
-				free(capy_temp);
-				free(w_leak);
-				return -1;
-			}
-			for(i=0; i<phot_temp->n_leaks;i++){
-				photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].coords = phot_temp->leaks[i].coords;
-				photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].direction = phot_temp->leaks[i].direction;
-				photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].n_refl = phot_temp->leaks[i].n_refl;
-				photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].weight = malloc(sizeof(double) * photon->n_energies);
-				memcpy(photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].weight, phot_temp->leaks[i].weight, sizeof(double)*photon->n_energies);
+			if(photon->n_leaks > 0){
+				photon->leaks = realloc(photon->leaks, sizeof(polycap_leaks) * photon->n_leaks);
+				if(photon->leaks == NULL){
+					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
+					polycap_photon_free(phot_temp);
+					free(capx_temp);
+					free(capy_temp);
+					free(w_leak);
+					return -1;
+				}
+				for(i=0; i<phot_temp->n_leaks;i++){
+					photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].coords = phot_temp->leaks[i].coords;
+					photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].direction = phot_temp->leaks[i].direction;
+					photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].n_refl = phot_temp->leaks[i].n_refl;
+					photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].weight = malloc(sizeof(double) * photon->n_energies);
+					memcpy(photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].weight, phot_temp->leaks[i].weight, sizeof(double)*photon->n_energies);
+				}
 			}
 			// Free memory that's no longer needed
 			polycap_photon_free(phot_temp);
