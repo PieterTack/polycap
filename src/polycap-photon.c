@@ -251,6 +251,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 				free(photon->leaks[i].weight);
 		}
 		free(photon->leaks);
+		photon->leaks = NULL;
 	}
 
 	polycap_description *description = photon->description;
