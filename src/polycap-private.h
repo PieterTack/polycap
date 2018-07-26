@@ -156,6 +156,7 @@ struct _polycap_images
   double *pc_exit_coords[2];
   double *pc_exit_dir[2];
   int64_t *pc_exit_nrefl;
+  double *pc_exit_dtravel;
   double *exit_coord_weights;
   int64_t i_leak;
   double *leak_coords[3];

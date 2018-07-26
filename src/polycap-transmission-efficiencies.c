@@ -450,6 +450,11 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Exit/Weights", efficiencies->images->exit_coord_weights,"[keV,a.u.]", error))
 		return false;
 
+	//Write transmitted photon traveled distance
+	n_energies_temp = efficiencies->images->i_exit;
+	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/PC_Exit/D_Travel", efficiencies->images->pc_exit_dtravel,"[cm]", error))
+		return false;
+
 	//Write leak photons data
 	//Make Leaks group
 	Leaks_id = H5Gcreate2(file, "/Leaks", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);

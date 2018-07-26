@@ -538,6 +538,13 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		free(sum_weights);
 		return NULL;
 	}
+	efficiencies->images->pc_exit_dtravel = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_exit_dtravel == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dtravel -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
 	efficiencies->images->exit_coord_weights = malloc(sizeof(double)*n_photons*n_energies);
 	if(efficiencies->images->exit_coord_weights == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
@@ -652,6 +659,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		efficiencies->images->pc_exit_dir[0][j] = photon->exit_direction.x;
 		efficiencies->images->pc_exit_dir[1][j] = photon->exit_direction.y;
 		efficiencies->images->pc_exit_nrefl[j] = photon->i_refl;
+		efficiencies->images->pc_exit_dtravel[j] = photon->d_travel; //TODO: something is wrong with these values. Should be at least the length of the (poly)cap. Currently most values are less than the length...
 
 		#pragma omp critical
 		{
