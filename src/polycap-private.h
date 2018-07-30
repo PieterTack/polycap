@@ -120,7 +120,9 @@ struct _polycap_photon
   polycap_rng *rng;
   polycap_description *description;
   polycap_leaks *leaks;
+  polycap_leaks *recap;
   int64_t n_leaks;
+  int64_t n_recap;
   polycap_vector3 start_coords;
   polycap_vector3 start_direction;
   polycap_vector3 start_electric_vector;
@@ -163,6 +165,11 @@ struct _polycap_images
   double *leak_dir[2];
   double *leak_coord_weights;
   int64_t *leak_n_refl;
+  int64_t i_recap;
+  double *recap_coords[3];
+  double *recap_dir[2];
+  double *recap_coord_weights;
+  int64_t *recap_n_refl;
   };
 
 int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord, polycap_error **error);

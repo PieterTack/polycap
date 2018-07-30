@@ -244,7 +244,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		return -1;
 	}
 
-	//free photon->leaks here in case polycap_photon_launch would be called twice on same photon (without intermittant photon freeing)
+	//free photon->leaks and recap here in case polycap_photon_launch would be called twice on same photon (without intermittant photon freeing)
 	if (photon->leaks){
 		for(i=0; i<photon->n_leaks; i++){
 			if (photon->leaks[i].weight)
@@ -252,6 +252,14 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		}
 		free(photon->leaks);
 		photon->leaks = NULL;
+	}
+	if (photon->recap){
+		for(i=0; i<photon->n_recap; i++){
+			if (photon->recap[i].weight)
+				free(photon->recap[i].weight);
+		}
+		free(photon->recap);
+		photon->recap = NULL;
 	}
 
 	polycap_description *description = photon->description;
@@ -281,6 +289,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	}
 	photon->i_refl = 0; //set reflections to 0
 	photon->n_leaks = 0; //set leaks to 0
+	photon->n_recap = 0; //set recap photons to 0
 
 	//calculate amount of shells in polycapillary
 	//NOTE: with description->n_cap <7 only a mono-capillary will be simulated.
@@ -443,6 +452,13 @@ void polycap_photon_free(polycap_photon *photon)
 				free(photon->leaks[i].weight);
 		}
 		free(photon->leaks);
+	}
+	if (photon->recap){
+		for(i=0; i<photon->n_recap; i++){
+			if (photon->recap[i].weight)
+				free(photon->recap[i].weight);
+		}
+		free(photon->recap);
 	}
 	free(photon);
 }

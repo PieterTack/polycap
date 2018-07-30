@@ -272,7 +272,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 		leak_coords.z = photon->exit_coords.z + 
 			(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.z;
 
-		if(wall_trace == 2 || wall_trace == 3){ //photon reached end of capillary through walls (either on side of polycap through outer wall or at the exit tip within the glass)
+		if(wall_trace == 3){ //photon reached end of capillary through side walls
 			// Save coordinates/direction and weights in appropriate way
 			// 	A single simulated photon can result in many leaks along the way
 			photon->leaks = realloc(photon->leaks, sizeof(polycap_leaks) * ++photon->n_leaks);
@@ -287,6 +287,21 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 			photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
 			memcpy(photon->leaks[photon->n_leaks-1].weight, w_leak, sizeof(double)*photon->n_energies);
 		}
+		if(wall_trace == 2){ //photon reached end of capillary tip inside wall
+			// Save coordinates/direction and weights in appropriate way
+			// 	A single simulated photon can result in many leaks along the way
+			photon->recap = realloc(photon->recap, sizeof(polycap_leaks) * ++photon->n_recap);
+			if(photon->recap == NULL){
+				polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->recap -> %s", strerror(errno));
+				free(w_leak);
+				return -1;
+			}
+			photon->recap[photon->n_recap-1].coords = leak_coords;
+			photon->recap[photon->n_recap-1].direction = photon->exit_direction;
+			photon->recap[photon->n_recap-1].n_refl = photon->i_refl;
+			photon->recap[photon->n_recap-1].weight = malloc(sizeof(double) * photon->n_energies);
+			memcpy(photon->recap[photon->n_recap-1].weight, w_leak, sizeof(double)*photon->n_energies);
+		}
 		if(wall_trace == 1){ // photon entered new capillary through the capillary walls
 			// in fact new photon tracing should occur starting at position within the new capillary (if weights are sufficiently high)...
 			// to do so, make new (temporary) photon, as well as current capillary central axes arrays
@@ -295,6 +310,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 			phot_temp = polycap_photon_new(description, photon->rng, leak_coords, photon->exit_direction, photon->exit_electric_vector, error);
 			phot_temp->i_refl = 0; //set reflections to 0
 			phot_temp->n_leaks = 0; //set leaks to 0
+			phot_temp->n_recap = 0; //set recap to 0
 			phot_temp->n_energies = photon->n_energies;
 			phot_temp->energies = malloc(sizeof(double)*phot_temp->n_energies);
 			if(phot_temp->energies == NULL){
@@ -361,11 +377,10 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 			phot_temp->d_travel = phot_temp->d_travel + photon->d_travel + d_travel; //NOTE: this is total traveled distance, however the weight has been adjusted already for the distance d_travel, so post-simulation air-absorption correction may induce some errors here. Users are advised to not perform air absorption corrections for leaked photons.
 
 			//	Store these 'additional' photons as leaked photons... 
-			//		Chances of photon leaking through 1 capillary and then reflecting in next one are pretty slim for most 
-			//		realistic (poly)capillary shapes; although in confocal mode it's not unlikely...
 			// 	A single simulated photon can result in many leaks along the way
-			photon->n_leaks += phot_temp->n_leaks; //TODO: if iesc_temp != -2 phot_temp reached end of capillary and should thus be stored as well. It would be nice if one could differentiate between photons that only leaked, photons that first leaked and then reflected and photons that first leaked, reflected and then leaked again etc... No idea how to make this clear efficiently.
-			if(photon->n_leaks > 0){
+			photon->n_leaks += phot_temp->n_leaks;
+			photon->n_recap += phot_temp->n_recap;
+			if(phot_temp->n_leaks > 0){
 				photon->leaks = realloc(photon->leaks, sizeof(polycap_leaks) * photon->n_leaks);
 				if(photon->leaks == NULL){
 					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
@@ -383,6 +398,45 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 					memcpy(photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].weight, phot_temp->leaks[i].weight, sizeof(double)*photon->n_energies);
 				}
 			}
+			if(phot_temp->n_recap > 0){
+				photon->recap = realloc(photon->recap, sizeof(polycap_leaks) * photon->n_recap);
+				if(photon->recap == NULL){
+					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: *could not allocate memory for photon->recap -> %s", strerror(errno));
+					polycap_photon_free(phot_temp);
+					free(capx_temp);
+					free(capy_temp);
+					free(w_leak);
+					return -1;
+				}
+				for(i=0; i<phot_temp->n_recap;i++){
+					photon->recap[photon->n_recap-phot_temp->n_recap+i].coords = phot_temp->recap[i].coords;
+					photon->recap[photon->n_recap-phot_temp->n_recap+i].direction = phot_temp->recap[i].direction;
+					photon->recap[photon->n_recap-phot_temp->n_recap+i].n_refl = phot_temp->recap[i].n_refl;
+					photon->recap[photon->n_recap-phot_temp->n_recap+i].weight = malloc(sizeof(double) * photon->n_energies);
+					memcpy(photon->recap[photon->n_recap-phot_temp->n_recap+i].weight, phot_temp->recap[i].weight, sizeof(double)*photon->n_energies);
+				}
+			}
+			//if iesc_temp != -2 phot_temp reached end of capillary and should thus be stored as well.
+			//Store as a recap photon.
+			//It would be nice if one could differentiate between photons that only leaked, photons that first leaked and then reflected and photons that first leaked, reflected and then leaked again etc... No idea how to make this clear efficiently.
+			if(iesc_temp != -2){
+				photon->n_recap++;
+				photon->recap = realloc(photon->recap, sizeof(polycap_leaks) * photon->n_recap);
+				if(photon->recap == NULL){
+					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->recap -> %s", strerror(errno));
+					polycap_photon_free(phot_temp);
+					free(capx_temp);
+					free(capy_temp);
+					free(w_leak);
+					return -1;
+				}
+				photon->recap[photon->n_recap-1].coords = phot_temp->exit_coords;
+				photon->recap[photon->n_recap-1].direction = phot_temp->exit_direction;
+				photon->recap[photon->n_recap-1].n_refl = phot_temp->i_refl;
+				photon->recap[photon->n_recap-1].weight = malloc(sizeof(double) * photon->n_energies);
+				memcpy(photon->recap[photon->n_recap-1].weight, phot_temp->weight, sizeof(double)*photon->n_energies);
+			}
+
 			// Free memory that's no longer needed
 			polycap_photon_free(phot_temp);
 			free(capx_temp);

@@ -351,9 +351,9 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, size_t n_energies, double *energies, int n_photons, polycap_progress_monitor *progress_monitor, polycap_error **error)
 {
 	int i, j;
-	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0, sum_not_transmitted=0, sum_nleaks=0;
-	int64_t leak_mem_size=0;
-	int64_t *istart_temp, *not_entered_temp, *not_transmitted_temp, *leak_mem_id;
+	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0, sum_not_transmitted=0, sum_nleaks=0, sum_nrecap=0;
+	int64_t leak_mem_size=0, recap_mem_size=0;
+	int64_t *istart_temp, *not_entered_temp, *not_transmitted_temp, *leak_mem_id, *recap_mem_id;
 	double *sum_weights;
 	polycap_transmission_efficiencies *efficiencies;
 
@@ -428,6 +428,11 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	leak_mem_id = malloc(sizeof(int64_t)*max_threads);
 	if(leak_mem_id == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for leak_mem_id -> %s", strerror(errno));
+		return NULL;
+	}
+	recap_mem_id = malloc(sizeof(int64_t)*max_threads);
+	if(recap_mem_id == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for recap_mem_id -> %s", strerror(errno));
 		return NULL;
 	}
 
@@ -666,6 +671,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		sum_irefl += photon->i_refl;
 		//Assign memory to arrays holding leak photon information (and fill them)
 		leak_mem_id[thread_id] = sum_nleaks;
+		recap_mem_id[thread_id] = sum_nrecap;
 		sum_nleaks += photon->n_leaks;
 		if(sum_nleaks > leak_mem_size){
 			if (leak_mem_size == 0){
@@ -682,6 +688,22 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			efficiencies->images->leak_coord_weights = realloc(efficiencies->images->leak_coord_weights, sizeof(double)*n_energies* leak_mem_size);
 			efficiencies->images->leak_n_refl = realloc(efficiencies->images->leak_n_refl, sizeof(int64_t)* leak_mem_size);
 		}
+		sum_nrecap += photon->n_recap;
+		if(sum_nrecap > recap_mem_size){
+			if (recap_mem_size == 0){
+				recap_mem_size = sum_nrecap;
+			} else {
+				recap_mem_size *= 2;
+				if (recap_mem_size < sum_nrecap) recap_mem_size = sum_nrecap; //not doing this could be dangerous at low values
+			}
+			efficiencies->images->recap_coords[0] = realloc(efficiencies->images->recap_coords[0], sizeof(double)* recap_mem_size);
+			efficiencies->images->recap_coords[1] = realloc(efficiencies->images->recap_coords[1], sizeof(double)* recap_mem_size);
+			efficiencies->images->recap_coords[2] = realloc(efficiencies->images->recap_coords[2], sizeof(double)* recap_mem_size);
+			efficiencies->images->recap_dir[0] = realloc(efficiencies->images->recap_dir[0], sizeof(double)* recap_mem_size);
+			efficiencies->images->recap_dir[1] = realloc(efficiencies->images->recap_dir[1], sizeof(double)* recap_mem_size);
+			efficiencies->images->recap_coord_weights = realloc(efficiencies->images->recap_coord_weights, sizeof(double)*n_energies* recap_mem_size);
+			efficiencies->images->recap_n_refl = realloc(efficiencies->images->recap_n_refl, sizeof(int64_t)* recap_mem_size);
+		}
 		}
 
 		//Write leak photon data.
@@ -696,6 +718,18 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				efficiencies->images->leak_n_refl[leak_mem_id[thread_id]+k] = photon->leaks[k].n_refl;
 				for(l=0; l<n_energies; l++)
 					efficiencies->images->leak_coord_weights[(leak_mem_id[thread_id]+k)*n_energies+l] = photon->leaks[k].weight[l];
+			}
+		}
+		if(photon->n_recap > 0){
+			for(k=0; k<photon->n_recap; k++){
+				efficiencies->images->recap_coords[0][recap_mem_id[thread_id]+k] = photon->recap[k].coords.x;
+				efficiencies->images->recap_coords[1][recap_mem_id[thread_id]+k] = photon->recap[k].coords.y;
+				efficiencies->images->recap_coords[2][recap_mem_id[thread_id]+k] = photon->recap[k].coords.z;
+				efficiencies->images->recap_dir[0][recap_mem_id[thread_id]+k] = photon->recap[k].direction.x;
+				efficiencies->images->recap_dir[1][recap_mem_id[thread_id]+k] = photon->recap[k].direction.y;
+				efficiencies->images->recap_n_refl[recap_mem_id[thread_id]+k] = photon->recap[k].n_refl;
+				for(l=0; l<n_energies; l++)
+					efficiencies->images->recap_coord_weights[(recap_mem_id[thread_id]+k)*n_energies+l] = photon->recap[k].weight[l];
 			}
 		}
 		//free photon structure (new one created for each for loop instance)
@@ -724,6 +758,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	free(not_entered_temp);
 	free(not_transmitted_temp);
 	free(leak_mem_id);
+	free(recap_mem_id);
 	
 	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_istart);
 	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_istart/(sum_istart+sum_not_entered));
@@ -737,6 +772,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	efficiencies->images->i_start = sum_istart;
 	efficiencies->images->i_exit = n_photons;
 	efficiencies->images->i_leak = sum_nleaks;
+	efficiencies->images->i_recap = sum_nrecap;
 	for(i=0; i<n_energies; i++){
 		efficiencies->energies[i] = energies[i];
 		efficiencies->efficiencies[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;
