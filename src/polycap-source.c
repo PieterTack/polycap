@@ -344,9 +344,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 }
 //===========================================
 // for a given array of energies, and a full polycap_description, get the transmission efficiencies.
-//   NOTE:
-// -Does not make photon image arrays (yet)
-// -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
+//   TODO:
 // -Polarised dependant reflectivity and change in electric field vector missing
 polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, size_t n_energies, double *energies, int n_photons, polycap_progress_monitor *progress_monitor, polycap_error **error)
 {
