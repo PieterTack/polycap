@@ -529,8 +529,9 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Free data_temp
 	free(data_temp);
 
+
 	//Write recap photons data
-	//Make Rcap group
+	//Make Recap group
 	Recap_id = H5Gcreate2(file, "/Recap", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		//write coordinates
 	//Copy coordinate data to temporary array for straightforward HDF5 writing
@@ -725,6 +726,10 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 			free(efficiencies->images->pc_exit_dir[0]);
 		if (efficiencies->images->pc_exit_dir[1])
 			free(efficiencies->images->pc_exit_dir[1]);
+		if (efficiencies->images->pc_exit_nrefl)
+			free(efficiencies->images->pc_exit_nrefl);
+		if (efficiencies->images->pc_exit_dtravel)
+			free(efficiencies->images->pc_exit_dtravel);
 		if (efficiencies->images->exit_coord_weights)
 			free(efficiencies->images->exit_coord_weights);
 		if (efficiencies->images->leak_coords[0])
@@ -739,6 +744,22 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 			free(efficiencies->images->leak_dir[1]);
 		if (efficiencies->images->leak_coord_weights)
 			free(efficiencies->images->leak_coord_weights);
+		if (efficiencies->images->leak_n_refl)
+			free(efficiencies->images->leak_n_refl);
+		if (efficiencies->images->recap_coords[0])
+			free(efficiencies->images->recap_coords[0]);
+		if (efficiencies->images->recap_coords[1])
+			free(efficiencies->images->recap_coords[1]);
+		if (efficiencies->images->recap_coords[2])
+			free(efficiencies->images->recap_coords[2]);
+		if (efficiencies->images->recap_dir[0])
+			free(efficiencies->images->recap_dir[0]);
+		if (efficiencies->images->recap_dir[1])
+			free(efficiencies->images->recap_dir[1]);
+		if (efficiencies->images->recap_coord_weights)
+			free(efficiencies->images->recap_coord_weights);
+		if (efficiencies->images->recap_n_refl)
+			free(efficiencies->images->recap_n_refl);
 		free(efficiencies->images);
 	}
 	free(efficiencies);
