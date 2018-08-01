@@ -163,7 +163,7 @@ static void set_exception(polycap_error **error) {
 		return;
 
 	struct err_data_t err;
-	const char *desc = NULL;
+	char *desc = NULL;
 	const char *desc_bottom = NULL;
 
 	if (H5Ewalk(H5E_DEFAULT, H5E_WALK_UPWARD, walk_cb, &err) < 0) {
@@ -192,12 +192,12 @@ static void set_exception(polycap_error **error) {
 		}
 	} 
 
-	desc = err.err.desc;
-
-	if (desc == NULL) {
+	if (err.err.desc == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_RUNTIME, "Failed to extract top-level HDF5 error description");
 		return;
 	}
+
+	desc = strdup(err.err.desc);
 
 	// Second, retrieve the bottom-most error description for additional info
 
@@ -215,6 +215,7 @@ static void set_exception(polycap_error **error) {
 	}
 
 	polycap_set_error(error, code, "%s (%s)", desc, desc_bottom);
+	free(desc);
 }
 
 //===========================================
