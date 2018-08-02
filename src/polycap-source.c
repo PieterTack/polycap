@@ -349,7 +349,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, size_t n_energies, double *energies, int n_photons, polycap_progress_monitor *progress_monitor, polycap_error **error)
 {
 	int i, j;
-	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0, sum_not_transmitted=0, sum_nleaks=0, sum_nrecap=0;
+	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0, sum_not_transmitted=0;
 	int64_t *istart_temp, *not_entered_temp, *not_transmitted_temp;
 	int64_t leak_counter, recap_counter;
 	double *sum_weights;
@@ -572,9 +572,9 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	double *weights;
 	double *weights_temp;
 	//polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
-	polycap_leaks *leaks = calloc(1, sizeof(polycap_leaks)); //define leaks structure for each thread
+	polycap_leaks *leaks = NULL; // define leaks structure for each thread
 	int64_t n_leaks=0;
-	polycap_leaks *recap = calloc(1, sizeof(polycap_leaks)); //define recap structure for each thread
+	polycap_leaks *recap = NULL; // define recap structure for each thread
 	int64_t n_recap=0;
 	int64_t leak_mem_size=0, recap_mem_size=0; //memory size indicator for leak and recap structure arrays
 
