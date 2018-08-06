@@ -189,7 +189,7 @@ void test_polycap_source_get_transmission_efficiencies() {
 	//Now we test actual values
 	//This will take a while...
 	polycap_clear_error(&error);
-	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, 7, energies, 50000, NULL, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, 7, energies, 10000, NULL, &error);
 	assert(efficiencies != NULL);
 	assert(fabs(efficiencies->efficiencies[0] - 0.354) <= 0.005); //1 keV
 	assert(fabs(efficiencies->efficiencies[1] - 0.295) <= 0.005); //5 keV
