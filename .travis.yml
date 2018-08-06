@@ -85,7 +85,7 @@ before_install:
 script:
   - autoreconf -fi || exit 1
   - export LIBS="$LIBS $EXTRA_LIBS"
-  - ./configure --disable-python || exit 1
+  - ./configure --disable-python || (cat config.log && exit 1)
   - make || exit 1
   - make check || exit 1
   - make distclean || exit 1
