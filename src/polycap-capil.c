@@ -211,7 +211,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 	double *w_leak; //leak weight
 	int capx_cntr, capy_cntr; //centre coordinates of neighbouring capillary photon traveled towards
 	double d_travel;  //distance photon traveled through the capillary wall
-	int leak_flag=0;
+	int leak_flag=0, weight_flag=0;
 	polycap_vector3 leak_coords;
 	polycap_photon *phot_temp;
 	double *capx_temp, *capy_temp;
@@ -447,7 +447,10 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 		} //endif(wall_trace == 1){ // photon entered new capillary through the capillary walls	
 	}//endif(leak_flag == 1)
 
-	if(photon->weight[0] < 1.e-4) iesc=-2;
+	//stop calculation if none of the energy weights is above threshold
+	for(i=0; i<photon->n_energies; i++)
+		if(photon->weight[i] >= 1.e-4) weight_flag = 1;
+	if (weight_flag != 1) iesc=-2;
 
 	free(w_leak);
 	return iesc;
