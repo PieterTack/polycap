@@ -332,7 +332,14 @@ cdef class Source:
         double src_sigx,
         double src_sigy,
         double src_shiftx,
-        double src_shifty):
+        double src_shifty,
+	object energies not None):
+
+        energies = np.asarray(energies, dtype=np.double)
+        energies = np.atleast_1d(energies)
+        if len(energies.shape) != 1:
+            raise ValueError("energies must be a 1D array")
+
         cdef polycap_error *error = NULL
         self.source = polycap_source_new(
             description.description,
@@ -343,6 +350,8 @@ cdef class Source:
             src_sigy,
             src_shiftx,
             src_shifty,
+            energies.size,
+            <double*> np.PyArray_DATA(energies),
             &error)
         set_exception(error)
 

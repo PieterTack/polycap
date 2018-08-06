@@ -29,6 +29,8 @@ cdef extern from "polycap-source.h" nogil:
         double src_sigy,
         double src_shiftx,
         double src_shifty,
+	size_t n_energies,
+	double *energies,
         polycap_error **error)
 
     void polycap_source_free(polycap_source *source)

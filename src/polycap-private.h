@@ -105,6 +105,8 @@ struct _polycap_source
   double src_sigy;
   double src_shiftx;
   double src_shifty;
+  size_t n_energies;
+  double *energies;
   };
 
 struct _polycap_leaks

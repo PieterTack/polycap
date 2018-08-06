@@ -39,6 +39,8 @@ polycap_source* polycap_source_new(
 	double src_sigy,
 	double src_shiftx,
 	double src_shifty,
+	size_t n_energies,
+	double *energies,
 	polycap_error **error);
 //
 // free a polycap_source struct

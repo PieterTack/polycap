@@ -123,9 +123,10 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 }
 //===========================================
 // get a new polycap_source by providing all its properties 
-polycap_source* polycap_source_new(polycap_description *description, double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, polycap_error **error)
+polycap_source* polycap_source_new(polycap_description *description, double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, size_t n_energies, double *energies, polycap_error **error)
 {
 	polycap_source *source;
+	int i;
 
 	//Argument sanity check
 	if (description == NULL) {
@@ -144,10 +145,29 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_y must be greater than 0");
 		return NULL;
 	}
+	if (n_energies <= 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: n_energies must be greater than 0");
+		return NULL;
+	}
+	if (energies == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: energies cannot be NULL");
+		return NULL;
+	}
+	for(i=0; i<n_energies; i++){
+		if (energies[i] < 1. || energies[i] > 100.) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: energies must be greater than 1 and smaller than 100");
+			return NULL;
+		}
+	}
 
 	source = malloc(sizeof(polycap_source));
 	if(source == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source -> %s", strerror(errno));
+		return NULL;
+	}
+	source->energies = malloc(sizeof(double)*n_energies);
+	if(source->energies == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source->energies -> %s", strerror(errno));
 		return NULL;
 	}
 
@@ -158,6 +178,8 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 	source->src_sigy = src_sigy;
 	source->src_shiftx = src_shiftx;
 	source->src_shifty = src_shifty;
+	source->n_energies = n_energies;
+	memcpy(source->energies, energies, sizeof(double)*n_energies);
 	source->description = polycap_description_new(description->profile, description->sig_rough, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
 
 	return source;
@@ -261,6 +283,15 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	}
 	fscanf(fptr,"%lf", &description->density);
 	fscanf(fptr,"%lf %lf %lf", &e_start, &e_final, &delta_e);
+	source->n_energies = (e_final-e_start)/delta_e + 1;
+	source->energies = malloc(sizeof(double)*source->n_energies);
+	if(source->energies == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new_from_file: could not allocate memory for source->energies -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	for(i=0; i<source->n_energies; i++)
+		source->energies[i] = e_start + i*delta_e;
 	fscanf(fptr,"%d", &nphotons);
 	fscanf(fptr,"%d", &type);
 	if(type == 0 || type == 1 || type == 2){
@@ -296,7 +327,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	// Calculate open area
 	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
 
-	//Perform source_temp and description argument sanity check
+	//Perform source and description argument sanity check
 	if (source->d_source < 0.0){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: source_temp->d_source must be greater than 0.0");
 		polycap_source_free(source);
@@ -311,6 +342,18 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: source_temp->src_y must be greater than 0.0");
 		polycap_source_free(source);
 		return NULL;
+	}
+	if (source->n_energies <= 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: source->n_energies must be greater than 0");
+		polycap_source_free(source);
+		return NULL;
+	}
+	for(i=0; i<source->n_energies; i++){
+		if (source->energies[i] < 1. || source->energies[i] > 100.) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: source->energies must be greater than 1 and smaller than 100");
+			polycap_source_free(source);
+			return NULL;
+		}
 	}
 	if (description->n_cap < 1){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->n_cap must be greater than 1");

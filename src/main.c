@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	polycap_source *source;
 	polycap_transmission_efficiencies *efficiencies;
 	int i, nthreads=-1;
-	size_t n_energies = 291;
+//	size_t n_energies = 291;
 	int n_photons = 50000;
 	double *energies;
 	const char filename[] = "polycap_out.h5";
@@ -52,19 +52,19 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	// Define energies	
-	energies = malloc(sizeof(double)*n_energies);
-	if(energies == NULL){
-		printf("main: could not allocate memory for energies\n");
-		return 1;
-	}
-	for(i=0; i<n_energies; i++){
-		energies[i] = 1.+0.1*i;
-	}
+//	// Define energies	
+//	energies = malloc(sizeof(double)*n_energies);
+//	if(energies == NULL){
+//		printf("main: could not allocate memory for energies\n");
+//		return 1;
+//	}
+//	for(i=0; i<n_energies; i++){
+//		energies[i] = 1.+0.1*i;
+//	}
 
 	// Perform calculations	
 	printf("Starting calculations...\n");
-	efficiencies = polycap_source_get_transmission_efficiencies(source, nthreads, n_energies, energies, n_photons, NULL, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, nthreads, source->n_energies, source->energies, n_photons, NULL, &error);
 	if (efficiencies == NULL) {
 		fprintf(stderr, "%s\n", error->message);
 		return 1;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 //		printf("%f keV: %f%%; ",energies[i],efficiencies->efficiencies[i]);
 //	}
 
-	free(energies);
+//	free(energies);
 	polycap_transmission_efficiencies_free(efficiencies);
 	polycap_source_free(source);
 
