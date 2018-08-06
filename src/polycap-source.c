@@ -696,12 +696,20 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			efficiencies->images->exit_coord_weights[k+j*n_energies] = weights_temp[k];
 		}
 		//save photon exit coordinates and propagation vector
-		efficiencies->images->pc_exit_coords[0][j] = photon->exit_coords.x;
-		efficiencies->images->pc_exit_coords[1][j] = photon->exit_coords.y;
+		//Make sure to calculate exit_coord at capillary exit (Z = capillary length); currently the exit_coord is the coordinate of the last photon-wall interaction
+//printf("** coords: %lf, %lf, %lf; length: %lf\n", photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, );
+		efficiencies->images->pc_exit_coords[0][j] = photon->exit_coords.x + photon->exit_direction.x*
+			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
+		efficiencies->images->pc_exit_coords[1][j] = photon->exit_coords.y + photon->exit_direction.y*
+			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
 		efficiencies->images->pc_exit_dir[0][j] = photon->exit_direction.x;
 		efficiencies->images->pc_exit_dir[1][j] = photon->exit_direction.y;
 		efficiencies->images->pc_exit_nrefl[j] = photon->i_refl;
-		efficiencies->images->pc_exit_dtravel[j] = photon->d_travel; //TODO: something is wrong with these values. Should be at least the length of the (poly)cap. Currently most values are less than the length...
+		efficiencies->images->pc_exit_dtravel[j] = photon->d_travel + 
+			sqrt( (efficiencies->images->pc_exit_coords[0][j] - photon->exit_coords.x)*(efficiencies->images->pc_exit_coords[0][j] - photon->exit_coords.x) + 
+			(efficiencies->images->pc_exit_coords[1][j] - photon->exit_coords.y)*(efficiencies->images->pc_exit_coords[1][j] - photon->exit_coords.y) + 
+			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)*(description->profile->z[description->profile->nmax] - photon->exit_coords.z));
+	//TODO: something is wrong with these values. Should be at least the length of the (poly)cap. Currently most values are less than the length...
 
 		//Assign memory to arrays holding leak photon information (and fill them)
 		n_leaks += photon->n_leaks;

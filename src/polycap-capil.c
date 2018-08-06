@@ -578,7 +578,6 @@ HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_descript
 	double alfa; //angle between capillary normal at interaction point and photon direction before interaction
 	polycap_vector3 photon_coord_rel; //relative coordinates of new interaction point compared to previous interaction
 	double d_travel; //distance between interactions
-//	double w0, w1; //photon weights
 
 	//argument sanity check
 	if (ix == NULL){
@@ -635,7 +634,7 @@ HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_descript
 		d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));
 		photon->d_travel += d_travel;
 
-		//store new interaction coordiantes in apprpriate array
+		//store new interaction coordinates in appropriate array
 		photon->exit_coords.x = photon_coord.x;
 		photon->exit_coords.y = photon_coord.y;
 		photon->exit_coords.z = photon_coord.z;
@@ -644,14 +643,10 @@ HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_descript
 			iesc = -1;
 		} else {
 			alfa = M_PI_2 - alfa;
-//			w0 = photon->weight[0];
 			
 			iesc = polycap_capil_reflect(photon, alfa, error);
 
 			if(iesc != -2){
-//				w1 = photon->weight[0];
-//				calc->absorb[*ix] = calc->absorb[*ix] + w0 - w1;
-
 				photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(alfa) * surface_norm.x;
 				photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(alfa) * surface_norm.y;
 				photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(alfa) * surface_norm.z;
