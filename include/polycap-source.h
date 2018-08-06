@@ -56,8 +56,6 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	polycap_source *source,
 	int max_threads,
-	size_t n_energies,
-	double *energies,
 	int n_photons,
 	polycap_progress_monitor *progress_monitor,
 	polycap_error **error);

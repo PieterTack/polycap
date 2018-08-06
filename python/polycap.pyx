@@ -376,20 +376,12 @@ cdef class Source:
 
     def get_transmission_efficiencies(self,
         int max_threads,
-        object energies not None,
         int n_photons):
-
-        energies = np.asarray(energies, dtype=np.double)
-        energies = np.atleast_1d(energies)
-        if len(energies.shape) != 1:
-            raise ValueError("energies must be a 1D array")
 
         cdef polycap_error *error = NULL
         cdef polycap_transmission_efficiencies *transmission_efficiencies = polycap_source_get_transmission_efficiencies(
             self.source,
             max_threads,
-            energies.size,
-            <double*> np.PyArray_DATA(energies),
             n_photons,
             NULL, # polycap_progress_monitor
             &error)

@@ -130,7 +130,7 @@ class TestPolycapSource(unittest.TestCase):
 
     def test_source_good_get_transmission_efficiencies(self):
         source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, np.linspace(1, 25.0, 250))
-        efficiencies = source.get_transmission_efficiencies(-1, np.linspace(1, 25.0, 250), 10000)
+        efficiencies = source.get_transmission_efficiencies(-1, 10000)
         efficiencies.write_hdf5("temp-py.h5")
         self.assertTrue(os.path.exists("temp-py.h5"))
         os.remove("temp-py.h5")

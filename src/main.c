@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
 	// Perform calculations	
 	printf("Starting calculations...\n");
-	efficiencies = polycap_source_get_transmission_efficiencies(source, nthreads, source->n_energies, source->energies, n_photons, NULL, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, nthreads, n_photons, NULL, &error);
 	if (efficiencies == NULL) {
 		fprintf(stderr, "%s\n", error->message);
 		return 1;
