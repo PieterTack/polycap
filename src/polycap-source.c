@@ -869,6 +869,9 @@ void polycap_source_free(polycap_source *source)
 	if (source->description)
 		polycap_description_free(source->description);
 
+	if (source->energies)
+		free(source->energies);
+
 	free(source);
 }
 
