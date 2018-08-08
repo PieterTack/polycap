@@ -202,7 +202,6 @@ STATIC double polycap_refl(double e, double theta, double density, double scatf,
 
 	return rtot;
 }
-
 //===========================================
 STATIC double polycap_refl_polar(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_vector3 surface_norm, polycap_photon *photon, polycap_error **error) {
 	// theta is the angle between photon direction and surface normal
@@ -357,7 +356,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 		r_rough = exp(-1.*cons1*cons1);
 
 		//reflectivity according to Fresnel expression
-//		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
+		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
 		rtot = polycap_refl_polar(photon->energies[i], M_PI_2-alfa, description->density, photon->scatf[i], photon->amu[i], surface_norm, photon, error);
 		photon->weight[i] = photon->weight[i] * rtot * r_rough;
 
