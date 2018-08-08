@@ -166,6 +166,7 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 
 //===========================================
 STATIC double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error) {
+	// theta is the glancing angle (angle between capillary surface and photon direction)
 	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
 	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
 	double complex rtot; //reflectivity
@@ -203,7 +204,111 @@ STATIC double polycap_refl(double e, double theta, double density, double scatf,
 }
 
 //===========================================
-STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_error **error)
+STATIC double polycap_refl_polar(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_vector3 surface_norm, polycap_photon *photon, polycap_error **error) {
+	// theta is the angle between photon direction and surface normal
+	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
+	// surface_norm is the surface normal vector
+	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
+	double complex n; //index of refraction of the capillary material (n = 1. - delta)
+			//Index of refraction of medium inside capillary is assumed == 1 (vacuum, air)
+	double complex rtot, r_s, r_p; //reflectivity total, perpendicular (s) and parallel (p) to the plane of reflection
+	polycap_vector3 s_dir, p_dir; //vector along s and p direction (p_dir is orthogonal to s_dir and surface_norm)
+	double frac_s, frac_p; //fraction of electric_vector corresponding to s and p directions
+	double angle_a, angle_b, angle_c; //some cos of angles between electric vector and (a=s_dir, b=surface_norm, c=p_dir)
+
+	//argument sanity check
+	if (e < 1. || e > 100.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: e must be greater than 1 and smaller than 100.");
+		return -1;
+	}
+	if (theta < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: theta must be greater than 0");
+		return -1;
+	}
+	if (density <= 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: density must be greater than 0");
+		return -1;
+	}
+	if (scatf < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: scatf must be greater than 0");
+		return -1;
+	}
+	if (lin_abs_coeff < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: lin_abs_coeff must be greater than 0");
+		return -1;
+	}
+
+	//Make sure the supplied vectors are normalised
+	//	Do not normalise photon->exit_direction; it's needed in non-normalised form in polycap_capil_trace()
+	if(sqrt(surface_norm.x*surface_norm.x+surface_norm.y*surface_norm.y+surface_norm.z*surface_norm.z) != 1)
+		polycap_norm(&surface_norm);
+	if(sqrt(photon->exit_electric_vector.x*photon->exit_electric_vector.x+photon->exit_electric_vector.y*photon->exit_electric_vector.y+photon->exit_electric_vector.z*photon->exit_electric_vector.z) != 1)
+		polycap_norm(&photon->exit_electric_vector);
+
+	// calculate s and p reflection intensities
+	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
+	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
+	n = 1. - (alfa - beta*I);
+
+	r_s = (1.*ccos(theta) - (complex double)n * csqrt(1.-((1./(complex double)n)*csin(theta))*((1./(complex double)n)*csin(theta))) ) /
+		(1.*ccos(theta) + (complex double)n * csqrt(1.-((1./(complex double)n)*csin(theta))*((1./(complex double)n)*csin(theta))) );
+	r_s = cpow(cabs(r_s),2.);
+
+	r_p = (1.*csqrt(1.-((1./(complex double)n)*csin(theta))*((1./(complex double)n)*csin(theta))) - (complex double)n * ccos(theta) ) /
+		(1.*csqrt(1.-((1./(complex double)n)*csin(theta))*((1./(complex double)n)*csin(theta))) + (complex double)n * ccos(theta) );
+	r_p = cpow(cabs(r_p),2.);
+
+	// calculate fraction of electric vector in s and p directions
+		//s direction is perpendicular to both photon incident direction and surface norm
+		//determine this direction by making vector product of both vectors
+	s_dir.x = surface_norm.y*photon->exit_direction.z - photon->exit_direction.y*surface_norm.z;
+	s_dir.y = surface_norm.z*photon->exit_direction.x - photon->exit_direction.z*surface_norm.x;
+	s_dir.z = surface_norm.x*photon->exit_direction.y - photon->exit_direction.x*surface_norm.y;
+	polycap_norm(&s_dir); //make it a unit vector, as we're not interested in the size of this vector. We prefer it to be size 1
+	p_dir.x = surface_norm.y*s_dir.z - s_dir.y*surface_norm.z;
+	p_dir.y = surface_norm.z*s_dir.x - s_dir.z*surface_norm.x;
+	p_dir.z = surface_norm.x*s_dir.y - s_dir.x*surface_norm.y;
+	polycap_norm(&p_dir);
+
+	//So now we can define a new axis system where surface_norm = z, s_dir = x and the other orthogonal vector =z
+	// the projection of electric_vector on each of these axes can then be determined
+	// 	by multiplying electric_vector by the cosine of the angle between electric_vector and the corresponding axis
+	//	thess angles can be derived from the scalar product (scalar product == cos(angle) for unit vectors)
+	//The fraction of electric_vector corresponding to s_dir can then be determined by cos(angle)^2 
+	//	as the sum of the cos^2 of electric_vector to all axes == 1
+	angle_a = polycap_scalar(photon->exit_electric_vector, s_dir);
+	frac_s = angle_a*angle_a; //square it
+	frac_p = 1.-frac_s; //what's not along s, is along p direction
+
+	// Determine rtot based on fraction of electric field in s and p direction
+	rtot = creal(r_s*frac_s + r_p*frac_p);
+
+	// Adjust electric_vector based on reflection in s and p direction
+	angle_b = polycap_scalar(photon->exit_electric_vector, surface_norm);
+	angle_c = polycap_scalar(photon->exit_electric_vector, p_dir);
+		//sqrt[ (E*angle_a*frac_s)^2 + (E*angle_b*frac_p)^2 + (E*angle_c*frac_p)^2 ]
+	photon->exit_electric_vector.x = sqrt( (photon->exit_electric_vector.x*angle_a*frac_s)*(photon->exit_electric_vector.x*angle_a*frac_s) +
+		(photon->exit_electric_vector.x*angle_b*frac_p)*(photon->exit_electric_vector.x*angle_b*frac_p) +
+		(photon->exit_electric_vector.x*angle_c*frac_p)*(photon->exit_electric_vector.x*angle_c*frac_p) );
+	photon->exit_electric_vector.y = sqrt( (photon->exit_electric_vector.y*angle_a*frac_s)*(photon->exit_electric_vector.y*angle_a*frac_s) +
+		(photon->exit_electric_vector.y*angle_b*frac_p)*(photon->exit_electric_vector.y*angle_b*frac_p) +
+		(photon->exit_electric_vector.y*angle_c*frac_p)*(photon->exit_electric_vector.y*angle_c*frac_p) );
+	photon->exit_electric_vector.z = sqrt( (photon->exit_electric_vector.z*angle_a*frac_s)*(photon->exit_electric_vector.z*angle_a*frac_s) +
+		(photon->exit_electric_vector.z*angle_b*frac_p)*(photon->exit_electric_vector.z*angle_b*frac_p) +
+		(photon->exit_electric_vector.z*angle_c*frac_p)*(photon->exit_electric_vector.z*angle_c*frac_p) );
+	polycap_norm(&photon->exit_electric_vector);
+
+	return rtot;
+//now we have R_s and R_p, we should figure out fraction of photon wave that is along s and p direction
+//	for this we need the capillary surface normal and photon electric field vector
+//then multiply these fractions by R_s and R_p. This should give the reflectivity of the fractions along s and p
+//Based on these fractions in s and p that are reflected, also calculate the new (combined) electric field vector
+//	based on vectorial product of the s and p vectors, adjusted in size by their R_s and R_p weights...
+//Afterwards, the total reflectivity rtot has to be determined as well
+//	this is done by simply adding r_p and r_s
+}
+//===========================================
+STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, polycap_error **error)
 {
 	int i, iesc=0, wall_trace=0, iesc_temp=0;
 	double cons1, r_rough;
@@ -252,7 +357,8 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_er
 		r_rough = exp(-1.*cons1*cons1);
 
 		//reflectivity according to Fresnel expression
-		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
+//		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
+		rtot = polycap_refl_polar(photon->energies[i], M_PI_2-alfa, description->density, photon->scatf[i], photon->amu[i], surface_norm, photon, error);
 		photon->weight[i] = photon->weight[i] * rtot * r_rough;
 
 		//Check if any of the photons are capable of passing through the wall matrix.
@@ -647,7 +753,7 @@ HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_descript
 		} else {
 			alfa = M_PI_2 - alfa;
 			
-			iesc = polycap_capil_reflect(photon, alfa, error);
+			iesc = polycap_capil_reflect(photon, alfa, surface_norm, error);
 
 			if(iesc != -2){
 				photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(alfa) * surface_norm.x;

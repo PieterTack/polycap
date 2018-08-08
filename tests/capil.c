@@ -97,7 +97,7 @@ void test_polycap_capil_reflect() {
 	double focal_dist_downstream = 0.5;
 	polycap_profile *profile;
 	polycap_description *description;
-	polycap_vector3 start_coords, start_direction, start_electric_vector;
+	polycap_vector3 start_coords, start_direction, start_electric_vector, surface_norm;
 	double energies = 10.;
 	int iz[2]={8,14};
 	double wi[2]={53.0,47.0};
@@ -115,6 +115,9 @@ void test_polycap_capil_reflect() {
 	start_electric_vector.x = 0.5;
 	start_electric_vector.y = 0.5;
 	start_electric_vector.z = 0.;
+	surface_norm.x = 0.707107;
+	surface_norm.y = -0.707107;
+	surface_norm.z = 0.;
 	// Create new rng
 	rng = polycap_rng_new_with_seed(20000);
 
@@ -135,28 +138,28 @@ void test_polycap_capil_reflect() {
 	polycap_clear_error(&error);
 
 	//won't work
-	test = polycap_capil_reflect(NULL, -1, &error);
+	test = polycap_capil_reflect(NULL, -1, surface_norm, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//should work
 	polycap_clear_error(&error);
 	double alfa = 2.e-3;
-	test = polycap_capil_reflect(photon, alfa, &error);
+	test = polycap_capil_reflect(photon, alfa, surface_norm, &error);
 	assert(test == 0);
 	assert(fabs(photon->weight[0] - 0.984522) < 1.e-5);
 
 	polycap_clear_error(&error);
 	alfa = 3.1e-3;
 	photon->weight[0] = 1.;
-	test = polycap_capil_reflect(photon, alfa, &error);
+	test = polycap_capil_reflect(photon, alfa, surface_norm, &error);
 	assert(test == 0);
 	assert(fabs(photon->weight[0] - 0.496310) < 1.e-5);
 
 	polycap_clear_error(&error);
 	alfa = M_PI_2;
 	photon->weight[0] = 1.;
-	test = polycap_capil_reflect(photon, alfa, &error);
+	test = polycap_capil_reflect(photon, alfa, surface_norm, &error);
 	assert(test == -2);
 	assert(fabs(photon->weight[0] - 0.) < 1.e-5);
 
