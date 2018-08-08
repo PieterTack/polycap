@@ -236,6 +236,10 @@ STATIC double polycap_refl_polar(double e, double theta, double density, double 
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: lin_abs_coeff must be greater than 0");
 		return -1;
 	}
+	if (photon == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: photon cannot be NULL");
+		return -1;
+	}
 
 	//Make sure the supplied vectors are normalised
 	//	Do not normalise photon->exit_direction; it's needed in non-normalised form in polycap_capil_trace()
