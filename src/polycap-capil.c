@@ -197,7 +197,7 @@ STATIC double polycap_refl(double e, double theta, double density, double scatf,
 	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
 	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
 
-	rtot = ((complex double)theta - csqrt(cpow((complex double)theta,2) - 2.*(alfa - beta*I))) / ((complex double)theta + csqrt(cpow((complex double)theta,2) - 2.*(alfa - beta*I)));
+	rtot = ((double complex)theta - csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I))) / ((double complex)theta + csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I)));
 	rtot = creal(cpow(cabs(rtot),2.));
 
 	return rtot;
@@ -251,14 +251,14 @@ STATIC double polycap_refl_polar(double e, double theta, double density, double 
 	// calculate s and p reflection intensities
 	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
 	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
-	n = 1. - (alfa - beta*I);
+	n = (double complex) 1. - (alfa - beta*I);
 
-	r_s = (1.*ccos(theta) - (complex double)n * csqrt(1.-((1./(complex double)n)*csin(theta))*((1./(complex double)n)*csin(theta))) ) /
-		(1.*ccos(theta) + (complex double)n * csqrt(1.-((1./(complex double)n)*csin(theta))*((1./(complex double)n)*csin(theta))) );
+	r_s = (double complex)((1.*ccos((double complex)theta)) - n * csqrt(1.-(((1./n)*csin((double complex)theta))*((1./n)*csin((double complex)theta)))) ) /
+		((1.*ccos((double complex)theta)) + n * csqrt(1.-(((1./n)*csin((double complex)theta))*((1./n)*csin((double complex)theta)))) );
 	r_s = cpow(cabs(r_s),2.);
 
-	r_p = (1.*csqrt(1.-((1./(complex double)n)*csin(theta))*((1./(complex double)n)*csin(theta))) - (complex double)n * ccos(theta) ) /
-		(1.*csqrt(1.-((1./(complex double)n)*csin(theta))*((1./(complex double)n)*csin(theta))) + (complex double)n * ccos(theta) );
+	r_p = (double complex)(1.*csqrt(1.-(((1./n)*csin((double complex)theta))*((1./n)*csin((double complex)theta)))) - (n*ccos((double complex)theta)) ) /
+		(1.*csqrt(1.-(((1./n)*csin((double complex)theta))*((1./n)*csin((double complex)theta)))) + (n*ccos((double complex)theta)) );
 	r_p = cpow(cabs(r_p),2.);
 
 	// calculate fraction of electric vector in s and p directions
@@ -282,6 +282,7 @@ STATIC double polycap_refl_polar(double e, double theta, double density, double 
 	angle_a = polycap_scalar(photon->exit_electric_vector, s_dir);
 	frac_s = angle_a*angle_a; //square it
 	frac_p = 1.-frac_s; //what's not along s, is along p direction
+	//printf("/theta: %lf, frac_s: %lf, r_s: %lf, frac_p: %lf, r_p: %lf\n", theta, frac_s, creal(r_s), frac_p, creal(r_p));
 
 	// Determine rtot based on fraction of electric field in s and p direction
 	rtot = creal(r_s*frac_s + r_p*frac_p);

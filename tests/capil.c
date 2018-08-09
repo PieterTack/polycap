@@ -84,6 +84,12 @@ void test_polycap_refl() {
 	test = polycap_refl(e, theta, density, scatf, lin_abs_coeff, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.496310) < 1.e-5);
+
+	polycap_clear_error(&error);
+	theta = M_PI_2-0.78515; //Brewster's angle
+	test = polycap_refl(e, theta, density, scatf, lin_abs_coeff, &error);
+	assert(test != -1);
+
 }
 
 void test_polycap_refl_polar() {
@@ -105,7 +111,6 @@ void test_polycap_refl_polar() {
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
-	//Should work
 	polycap_clear_error(&error);
 	theta = 0.;
 	photon->exit_direction.y = sin(-1.*theta);
@@ -116,6 +121,9 @@ void test_polycap_refl_polar() {
 	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.) < 1.e-5);
+	assert(photon->exit_electric_vector.x == 1);
+	assert(photon->exit_electric_vector.y == 0);
+	assert(photon->exit_electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = M_PI_2-2.e-3;
@@ -127,6 +135,9 @@ void test_polycap_refl_polar() {
 	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.984522) < 1.e-5);
+	assert(photon->exit_electric_vector.x == 1);
+	assert(photon->exit_electric_vector.y == 0);
+	assert(photon->exit_electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = M_PI_2-3.1e-3;
@@ -138,6 +149,9 @@ void test_polycap_refl_polar() {
 	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.496310) < 1.e-5);
+	assert(photon->exit_electric_vector.x == 1);
+	assert(photon->exit_electric_vector.y == 0);
+	assert(photon->exit_electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = 0.;
@@ -160,6 +174,9 @@ void test_polycap_refl_polar() {
 	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.984522) < 1.e-5);
+	assert(photon->exit_electric_vector.x == 0);
+	assert(photon->exit_electric_vector.y == 1);
+	assert(photon->exit_electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = M_PI_2-3.1e-3;
@@ -171,6 +188,9 @@ void test_polycap_refl_polar() {
 	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.496310) < 1.e-5);
+	assert(photon->exit_electric_vector.x == 0);
+	assert(photon->exit_electric_vector.y == 1);
+	assert(photon->exit_electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = M_PI_2-2.e-3;
@@ -182,6 +202,9 @@ void test_polycap_refl_polar() {
 	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.984522) < 1.e-5);
+	assert((photon->exit_electric_vector.x - 0.707107) < 1.e-5);
+	assert((photon->exit_electric_vector.y - 0.707107) < 1.e-5);
+	assert(photon->exit_electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = M_PI_2-3.1e-3;
@@ -193,9 +216,26 @@ void test_polycap_refl_polar() {
 	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.496310) < 1.e-5);
+	assert((photon->exit_electric_vector.x - 0.707107) < 1.e-5);
+	assert((photon->exit_electric_vector.y - 0.707107) < 1.e-5);
+	assert(photon->exit_electric_vector.z == 0);
 
 	//NOTE: for these angles it doesn't matter if we use polarised radiation or not (at least in the checks)
 	//	attempt at larger angles, there should be more difference between Rs and Rp then...
+	//	polycap_refl_polar() was tested with n set to 1.5, which does give correct Brewster angle performance,
+	//		so complex math appears correct
+
+//printf("---------------------------\n");
+//int i;
+//for(i=0; i<1000; i++){
+//	polycap_clear_error(&error);
+//	theta = M_PI_2/1000*i;
+//	photon->exit_direction.y = sin(-1.*theta);
+//	photon->exit_direction.z = cos(theta);
+//	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
+//}
+
+
 
 	free(photon);
 }
