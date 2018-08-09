@@ -93,17 +93,17 @@ void test_polycap_refl_polar() {
 	polycap_photon *photon;
 	polycap_vector3 surface_norm;
 
-	//won't work
-	test = polycap_refl_polar(-1, -1*M_PI, 0.,-1., -1., surface_norm, photon, &error);
-	assert(test == -1);
-	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
-
 	//define relevant photon values
 	photon = malloc(sizeof(polycap_photon));
 	photon->exit_direction.x = 0.; //plane of reflection is the yz plane
 	surface_norm.x = 0.;
 	surface_norm.y = 1.;
 	surface_norm.z = 0.;
+
+	//won't work
+	test = polycap_refl_polar(-1, -1*M_PI, 0.,-1., -1., surface_norm, photon, &error);
+	assert(test == -1);
+	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//Should work
 	polycap_clear_error(&error);
