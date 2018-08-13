@@ -724,6 +724,10 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 			free(efficiencies->images->pc_start_dir[0]);
 		if (efficiencies->images->pc_start_dir[1])
 			free(efficiencies->images->pc_start_dir[1]);
+		if (efficiencies->images->pc_start_elecv[0])
+			free(efficiencies->images->pc_start_elecv[0]);
+		if (efficiencies->images->pc_start_elecv[1])
+			free(efficiencies->images->pc_start_elecv[1]);
 		if (efficiencies->images->pc_exit_coords[0])
 			free(efficiencies->images->pc_exit_coords[0]);
 		if (efficiencies->images->pc_exit_coords[1])
@@ -732,6 +736,10 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 			free(efficiencies->images->pc_exit_dir[0]);
 		if (efficiencies->images->pc_exit_dir[1])
 			free(efficiencies->images->pc_exit_dir[1]);
+		if (efficiencies->images->pc_exit_elecv[0])
+			free(efficiencies->images->pc_exit_elecv[0]);
+		if (efficiencies->images->pc_exit_elecv[1])
+			free(efficiencies->images->pc_exit_elecv[1]);
 		if (efficiencies->images->pc_exit_nrefl)
 			free(efficiencies->images->pc_exit_nrefl);
 		if (efficiencies->images->pc_exit_dtravel)
@@ -762,6 +770,10 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 			free(efficiencies->images->recap_dir[0]);
 		if (efficiencies->images->recap_dir[1])
 			free(efficiencies->images->recap_dir[1]);
+		if (efficiencies->images->recap_elecv[0])
+			free(efficiencies->images->recap_elecv[0]);
+		if (efficiencies->images->recap_elecv[1])
+			free(efficiencies->images->recap_elecv[1]);
 		if (efficiencies->images->recap_coord_weights)
 			free(efficiencies->images->recap_coord_weights);
 		if (efficiencies->images->recap_n_refl)

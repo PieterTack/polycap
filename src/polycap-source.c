@@ -29,6 +29,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	double phi; //random polar angle phi from source x axis 
 	double src_start_x, src_start_y, max_rad;
 	polycap_photon *photon;
+	double alpha, cosalpha, c_ae, c_be; //angle between initial electric vector and photon direction
 
 	// Argument sanity check
 	if (source == NULL) {
@@ -107,12 +108,28 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	polycap_norm(&start_direction);
 
 	// Provide random electric vector
+	// 	make sure electric vector is perpendicular to photon direction
 	r = polycap_rng_uniform(rng);
-	start_electric_vector.x = (1.-2.*fabs(r));
-	r = polycap_rng_uniform(rng);
-	start_electric_vector.y = (1.-2.*fabs(r));
-	r = polycap_rng_uniform(rng);
-	start_electric_vector.z = (1.-2.*fabs(r));
+	if(fabs(r) <= source->hor_pol){
+		//horizontally polarised
+		start_electric_vector.x = 1.;
+		start_electric_vector.y = 0.;
+		start_electric_vector.z = 0.;
+	} else {
+		//vertically polarised
+		start_electric_vector.x = 0.;
+		start_electric_vector.y = 1.;
+		start_electric_vector.z = 0.;
+	}
+	cosalpha = polycap_scalar(start_electric_vector, start_direction);
+	alpha = acos(cosalpha);
+	c_ae = 1./sin(alpha);
+	c_be = -1.*c_ae*cosalpha;
+
+	start_electric_vector.x = start_electric_vector.x * c_ae + start_direction.x * c_be;
+	start_electric_vector.y = start_electric_vector.y * c_ae + start_direction.y * c_be;
+	start_electric_vector.z = start_electric_vector.z * c_ae + start_direction.z * c_be;
+
 	polycap_norm(&start_electric_vector);
 
 	// Create photon structure
@@ -123,7 +140,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 }
 //===========================================
 // get a new polycap_source by providing all its properties 
-polycap_source* polycap_source_new(polycap_description *description, double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, size_t n_energies, double *energies, polycap_error **error)
+polycap_source* polycap_source_new(polycap_description *description, double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, double hor_pol, size_t n_energies, double *energies, polycap_error **error)
 {
 	polycap_source *source;
 	int i;
@@ -143,6 +160,10 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 	}
 	if (src_y <= 0.) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_y must be greater than 0");
+		return NULL;
+	}
+	if (hor_pol > 1. || hor_pol < 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: hor_pol must be greater than 0 and smaller than 1");
 		return NULL;
 	}
 	if (n_energies <= 0.) {
@@ -178,6 +199,7 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 	source->src_sigy = src_sigy;
 	source->src_shiftx = src_shiftx;
 	source->src_shifty = src_shifty;
+	source->hor_pol = hor_pol;
 	source->n_energies = n_energies;
 	memcpy(source->energies, energies, sizeof(double)*n_energies);
 	source->description = polycap_description_new(description->profile, description->sig_rough, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
@@ -255,6 +277,12 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	filecheck = fscanf(fptr,"%lf %lf", &source->src_shiftx, &source->src_shifty);
 	if(filecheck == 0){
 		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->src_shiftx or &source->src_shifty -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%lf", &source->hor_pol);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->hor_pol -> %s", strerror(errno));
 		polycap_source_free(source);
 		return NULL;
 	}
@@ -539,6 +567,20 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		free(sum_weights);
 		return NULL;
 	}
+	efficiencies->images->pc_start_elecv[0] = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_start_elecv[0] == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_elecv[0] -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
+	efficiencies->images->pc_start_elecv[1] = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_start_elecv[1] == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_elecv[1] -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
 	efficiencies->images->pc_exit_coords[0] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_exit_coords[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_coords[0] -> %s", strerror(errno));
@@ -563,6 +605,20 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	efficiencies->images->pc_exit_dir[1] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_exit_dir[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
+	efficiencies->images->pc_exit_elecv[0] = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_exit_elecv[0] == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_elecv[0] -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
+	efficiencies->images->pc_exit_elecv[1] = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_exit_elecv[1] == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_elecv[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
@@ -737,6 +793,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		for(k=0; k<photon->n_leaks; k++){
 				leaks[n_leaks-photon->n_leaks+k].coords = photon->leaks[k].coords;
 				leaks[n_leaks-photon->n_leaks+k].direction = photon->leaks[k].direction;
+				leaks[n_leaks-photon->n_leaks+k].elecv = photon->leaks[k].elecv;
 				leaks[n_leaks-photon->n_leaks+k].n_refl = photon->leaks[k].n_refl;
 				leaks[n_leaks-photon->n_leaks+k].weight = malloc(sizeof(double)*source->n_energies);
 				memcpy(leaks[n_leaks-photon->n_leaks+k].weight, photon->leaks[k].weight, sizeof(double)*source->n_energies);
@@ -746,6 +803,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			for(k=0; k<photon->n_recap; k++){
 				recap[n_recap-photon->n_recap+k].coords = photon->recap[k].coords;
 				recap[n_recap-photon->n_recap+k].direction = photon->recap[k].direction;
+				recap[n_recap-photon->n_recap+k].elecv = photon->recap[k].elecv;
 				recap[n_recap-photon->n_recap+k].n_refl = photon->recap[k].n_refl;
 				recap[n_recap-photon->n_recap+k].weight = malloc(sizeof(double)*source->n_energies);
 				memcpy(recap[n_recap-photon->n_recap+k].weight, photon->recap[k].weight, sizeof(double)*source->n_energies);
@@ -784,6 +842,8 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	efficiencies->images->recap_coords[2] = realloc(efficiencies->images->recap_coords[2], sizeof(double)* efficiencies->images->i_recap);
 	efficiencies->images->recap_dir[0] = realloc(efficiencies->images->recap_dir[0], sizeof(double)* efficiencies->images->i_recap);
 	efficiencies->images->recap_dir[1] = realloc(efficiencies->images->recap_dir[1], sizeof(double)* efficiencies->images->i_recap);
+	efficiencies->images->recap_elecv[0] = realloc(efficiencies->images->recap_elecv[0], sizeof(double)* efficiencies->images->i_recap);
+	efficiencies->images->recap_elecv[1] = realloc(efficiencies->images->recap_elecv[1], sizeof(double)* efficiencies->images->i_recap);
 	efficiencies->images->recap_n_refl = realloc(efficiencies->images->recap_n_refl, sizeof(int64_t)* efficiencies->images->i_recap);
 	efficiencies->images->recap_coord_weights = realloc(efficiencies->images->recap_coord_weights, sizeof(double)*source->n_energies* efficiencies->images->i_recap);
 	leak_counter = 0;
@@ -810,6 +870,8 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		efficiencies->images->recap_coords[2][recap_counter] = recap[k].coords.z;
 		efficiencies->images->recap_dir[0][recap_counter] = recap[k].direction.x;
 		efficiencies->images->recap_dir[1][recap_counter] = recap[k].direction.y;
+		efficiencies->images->recap_elecv[0][recap_counter] = recap[k].elecv.x;
+		efficiencies->images->recap_elecv[1][recap_counter] = recap[k].elecv.y;
 		efficiencies->images->recap_n_refl[recap_counter] = recap[k].n_refl;
 		for(l=0; l < source->n_energies; l++)
 			efficiencies->images->recap_coord_weights[recap_counter*source->n_energies+l] = recap[k].weight[l];

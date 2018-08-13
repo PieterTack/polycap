@@ -396,6 +396,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 			}
 			photon->leaks[photon->n_leaks-1].coords = leak_coords;
 			photon->leaks[photon->n_leaks-1].direction = photon->exit_direction;
+			photon->leaks[photon->n_leaks-1].elecv = photon->exit_electric_vector;
 			photon->leaks[photon->n_leaks-1].n_refl = photon->i_refl;
 			photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
 			memcpy(photon->leaks[photon->n_leaks-1].weight, w_leak, sizeof(double)*photon->n_energies);
@@ -411,6 +412,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 			}
 			photon->recap[photon->n_recap-1].coords = leak_coords;
 			photon->recap[photon->n_recap-1].direction = photon->exit_direction;
+			photon->recap[photon->n_recap-1].elecv = photon->exit_electric_vector;
 			photon->recap[photon->n_recap-1].n_refl = photon->i_refl;
 			photon->recap[photon->n_recap-1].weight = malloc(sizeof(double) * photon->n_energies);
 			memcpy(photon->recap[photon->n_recap-1].weight, w_leak, sizeof(double)*photon->n_energies);
@@ -506,6 +508,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 				for(i=0; i<phot_temp->n_leaks;i++){
 					photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].coords = phot_temp->leaks[i].coords;
 					photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].direction = phot_temp->leaks[i].direction;
+					photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].elecv = phot_temp->leaks[i].elecv;
 					photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].n_refl = phot_temp->leaks[i].n_refl;
 					photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].weight = malloc(sizeof(double) * photon->n_energies);
 					memcpy(photon->leaks[photon->n_leaks-phot_temp->n_leaks+i].weight, phot_temp->leaks[i].weight, sizeof(double)*photon->n_energies);
@@ -524,6 +527,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 				for(i=0; i<phot_temp->n_recap;i++){
 					photon->recap[photon->n_recap-phot_temp->n_recap+i].coords = phot_temp->recap[i].coords;
 					photon->recap[photon->n_recap-phot_temp->n_recap+i].direction = phot_temp->recap[i].direction;
+					photon->recap[photon->n_recap-phot_temp->n_recap+i].elecv = phot_temp->recap[i].elecv;
 					photon->recap[photon->n_recap-phot_temp->n_recap+i].n_refl = phot_temp->recap[i].n_refl;
 					photon->recap[photon->n_recap-phot_temp->n_recap+i].weight = malloc(sizeof(double) * photon->n_energies);
 					memcpy(photon->recap[photon->n_recap-phot_temp->n_recap+i].weight, phot_temp->recap[i].weight, sizeof(double)*photon->n_energies);
@@ -545,6 +549,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 				}
 				photon->recap[photon->n_recap-1].coords = phot_temp->exit_coords;
 				photon->recap[photon->n_recap-1].direction = phot_temp->exit_direction;
+				photon->recap[photon->n_recap-1].elecv = phot_temp->exit_electric_vector;
 				photon->recap[photon->n_recap-1].n_refl = phot_temp->i_refl;
 				photon->recap[photon->n_recap-1].weight = malloc(sizeof(double) * photon->n_energies);
 				memcpy(photon->recap[photon->n_recap-1].weight, phot_temp->weight, sizeof(double)*photon->n_energies);

@@ -106,6 +106,7 @@ struct _polycap_source
   double src_sigy;
   double src_shiftx;
   double src_shifty;
+  double hor_pol;
   size_t n_energies;
   double *energies;
   };
@@ -114,6 +115,7 @@ struct _polycap_leaks
   {
   polycap_vector3 coords;
   polycap_vector3 direction;
+  polycap_vector3 elecv;
   double *weight;
   int64_t n_refl;
   };
@@ -158,8 +160,10 @@ struct _polycap_images
   double *src_start_coords[2];
   double *pc_start_coords[2];
   double *pc_start_dir[2];
+  double *pc_start_elecv[2];
   double *pc_exit_coords[2];
   double *pc_exit_dir[2];
+  double *pc_exit_elecv[2];
   int64_t *pc_exit_nrefl;
   double *pc_exit_dtravel;
   double *exit_coord_weights;
@@ -171,6 +175,7 @@ struct _polycap_images
   int64_t i_recap;
   double *recap_coords[3];
   double *recap_dir[2];
+  double *recap_elecv[2];
   double *recap_coord_weights;
   int64_t *recap_n_refl;
   };

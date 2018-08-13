@@ -333,6 +333,7 @@ cdef class Source:
         double src_sigy,
         double src_shiftx,
         double src_shifty,
+	double hor_pol,
 	object energies not None):
 
         energies = np.asarray(energies, dtype=np.double)
@@ -350,6 +351,7 @@ cdef class Source:
             src_sigy,
             src_shiftx,
             src_shifty,
+            hor_pol,
             energies.size,
             <double*> np.PyArray_DATA(energies),
             &error)

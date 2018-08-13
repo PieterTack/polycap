@@ -44,7 +44,7 @@ void test_polycap_source_get_photon() {
 	polycap_clear_error(&error);
 	description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
-	source = polycap_source_new(description, 0.05, 0.1, 0.1, 0.2, 0.2, 0., 0., 7, energies, &error);
+	source = polycap_source_new(description, 0.05, 0.1, 0.1, 0.2, 0.2, 0., 0., 0.5, 7, energies, &error);
 	assert(source != NULL);
 
 	//this won't work
@@ -74,7 +74,7 @@ void test_polycap_source_new() {
 	polycap_source *source;
 
 	// Shouldn't work
-	source = polycap_source_new(NULL, -1,-1,-1,-1,-1,0.3,0.3, -1, NULL, &error);
+	source = polycap_source_new(NULL, -1,-1,-1,-1,-1,0.3,0.3, -1., -1, NULL, &error);
 	assert(source == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 	polycap_clear_error(&error);
@@ -113,7 +113,7 @@ void test_polycap_source_new_from_file() {
 	assert(description2 != NULL);
 	polycap_profile_free(profile2);
 	double energies[7]={1,5,10,15,20,25,30};
-	polycap_source *source2 = polycap_source_new(description2, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 7, energies, &error); //source2->(n_)energies is not identical to those of source->(n_)energies, but should not be relevant here
+	polycap_source *source2 = polycap_source_new(description2, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, 7, energies, &error); //source2->(n_)energies is not identical to those of source->(n_)energies, but should not be relevant here
 	assert(source2 != NULL);
 	assert(polycap_source_get_description(source2) == polycap_source_get_description(source2));
 	assert(polycap_source_get_description(source2) != description2);
@@ -137,6 +137,7 @@ void test_polycap_source_new_from_file() {
 	assert(fabs(source->src_sigy - source2->src_sigy) < 1e-5);
 	assert(fabs(source->src_shiftx - source2->src_shiftx) < 1e-5);
 	assert(fabs(source->src_shifty - source2->src_shifty) < 1e-5);
+	assert(fabs(source->hor_pol - source2->hor_pol) < 1e-5);
 	//check profile parameters
 	assert(source->description->profile->nmax == source2->description->profile->nmax);
 	assert(fabs(source->description->profile->z[0] - source2->description->profile->z[0]) < 1e-5);
@@ -170,7 +171,7 @@ void test_polycap_source_get_transmission_efficiencies() {
 	description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 	polycap_profile_free(profile);
-	source = polycap_source_new(description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 7, energies, &error);
+	source = polycap_source_new(description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, 7, energies, &error);
 	assert(source != NULL);
 	polycap_description_free(description);
 
