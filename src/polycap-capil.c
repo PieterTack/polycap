@@ -312,7 +312,7 @@ STATIC double polycap_refl_polar(double e, double theta, double density, double 
 //	this is done by simply adding r_p and r_s
 }
 //===========================================
-STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, polycap_error **error)
+STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, bool leak_calc, polycap_error **error)
 {
 	int i, iesc=0, wall_trace=0, iesc_temp=0;
 	double cons1, r_rough;
@@ -349,8 +349,9 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 	}
 
 	//for halo effect one calculates here the distance traveled through the capillary wall d_travel
-	//	TODO: just skip this function if leakage calculations are not wanted
-	wall_trace = polycap_capil_trace_wall(photon, &d_travel, &capx_cntr, &capy_cntr, error);
+	//	if leak_calc is false wall_trace will remain 0 and the whole leak calculation will be skipped
+	if(leak_calc)
+		wall_trace = polycap_capil_trace_wall(photon, &d_travel, &capx_cntr, &capy_cntr, error);
 		//wall_trace == 1: photon path enters a new (neighbouring) capillary
 		//wall_trace == 2: photon path reaches end of (poly)capillary by traveling through the glass wall
 		//wall_trace == 3: photon path escapes (poly)capillary through the side walls.
@@ -479,7 +480,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 			//polycap_capil_trace should be ran description->profile->nmax at most,
 			//which means it essentially reflected once every known capillary coordinate
 			for(i=0; i<=description->profile->nmax; i++){
-				iesc_temp = polycap_capil_trace(ix_temp, phot_temp, description, capx_temp, capy_temp, error);
+				iesc_temp = polycap_capil_trace(ix_temp, phot_temp, description, capx_temp, capy_temp, leak_calc, error);
 				if(iesc_temp != 0){ //as long as iesc_temp = 0 photon is still reflecting in capillary
 				//iesc_temp == -2, which means this photon has reached its final point (weight[0] <1e-4)
 				//alternatively, iesc_temp can be 1 due to not finding intersection point, as the photon reached the end of the capillary
@@ -686,7 +687,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 }
 //===========================================
 // trace photon through capillary
-HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, polycap_error **error)
+HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, bool leak_calc, polycap_error **error)
 {
 	int i, iesc=0;
 	double cap_rad0, cap_rad1;
@@ -762,7 +763,7 @@ HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_descript
 		} else {
 			alfa = M_PI_2 - alfa;
 			
-			iesc = polycap_capil_reflect(photon, alfa, surface_norm, error);
+			iesc = polycap_capil_reflect(photon, alfa, surface_norm, leak_calc, error);
 
 			if(iesc != -2){
 				photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(alfa) * surface_norm.x;

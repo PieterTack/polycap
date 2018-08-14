@@ -20,13 +20,16 @@
 #include <omp.h> /* openmp header */
 
 //===========================================
+//call example: ./polycap inputfile.inp outfile.h5     5       1
+//						    #cores   leak_calc on
 int main(int argc, char *argv[])
 {	
 	polycap_source *source;
 	polycap_transmission_efficiencies *efficiencies;
-	int nthreads=-1;
+	int nthreads = -1;
 	int n_photons = 50000;
 	const char filename[] = "polycap_out.h5";
+	bool leak_calc = false;
 	polycap_error *error = NULL;
 
 	// Check whether input file argument was supplied
@@ -36,11 +39,17 @@ int main(int argc, char *argv[])
 		}
 
 	//Check nthreads if sufficient arguments were supplied
-	if(argc >= 3){
-		nthreads = atoi(argv[2]);
+//	if(argc >= 3)
+//		filename = argv[2];
+	if(argc >= 4){
+		nthreads = atoi(argv[3]);
 		if(nthreads < 1 || nthreads > omp_get_max_threads() ){
 			nthreads = omp_get_max_threads();
 		}
+	}
+	if(argc >= 5){
+		if(atoi(argv[4]) == 1)
+			leak_calc = true;
 	}
 
 	// Read input file and define source structure
@@ -52,7 +61,7 @@ int main(int argc, char *argv[])
 
 	// Perform calculations	
 	printf("Starting calculations...\n");
-	efficiencies = polycap_source_get_transmission_efficiencies(source, nthreads, n_photons, NULL, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, nthreads, n_photons, leak_calc, NULL, &error);
 	if (efficiencies == NULL) {
 		fprintf(stderr, "%s\n", error->message);
 		return 1;

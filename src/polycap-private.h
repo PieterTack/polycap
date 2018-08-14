@@ -34,7 +34,7 @@
   int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa, polycap_error **error);
   double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error);
   double polycap_refl_polar(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_vector3 surface_norm, polycap_photon *photon, polycap_error **error);
-  int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, polycap_error **error);
+  int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, bool leak_calc, polycap_error **error);
 #else
   #define STATIC static
   #define HIDDEN __attribute__((visibility("hidden")))
@@ -183,7 +183,7 @@ struct _polycap_images
 int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord, polycap_error **error);
 void polycap_norm(polycap_vector3 *vect);
 double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2);
-int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, polycap_error **error);
+int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, bool leak_calc, polycap_error **error);
 int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *capx_id, int *capy_id, polycap_error **error);
 char *polycap_read_input_line(FILE *fptr, polycap_error **error);
 void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error);

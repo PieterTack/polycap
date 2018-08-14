@@ -47,6 +47,7 @@ cdef extern from "polycap-source.h" nogil:
         polycap_source *source,
         int max_threads,
         int n_photons,
+	bint leak_calc,
         polycap_progress_monitor *progress_monitor,
         polycap_error **error)
 

@@ -240,7 +240,7 @@ void test_polycap_photon_launch() {
 	polycap_clear_error(&error);
 
 	//This should not work
-	test = polycap_photon_launch(NULL, 1., &energies, NULL, &error);
+	test = polycap_photon_launch(NULL, 1., &energies, NULL, false, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
@@ -248,7 +248,7 @@ void test_polycap_photon_launch() {
 	//Additionally, amu and scatf will not have been initialised yet
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.21;
-	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(photon->n_energies == 1);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
@@ -261,7 +261,7 @@ void test_polycap_photon_launch() {
 	//This works but returns 0 (as photon does not reach the end of the capillary)
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.0;
-	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(photon->n_energies == 1);
@@ -274,7 +274,7 @@ void test_polycap_photon_launch() {
 	photon->start_direction.x = 0.;
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.0;
-	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(photon->n_energies == 1);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);

@@ -292,28 +292,28 @@ void test_polycap_capil_reflect() {
 	polycap_clear_error(&error);
 
 	//won't work
-	test = polycap_capil_reflect(NULL, -1, surface_norm, &error);
+	test = polycap_capil_reflect(NULL, -1, surface_norm, false, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//should work
 	polycap_clear_error(&error);
 	double alfa = 2.e-3;
-	test = polycap_capil_reflect(photon, alfa, surface_norm, &error);
+	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
 	assert(test == 0);
 	assert(fabs(photon->weight[0] - 0.984522) < 1.e-5);
 
 	polycap_clear_error(&error);
 	alfa = 3.1e-3;
 	photon->weight[0] = 1.;
-	test = polycap_capil_reflect(photon, alfa, surface_norm, &error);
+	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
 	assert(test == 0);
 	assert(fabs(photon->weight[0] - 0.496310) < 1.e-5);
 
 	polycap_clear_error(&error);
 	alfa = M_PI_2;
 	photon->weight[0] = 1.;
-	test = polycap_capil_reflect(photon, alfa, surface_norm, &error);
+	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
 	assert(test == -2);
 	assert(fabs(photon->weight[0] - 0.) < 1.e-5);
 
@@ -385,13 +385,13 @@ void test_polycap_capil_trace() {
 	}
 
 	//won't work
-	test = polycap_capil_trace(NULL, NULL, NULL, NULL, NULL, &error);
+	test = polycap_capil_trace(NULL, NULL, NULL, NULL, NULL, false, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//Should work, finds new reflection point
 	polycap_clear_error(&error);
-	test = polycap_capil_trace(ix, photon, description, cap, cap, &error);
+	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
 	assert(test == 0);
 	assert(*ix == 0);
 	assert(photon->i_refl == 1);
@@ -420,7 +420,7 @@ void test_polycap_capil_trace() {
 	photon->energies[0] = energies;
 	photon->weight[0] = 1.0;
 	photon->i_refl = 0;
-	test = polycap_capil_trace(ix, photon, description, cap, cap, &error);
+	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
 	assert(test == 1);
 	assert(photon->i_refl == 0);
 

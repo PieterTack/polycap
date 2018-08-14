@@ -207,7 +207,7 @@ HIDDEN double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2)
 
 //===========================================
 // simulate a single photon for a given polycap_description
-int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *energies, double **weights, polycap_error **error)
+int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *energies, double **weights, bool leak_calc, polycap_error **error)
 {
 	polycap_vector3 central_axis;
 	double weight;
@@ -368,7 +368,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//polycap_capil_trace should be ran description->profile->nmax at most,
 	//which means it essentially reflected once every known capillary coordinate
 	for(i=0; i<=description->profile->nmax; i++){
-		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, error);
+		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, leak_calc, error);
 		if(iesc != 0){ //as long as iesc = 0 photon is still reflecting in capillary
 		//iesc == -2, which means this photon has reached its final point (weight[0] <1e-4)
 		//alternatively, iesc can be 1 due to not finding intersection point, as the photon reached the end of the capillary

@@ -298,7 +298,7 @@ cdef class Photon:
         cdef polycap_error *error = NULL
         cdef double *weights = NULL
            
-        rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, &error)
+        rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, False, &error)
         set_exception(error)
         if rv == 0:
             return None
@@ -385,6 +385,7 @@ cdef class Source:
             self.source,
             max_threads,
             n_photons,
+            False, #leak_calc option
             NULL, # polycap_progress_monitor
             &error)
         set_exception(error)
