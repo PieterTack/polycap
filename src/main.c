@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	polycap_transmission_efficiencies *efficiencies;
 	int nthreads = -1;
 	int n_photons = 50000;
-	const char filename[] = "polycap_out.h5";
+	char *filename;//filename[] = "polycap_out.h5";
 	bool leak_calc = false;
 	polycap_error *error = NULL;
 
@@ -39,8 +39,13 @@ int main(int argc, char *argv[])
 		}
 
 	//Check nthreads if sufficient arguments were supplied
-//	if(argc >= 3)
-//		filename = argv[2];
+	if(argc >= 3){
+		filename = realloc(filename, sizeof(argv[2]));
+		strcpy(filename, argv[2]);
+	} else {
+		filename = realloc(filename, sizeof("polycap_out.h5"));
+		strcpy(filename, "polycap_out.h5");
+	}
 	if(argc >= 4){
 		nthreads = atoi(argv[3]);
 		if(nthreads < 1 || nthreads > omp_get_max_threads() ){
@@ -74,6 +79,7 @@ int main(int argc, char *argv[])
 	}
 
 
+	free(filename);
 	polycap_transmission_efficiencies_free(efficiencies);
 	polycap_source_free(source);
 

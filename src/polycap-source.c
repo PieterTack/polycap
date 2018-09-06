@@ -30,6 +30,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	double src_start_x, src_start_y, max_rad;
 	polycap_photon *photon;
 	double alpha, cosalpha, c_ae, c_be; //angle between initial electric vector and photon direction
+	double frac_hor_pol; //fraction of horizontally oriented photons
 
 	// Argument sanity check
 	if (source == NULL) {
@@ -109,8 +110,9 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 
 	// Provide random electric vector
 	// 	make sure electric vector is perpendicular to photon direction
+	frac_hor_pol = (1. + source->hor_pol)/2.;
 	r = polycap_rng_uniform(rng);
-	if(fabs(r) <= source->hor_pol){
+	if(fabs(r) <= frac_hor_pol){
 		//horizontally polarised
 		start_electric_vector.x = 1.;
 		start_electric_vector.y = 0.;
@@ -162,8 +164,8 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_y must be greater than 0");
 		return NULL;
 	}
-	if (hor_pol > 1. || hor_pol < 0.) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: hor_pol must be greater than 0 and smaller than 1");
+	if (fabs(hor_pol) > 1.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: hor_pol must be greater than or equal to -1 and smaller than or equal to 1");
 		return NULL;
 	}
 	if (n_energies <= 0.) {
