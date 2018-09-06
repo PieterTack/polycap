@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	polycap_transmission_efficiencies *efficiencies;
 	int nthreads = -1;
 	int n_photons = 50000;
-	char *filename;//filename[] = "polycap_out.h5";
+	char *filename;
 	bool leak_calc = false;
 	polycap_error *error = NULL;
 
@@ -40,10 +40,10 @@ int main(int argc, char *argv[])
 
 	//Check nthreads if sufficient arguments were supplied
 	if(argc >= 3){
-		filename = realloc(filename, sizeof(argv[2]));
+		filename = malloc(sizeof(argv[2]));
 		strcpy(filename, argv[2]);
 	} else {
-		filename = realloc(filename, sizeof("polycap_out.h5"));
+		filename = malloc(sizeof("polycap_out.h5"));
 		strcpy(filename, "polycap_out.h5");
 	}
 	if(argc >= 4){
