@@ -113,7 +113,7 @@ void test_polycap_source_new_from_file() {
 	assert(description2 != NULL);
 	polycap_profile_free(profile2);
 	double energies[7]={1,5,10,15,20,25,30};
-	polycap_source *source2 = polycap_source_new(description2, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, 7, energies, &error); //source2->(n_)energies is not identical to those of source->(n_)energies, but should not be relevant here
+	polycap_source *source2 = polycap_source_new(description2, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0., 7, energies, &error); //source2->(n_)energies is not identical to those of source->(n_)energies, but should not be relevant here
 	assert(source2 != NULL);
 	assert(polycap_source_get_description(source2) == polycap_source_get_description(source2));
 	assert(polycap_source_get_description(source2) != description2);

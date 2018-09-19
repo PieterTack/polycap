@@ -29,7 +29,8 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	double phi; //random polar angle phi from source x axis 
 	double src_start_x, src_start_y, max_rad;
 	polycap_photon *photon;
-	double alpha, cosalpha, c_ae, c_be; //angle between initial electric vector and photon direction
+	double cosalpha, alpha; //angle between initial electric vector and photon direction
+	double c_ae, c_be;
 	double frac_hor_pol; //fraction of horizontally oriented photons
 
 	// Argument sanity check
@@ -123,6 +124,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 		start_electric_vector.y = 1.;
 		start_electric_vector.z = 0.;
 	}
+	// Define electric vector as both orthogonal to start_direction and in line with original xy coordinate axes
 	cosalpha = polycap_scalar(start_electric_vector, start_direction);
 	alpha = acos(cosalpha);
 	c_ae = 1./sin(alpha);
@@ -816,7 +818,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			}
 		}
 
-		#pragma omp critical //TODO: may be useful to make this 'atomic' instead of 'critical'?
+		#pragma omp critical
 		{
 		sum_irefl += photon->i_refl;
 		}

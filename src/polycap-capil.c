@@ -276,7 +276,7 @@ STATIC double polycap_refl_polar(double e, double theta, double density, double 
 	//So now we can define a new axis system where surface_norm = z, s_dir = x and the other orthogonal vector =z
 	// the projection of electric_vector on each of these axes can then be determined
 	// 	by multiplying electric_vector by the cosine of the angle between electric_vector and the corresponding axis
-	//	thess angles can be derived from the scalar product (scalar product == cos(angle) for unit vectors)
+	//	these angles can be derived from the scalar product (scalar product == cos(angle) for unit vectors)
 	//The fraction of electric_vector corresponding to s_dir can then be determined by cos(angle)^2 
 	//	as the sum of the cos^2 of electric_vector to all axes == 1
 	angle_a = polycap_scalar(photon->exit_electric_vector, s_dir);

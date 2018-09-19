@@ -20,8 +20,8 @@
 #include <omp.h> /* openmp header */
 
 //===========================================
-//call example: ./polycap inputfile.inp outfile.h5     5       1
-//						    #cores   leak_calc on
+//call example: ./polycap inputfile.inp      outfile.h5     5       1
+//					         	    #cores   leak_calc on
 int main(int argc, char *argv[])
 {	
 	polycap_source *source;
@@ -40,11 +40,9 @@ int main(int argc, char *argv[])
 
 	//Check nthreads if sufficient arguments were supplied
 	if(argc >= 3){
-		filename = malloc(sizeof(argv[2]));
-		strcpy(filename, argv[2]);
+		filename = strdup(argv[2]);
 	} else {
-		filename = malloc(sizeof("polycap_out.h5"));
-		strcpy(filename, "polycap_out.h5");
+		filename = strdup("polycap_out.h5");
 	}
 	if(argc >= 4){
 		nthreads = atoi(argv[3]);
