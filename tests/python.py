@@ -69,21 +69,21 @@ class TestPolycapDescription(unittest.TestCase):
     def test_description_bad_input(self):
         with self.assertRaises(ValueError):
             composition = {"Bad": 53.0, "Ugly": 47.0}
-            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0.0, 0.0, 0, composition, 2.23)
+            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0, composition, 2.23)
         with self.assertRaises(ValueError):
             composition = {"O": 53.0, "Si": 47.0}
-            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0.0, 0.0, 0, composition, 2.23)
+            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0, composition, 2.23)
         with self.assertRaises(ValueError):
             composition = {"O": 53.0, "Si": 47.0}
-            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0.0, 0.0, 0, composition, 2.23)
+            description = polycap.Description(TestPolycapDescription.profile, 0.0, 0, composition, 2.23)
             
     def test_description_good_input(self):
         composition = {"O": 53.0, "Si": 47.0}
-        description = polycap.Description(TestPolycapDescription.profile, 0.0, 0.0, 0.0, 200000, composition, 2.23)
+        description = polycap.Description(TestPolycapDescription.profile, 0.0, 200000, composition, 2.23)
 
 class TestPolycapPhoton(unittest.TestCase):
     composition = {"O": 53.0, "Si": 47.0}
-    description = polycap.Description(TestPolycapDescription.profile, 0.0, 0.0, 0.0, 200000, composition, 2.23)
+    description = polycap.Description(TestPolycapDescription.profile, 0.0, 200000, composition, 2.23)
 
     def test_photon_bad_input(self):
         start_coords = (0., 0. , 0.)
@@ -115,22 +115,22 @@ class TestPolycapSource(unittest.TestCase):
 
     def test_source_bad_input(self):
         with self.assertRaises(TypeError):
-            source = polycap.Source(None, -1,-1,-1,-1,-1,0.3,0.3)
+            source = polycap.Source(None, -1,-1,-1,-1,-1,0.3,0.3, 2., np.linspace(1, 25.0, 250))
         with self.assertRaises(ValueError):
-            source = polycap.Source(TestPolycapPhoton.description, -1,-1,-1,-1,-1,0.3,0.3)
+            source = polycap.Source(TestPolycapPhoton.description, -1,-1,-1,-1,-1,0.3,0.3, 2., np.linspace(1, 25.0, 250))
 
     def test_source_get_photon(self):
-        source = polycap.Source(TestPolycapPhoton.description, 0.05, 0.1, 0.1, 0.2, 0.2, 0., 0.)
+        source = polycap.Source(TestPolycapPhoton.description, 0.05, 0.1, 0.1, 0.2, 0.2, 0., 0., 0.5, np.linspace(1, 25.0, 250))
         photon = source.get_photon(TestPolycapSource.rng)
 
     def test_source_bad_get_transmission_efficiencies(self):
-        source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0)
+        source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, np.linspace(1, 25.0, 250))
         with self.assertRaises(TypeError):
             efficiencies = source.get_transmission_efficiencies(-1, None, 1000)
 
     def test_source_good_get_transmission_efficiencies(self):
-        source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0)
-        efficiencies = source.get_transmission_efficiencies(-1, np.linspace(1, 25.0, 250), 10000)
+        source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, np.linspace(1, 25.0, 250))
+        efficiencies = source.get_transmission_efficiencies(-1, 10000)
         efficiencies.write_hdf5("temp-py.h5")
         self.assertTrue(os.path.exists("temp-py.h5"))
         os.remove("temp-py.h5")

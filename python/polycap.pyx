@@ -126,8 +126,6 @@ cdef class Description:
     def __cinit__(self, 
         Profile profile,
         double sig_rough,
-        double sig_wave,
-        double corr_length,
         int64_t n_cap,
         dict composition,
         double density):
@@ -146,8 +144,6 @@ cdef class Description:
         self.description = polycap_description_new(
             profile.profile,
             sig_rough,
-            sig_wave,
-            corr_length,
             n_cap,
             len(composition),
             <int*> np.PyArray_DATA(iz),
@@ -302,7 +298,7 @@ cdef class Photon:
         cdef polycap_error *error = NULL
         cdef double *weights = NULL
            
-        rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, &error)
+        rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, False, &error)
         set_exception(error)
         if rv == 0:
             return None
@@ -336,7 +332,15 @@ cdef class Source:
         double src_sigx,
         double src_sigy,
         double src_shiftx,
-        double src_shifty):
+        double src_shifty,
+	double hor_pol,
+	object energies not None):
+
+        energies = np.asarray(energies, dtype=np.double)
+        energies = np.atleast_1d(energies)
+        if len(energies.shape) != 1:
+            raise ValueError("energies must be a 1D array")
+
         cdef polycap_error *error = NULL
         self.source = polycap_source_new(
             description.description,
@@ -347,6 +351,9 @@ cdef class Source:
             src_sigy,
             src_shiftx,
             src_shifty,
+            hor_pol,
+            energies.size,
+            <double*> np.PyArray_DATA(energies),
             &error)
         set_exception(error)
 
@@ -371,21 +378,14 @@ cdef class Source:
 
     def get_transmission_efficiencies(self,
         int max_threads,
-        object energies not None,
         int n_photons):
-
-        energies = np.asarray(energies, dtype=np.double)
-        energies = np.atleast_1d(energies)
-        if len(energies.shape) != 1:
-            raise ValueError("energies must be a 1D array")
 
         cdef polycap_error *error = NULL
         cdef polycap_transmission_efficiencies *transmission_efficiencies = polycap_source_get_transmission_efficiencies(
             self.source,
             max_threads,
-            energies.size,
-            <double*> np.PyArray_DATA(energies),
             n_photons,
+            False, #leak_calc option
             NULL, # polycap_progress_monitor
             &error)
         set_exception(error)

@@ -92,13 +92,12 @@ HIDDEN void polycap_description_check_weight(size_t nelem, double wi[], polycap_
 
 //===========================================
 // get a new polycap_description by providing all its properties
-polycap_description* polycap_description_new(polycap_profile *profile, double sig_rough, double sig_wave, double corr_length, int64_t n_cap, unsigned int nelem, int iz[], double wi[], double density, polycap_error **error)
+polycap_description* polycap_description_new(polycap_profile *profile, double sig_rough, int64_t n_cap, unsigned int nelem, int iz[], double wi[], double density, polycap_error **error)
 {
 	int i;
 	polycap_description *description;
 
 	//Perform source_temp and description argument sanity check
-	// TODO: more sanity checks??
 	if (n_cap <= 1){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: n_cap must be greater than 1");
 		return NULL;
@@ -152,8 +151,6 @@ polycap_description* polycap_description_new(polycap_profile *profile, double si
 
 	//copy data into description structure
 	description->sig_rough = sig_rough;
-	description->sig_wave = sig_wave;
-	description->corr_length = corr_length;
 	description->n_cap = n_cap;
 	description->nelem = nelem;
 	description->density = density;

@@ -51,7 +51,7 @@ void test_polycap_photon_scatf() {
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
 	polycap_clear_error(&error);
-	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
+	description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
@@ -120,7 +120,7 @@ void test_polycap_photon_new() {
 	polycap_profile *profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
 	polycap_clear_error(&error);
-	polycap_description *description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
+	polycap_description *description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
@@ -233,14 +233,14 @@ void test_polycap_photon_launch() {
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL);
 	polycap_clear_error(&error);
-	description = polycap_description_new(profile, 0.0, 0.0, 0.0, 200000, 2, iz, wi, 2.23, &error);
+	description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 
 	//This should not work
-	test = polycap_photon_launch(NULL, 1., &energies, NULL, &error);
+	test = polycap_photon_launch(NULL, 1., &energies, NULL, false, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
@@ -248,34 +248,39 @@ void test_polycap_photon_launch() {
 	//Additionally, amu and scatf will not have been initialised yet
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.21;
-	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(photon->n_energies == 1);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
+	polycap_free(weights);
+	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->weight); // this is just to shut up valgrind because we are reusing the photon...
 	
 	//This works but returns 0 (as photon does not reach the end of the capillary)
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.0;
-	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(photon->n_energies == 1);
 	assert(test == 0);
+	polycap_free(weights);
+	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...
 	
 	//This works and returns 1 (photon reached end of capillary)
 	polycap_clear_error(&error);
 	photon->start_direction.x = 0.;
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.0;
-	test = polycap_photon_launch(photon, 1., &energies, &weights, &error);
+	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(photon->n_energies == 1);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(test == 1);
+	polycap_free(weights);
 	
-	free(weights);
 	polycap_photon_free(photon);
 	polycap_description_free(description);
 	polycap_profile_free(profile);

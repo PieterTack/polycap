@@ -29,6 +29,9 @@ cdef extern from "polycap-source.h" nogil:
         double src_sigy,
         double src_shiftx,
         double src_shifty,
+	double hor_pol,
+	size_t n_energies,
+	double *energies,
         polycap_error **error)
 
     void polycap_source_free(polycap_source *source)
@@ -43,9 +46,8 @@ cdef extern from "polycap-source.h" nogil:
     polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
         polycap_source *source,
         int max_threads,
-        size_t n_energies,
-        double *energies,
         int n_photons,
+	bint leak_calc,
         polycap_progress_monitor *progress_monitor,
         polycap_error **error)
 

@@ -207,7 +207,7 @@ HIDDEN double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2)
 
 //===========================================
 // simulate a single photon for a given polycap_description
-int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *energies, double **weights, polycap_error **error)
+int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *energies, double **weights, bool leak_calc, polycap_error **error)
 {
 	polycap_vector3 central_axis;
 	double weight;
@@ -244,6 +244,24 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		return -1;
 	}
 
+	//free photon->leaks and recap here in case polycap_photon_launch would be called twice on same photon (without intermittant photon freeing)
+	if (photon->leaks){
+		for(i=0; i<photon->n_leaks; i++){
+			if (photon->leaks[i].weight)
+				free(photon->leaks[i].weight);
+		}
+		free(photon->leaks);
+		photon->leaks = NULL;
+	}
+	if (photon->recap){
+		for(i=0; i<photon->n_recap; i++){
+			if (photon->recap[i].weight)
+				free(photon->recap[i].weight);
+		}
+		free(photon->recap);
+		photon->recap = NULL;
+	}
+
 	polycap_description *description = photon->description;
 	if (description == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: description cannot be NULL");
@@ -270,12 +288,25 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		photon->weight[i] = 1.;
 	}
 	photon->i_refl = 0; //set reflections to 0
+	photon->n_leaks = 0; //set leaks to 0
+	photon->n_recap = 0; //set recap photons to 0
 
+	//calculate amount of shells in polycapillary
+	//NOTE: with description->n_cap <7 only a mono-capillary will be simulated.
+	//    10 describes 1 shell (of 7 capillaries), ... due to hexagon stacking
+	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
 	//check if photon->start_coord are within hexagonal polycap boundaries
-	photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords, error);
-	if(photon_pos_check == 0){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within polycapillary boundaries");
-		return -1;
+	if(n_shells == 0.){ //monocapillary case
+		if(sqrt((photon->start_coords.x)*(photon->start_coords.x) + (photon->start_coords.y)*(photon->start_coords.y)) > description->profile->ext[0]){
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within monocapillary boundaries");
+			return -1;
+		}
+	} else { //polycapillary case
+		photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords, error);
+		if(photon_pos_check == 0){
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within polycapillary boundaries");
+			return -1;
+		}
 	}
 
 	//calculate attenuation coefficients and scattering factors
@@ -290,10 +321,6 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//normalize start_direction
 	polycap_norm(&photon->start_direction);
 
-	//calculate amount of shells in polycapillary
-	//NOTE: with description->n_cap <7 only a mono-capillary will be simulated.
-	//    10 describes 1 shell (of 7 capillaries), ... due to hexagon stacking
-	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
 	if(n_shells == 0.){ //monocapillary case
 		capx_0 = 0;
 		capy_0 = 0;
@@ -309,7 +336,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//Check whether photon start coordinate is within capillary (within capillary center at distance < capillary radius)
 	d_ph_capcen = sqrt( (photon->start_coords.x-capx_0)*(photon->start_coords.x-capx_0) + (photon->start_coords.y-capy_0)*(photon->start_coords.y-capy_0) );
 	if(d_ph_capcen > description->profile->cap[0]){
-		return 0; //simulates new photon
+		return 2; //simulates new photon
 	}
 
 	//define selected capillary axis X and Y coordinates
@@ -341,13 +368,10 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//polycap_capil_trace should be ran description->profile->nmax at most,
 	//which means it essentially reflected once every known capillary coordinate
 	for(i=0; i<=description->profile->nmax; i++){
-		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, error);
+		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, leak_calc, error);
 		if(iesc != 0){ //as long as iesc = 0 photon is still reflecting in capillary
 		//iesc == -2, which means this photon has reached its final point (weight[0] <1e-4)
-			//in old program a new photon is simulated at this point
 		//alternatively, iesc can be 1 due to not finding intersection point, as the photon reached the end of the capillary
-		//TODO: for halo effect likely an option has to be added here to check if photon traveled through capillary wall
-			//In this case the new capillary shape should be defined and reflecting process should proceed etc.
 			break;
 		}
 	}
@@ -410,6 +434,8 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 // free a polycap_photon
 void polycap_photon_free(polycap_photon *photon)
 {
+	int i;
+
 	if (photon == NULL)
 		return;
 	if (photon->energies)
@@ -420,6 +446,20 @@ void polycap_photon_free(polycap_photon *photon)
 		free(photon->amu);
 	if (photon->scatf)
 		free(photon->scatf);
+	if (photon->leaks){
+		for(i=0; i<photon->n_leaks; i++){
+			if (photon->leaks[i].weight)
+				free(photon->leaks[i].weight);
+		}
+		free(photon->leaks);
+	}
+	if (photon->recap){
+		for(i=0; i<photon->n_recap; i++){
+			if (photon->recap[i].weight)
+				free(photon->recap[i].weight);
+		}
+		free(photon->recap);
+	}
 	free(photon);
 }
 

@@ -17,17 +17,19 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <omp.h> /* openmp header */
 
 //===========================================
+//call example: ./polycap inputfile.inp      outfile.h5     5       1
+//					         	    #cores   leak_calc on
 int main(int argc, char *argv[])
 {	
 	polycap_source *source;
 	polycap_transmission_efficiencies *efficiencies;
-	int i;
-	size_t n_energies = 291;
+	int nthreads = -1;
 	int n_photons = 50000;
-	double *energies;
-	const char filename[] = "polycap_out.h5";
+	char *filename;
+	bool leak_calc = false;
 	polycap_error *error = NULL;
 
 	// Check whether input file argument was supplied
@@ -36,6 +38,23 @@ int main(int argc, char *argv[])
 		exit(0);
 		}
 
+	//Check nthreads if sufficient arguments were supplied
+	if(argc >= 3){
+		filename = strdup(argv[2]);
+	} else {
+		filename = strdup("polycap_out.h5");
+	}
+	if(argc >= 4){
+		nthreads = atoi(argv[3]);
+		if(nthreads < 1 || nthreads > omp_get_max_threads() ){
+			nthreads = omp_get_max_threads();
+		}
+	}
+	if(argc >= 5){
+		if(atoi(argv[4]) == 1)
+			leak_calc = true;
+	}
+
 	// Read input file and define source structure
 	source = polycap_source_new_from_file(argv[1], &error);
 	if (source == NULL) {
@@ -43,20 +62,9 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	// Define energies	
-	energies = malloc(sizeof(double)*n_energies);
-	if(energies == NULL){
-		printf("main: could not allocate memory for energies\n");
-		return 1;
-	}
-	for(i=0; i<n_energies; i++){
-		energies[i] = 1.+0.1*i;
-	}
-
 	// Perform calculations	
 	printf("Starting calculations...\n");
-	// TODO: add a command-line option to override the number of threads
-	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, n_energies, energies, n_photons, NULL, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, nthreads, n_photons, leak_calc, NULL, &error);
 	if (efficiencies == NULL) {
 		fprintf(stderr, "%s\n", error->message);
 		return 1;
@@ -68,11 +76,8 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-//	for(i=0; i<n_energies; i++){
-//		printf("%f keV: %f%%; ",energies[i],efficiencies->efficiencies[i]);
-//	}
 
-	free(energies);
+	free(filename);
 	polycap_transmission_efficiencies_free(efficiencies);
 	polycap_source_free(source);
 

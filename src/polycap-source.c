@@ -29,6 +29,9 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	double phi; //random polar angle phi from source x axis 
 	double src_start_x, src_start_y, max_rad;
 	polycap_photon *photon;
+	double cosalpha, alpha; //angle between initial electric vector and photon direction
+	double c_ae, c_be;
+	double frac_hor_pol; //fraction of horizontally oriented photons
 
 	// Argument sanity check
 	if (source == NULL) {
@@ -107,12 +110,30 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	polycap_norm(&start_direction);
 
 	// Provide random electric vector
+	// 	make sure electric vector is perpendicular to photon direction
+	frac_hor_pol = (1. + source->hor_pol)/2.;
 	r = polycap_rng_uniform(rng);
-	start_electric_vector.x = (1.-2.*fabs(r));
-	r = polycap_rng_uniform(rng);
-	start_electric_vector.y = (1.-2.*fabs(r));
-	r = polycap_rng_uniform(rng);
-	start_electric_vector.z = (1.-2.*fabs(r));
+	if(fabs(r) <= frac_hor_pol){
+		//horizontally polarised
+		start_electric_vector.x = 1.;
+		start_electric_vector.y = 0.;
+		start_electric_vector.z = 0.;
+	} else {
+		//vertically polarised
+		start_electric_vector.x = 0.;
+		start_electric_vector.y = 1.;
+		start_electric_vector.z = 0.;
+	}
+	// Define electric vector as both orthogonal to start_direction and in line with original xy coordinate axes
+	cosalpha = polycap_scalar(start_electric_vector, start_direction);
+	alpha = acos(cosalpha);
+	c_ae = 1./sin(alpha);
+	c_be = -1.*c_ae*cosalpha;
+
+	start_electric_vector.x = start_electric_vector.x * c_ae + start_direction.x * c_be;
+	start_electric_vector.y = start_electric_vector.y * c_ae + start_direction.y * c_be;
+	start_electric_vector.z = start_electric_vector.z * c_ae + start_direction.z * c_be;
+
 	polycap_norm(&start_electric_vector);
 
 	// Create photon structure
@@ -123,9 +144,10 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 }
 //===========================================
 // get a new polycap_source by providing all its properties 
-polycap_source* polycap_source_new(polycap_description *description, double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, polycap_error **error)
+polycap_source* polycap_source_new(polycap_description *description, double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, double hor_pol, size_t n_energies, double *energies, polycap_error **error)
 {
 	polycap_source *source;
+	int i;
 
 	//Argument sanity check
 	if (description == NULL) {
@@ -144,10 +166,33 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: src_y must be greater than 0");
 		return NULL;
 	}
+	if (fabs(hor_pol) > 1.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: hor_pol must be greater than or equal to -1 and smaller than or equal to 1");
+		return NULL;
+	}
+	if (n_energies <= 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: n_energies must be greater than 0");
+		return NULL;
+	}
+	if (energies == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: energies cannot be NULL");
+		return NULL;
+	}
+	for(i=0; i<n_energies; i++){
+		if (energies[i] < 1. || energies[i] > 100.) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: energies must be greater than 1 and smaller than 100");
+			return NULL;
+		}
+	}
 
 	source = malloc(sizeof(polycap_source));
 	if(source == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source -> %s", strerror(errno));
+		return NULL;
+	}
+	source->energies = malloc(sizeof(double)*n_energies);
+	if(source->energies == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source->energies -> %s", strerror(errno));
 		return NULL;
 	}
 
@@ -158,7 +203,10 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 	source->src_sigy = src_sigy;
 	source->src_shiftx = src_shiftx;
 	source->src_shifty = src_shifty;
-	source->description = polycap_description_new(description->profile, description->sig_rough, description->sig_wave, description->corr_length, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
+	source->hor_pol = hor_pol;
+	source->n_energies = n_energies;
+	memcpy(source->energies, energies, sizeof(double)*n_energies);
+	source->description = polycap_description_new(description->profile, description->sig_rough, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
 
 	return source;
 }
@@ -167,7 +215,7 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 polycap_source* polycap_source_new_from_file(const char *filename, polycap_error **error)
 {
 	FILE *fptr;
-	int i;
+	int i, filecheck;
 	polycap_description *description;
 	polycap_source *source;
 	double e_start, e_final, delta_e;
@@ -206,14 +254,48 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 		return NULL;
 	}
 
-	// TODO: fscanf return value checks
-	fscanf(fptr,"%lf", &description->sig_rough);
-	fscanf(fptr,"%lf %lf", &description->sig_wave, &description->corr_length);
-	fscanf(fptr,"%lf", &source->d_source);
-	fscanf(fptr,"%lf %lf", &source->src_x, &source->src_y);
-	fscanf(fptr,"%lf %lf", &source->src_sigx, &source->src_sigy);
-	fscanf(fptr,"%lf %lf", &source->src_shiftx, &source->src_shifty);
-	fscanf(fptr,"%u", &description->nelem);
+	filecheck = fscanf(fptr,"%lf", &description->sig_rough);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &description->sig_rough -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%lf", &source->d_source);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->d_source -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%lf %lf", &source->src_x, &source->src_y);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->src_x or &source->src_y -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%lf %lf", &source->src_sigx, &source->src_sigy);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->src_sigx or &source->src_sigy -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%lf %lf", &source->src_shiftx, &source->src_shifty);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->src_shiftx or &source->src_shifty -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%lf", &source->hor_pol);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &source->hor_pol -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	filecheck = fscanf(fptr,"%u", &description->nelem);
+	if(filecheck == 0){
+		polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_source_new_from_file: could not read &description->nelem -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
 
 	description->iz = malloc(sizeof(int)*description->nelem);
 	if(description->iz == NULL){
@@ -233,6 +315,15 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	}
 	fscanf(fptr,"%lf", &description->density);
 	fscanf(fptr,"%lf %lf %lf", &e_start, &e_final, &delta_e);
+	source->n_energies = (e_final-e_start)/delta_e + 1;
+	source->energies = malloc(sizeof(double)*source->n_energies);
+	if(source->energies == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new_from_file: could not allocate memory for source->energies -> %s", strerror(errno));
+		polycap_source_free(source);
+		return NULL;
+	}
+	for(i=0; i<source->n_energies; i++)
+		source->energies[i] = e_start + i*delta_e;
 	fscanf(fptr,"%d", &nphotons);
 	fscanf(fptr,"%d", &type);
 	if(type == 0 || type == 1 || type == 2){
@@ -268,7 +359,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	// Calculate open area
 	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
 
-	//Perform source_temp and description argument sanity check
+	//Perform source and description argument sanity check
 	if (source->d_source < 0.0){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: source_temp->d_source must be greater than 0.0");
 		polycap_source_free(source);
@@ -283,6 +374,18 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: source_temp->src_y must be greater than 0.0");
 		polycap_source_free(source);
 		return NULL;
+	}
+	if (source->n_energies <= 0.) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: source->n_energies must be greater than 0");
+		polycap_source_free(source);
+		return NULL;
+	}
+	for(i=0; i<source->n_energies; i++){
+		if (source->energies[i] < 1. || source->energies[i] > 100.) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: source->energies must be greater than 1 and smaller than 100");
+			polycap_source_free(source);
+			return NULL;
+		}
 	}
 	if (description->n_cap < 1){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->n_cap must be greater than 1");
@@ -316,14 +419,12 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 }
 //===========================================
 // for a given array of energies, and a full polycap_description, get the transmission efficiencies.
-//   NOTE:
-// -Does not make photon image arrays (yet)
-// -in polycap-capil.c some leak and absorb counters are commented out (currently not monitored)
-// -Polarised dependant reflectivity and change in electric field vector missing
-polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, size_t n_energies, double *energies, int n_photons, polycap_progress_monitor *progress_monitor, polycap_error **error)
+polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, int n_photons, bool leak_calc, polycap_progress_monitor *progress_monitor, polycap_error **error)
 {
 	int i, j;
-	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0;
+	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0, sum_not_transmitted=0;
+	int64_t *istart_temp, *not_entered_temp, *not_transmitted_temp;
+	int64_t leak_counter, recap_counter;
 	double *sum_weights;
 	polycap_transmission_efficiencies *efficiencies;
 
@@ -341,17 +442,17 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: description cannot be NULL");
 		return NULL;
 	}
-	if (n_energies < 1) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: n_energies must be greater than or equal to 1");
+	if (source->n_energies < 1) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: source->n_energies must be greater than or equal to 1");
 		return NULL;
 	}
-	if (energies == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: energies cannot be NULL");
+	if (source->energies == NULL) {
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: source->energies cannot be NULL");
 		return NULL;
 	}
-	for(i=0; i< n_energies; i++){
-		if (energies[i] < 1. || energies[i] > 100.) {
-			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: energies[i] must be greater than 1 and less than 100");
+	for(i=0; i< source->n_energies; i++){
+		if (source->energies[i] < 1. || source->energies[i] > 100.) {
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_transmission_efficiencies: source->energies[i] must be greater than 1 and less than 100");
 			return NULL;
 		}
 	}
@@ -366,12 +467,35 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		max_threads = omp_get_max_threads();
 
 	// Prepare arrays to save results
-	sum_weights = malloc(sizeof(double)*n_energies);
+	sum_weights = malloc(sizeof(double)*source->n_energies);
 	if(sum_weights == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for sum_weights -> %s", strerror(errno));
 		return NULL;
 	}
-	for(i=0; i<n_energies; i++) sum_weights[i] = 0.;
+	for(i=0; i < source->n_energies; i++)
+		sum_weights[i] = 0.;
+
+	// Thread specific started photon counter
+	istart_temp = malloc(sizeof(int64_t)*max_threads);
+	if(istart_temp == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for istart_temp -> %s", strerror(errno));
+		return NULL;
+	}
+	not_entered_temp = malloc(sizeof(int64_t)*max_threads);
+	if(not_entered_temp == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for not_entered_temp -> %s", strerror(errno));
+		return NULL;
+	}
+	not_transmitted_temp = malloc(sizeof(int64_t)*max_threads);
+	if(not_transmitted_temp == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for not_transmitted_temp -> %s", strerror(errno));
+		return NULL;
+	}
+	for(i=0; i < max_threads; i++){
+		istart_temp[i] = 0;
+		not_entered_temp[i] = 0;
+		not_transmitted_temp[i] = 0;
+	}
 
 	// Assign polycap_transmission_efficiencies memory
 	efficiencies = calloc(1, sizeof(polycap_transmission_efficiencies));
@@ -380,14 +504,14 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->energies = malloc(sizeof(double)*n_energies);
+	efficiencies->energies = malloc(sizeof(double)*source->n_energies);
 	if(efficiencies->energies == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->energies -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->efficiencies = malloc(sizeof(double)*n_energies);
+	efficiencies->efficiencies = malloc(sizeof(double)*source->n_energies);
 	if(efficiencies->efficiencies == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->efficiencies -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
@@ -403,44 +527,58 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->pc_start_coords[0] = malloc(sizeof(double));
+	efficiencies->images->pc_start_coords[0] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_start_coords[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->pc_start_coords[1] = malloc(sizeof(double));
+	efficiencies->images->pc_start_coords[1] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_start_coords[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_coords[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->src_start_coords[0] = malloc(sizeof(double));
+	efficiencies->images->src_start_coords[0] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->src_start_coords[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->src_start_coords[1] = malloc(sizeof(double));
+	efficiencies->images->src_start_coords[1] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->src_start_coords[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->src_start_coords[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->pc_start_dir[0] = malloc(sizeof(double));
+	efficiencies->images->pc_start_dir[0] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_start_dir[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[0] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->pc_start_dir[1] = malloc(sizeof(double));
+	efficiencies->images->pc_start_dir[1] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_start_dir[1] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_dir[1] -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
+	efficiencies->images->pc_start_elecv[0] = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_start_elecv[0] == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_elecv[0] -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
+	efficiencies->images->pc_start_elecv[1] = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_start_elecv[1] == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_start_elecv[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
 		free(sum_weights);
 		return NULL;
@@ -473,7 +611,35 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		free(sum_weights);
 		return NULL;
 	}
-	efficiencies->images->exit_coord_weights = malloc(sizeof(double)*n_photons*n_energies);
+	efficiencies->images->pc_exit_elecv[0] = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_exit_elecv[0] == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_elecv[0] -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
+	efficiencies->images->pc_exit_elecv[1] = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_exit_elecv[1] == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_elecv[1] -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
+	efficiencies->images->pc_exit_nrefl = malloc(sizeof(int64_t)*n_photons);
+	if(efficiencies->images->pc_exit_nrefl == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_nrefl -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
+	efficiencies->images->pc_exit_dtravel = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_exit_dtravel == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dtravel -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
+	efficiencies->images->exit_coord_weights = malloc(sizeof(double)*n_photons*source->n_energies);
 	if(efficiencies->images->exit_coord_weights == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[1] -> %s", strerror(errno));
 		polycap_transmission_efficiencies_free(efficiencies);
@@ -503,12 +669,17 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	int thread_id = omp_get_thread_num();
 	polycap_rng *rng;
 	polycap_photon *photon;
-	int iesc=0, k;
+	int iesc=0, k, l;
 	double *weights;
 	double *weights_temp;
 	//polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
+	polycap_leaks *leaks = NULL; // define leaks structure for each thread
+	int64_t n_leaks=0;
+	polycap_leaks *recap = NULL; // define recap structure for each thread
+	int64_t n_recap=0;
+	int64_t leak_mem_size=0, recap_mem_size=0; //memory size indicator for leak and recap structure arrays
 
-	weights = malloc(sizeof(double)*n_energies);
+	weights = malloc(sizeof(double)*source->n_energies);
 //	if(weights == NULL) {
 //	#pragma omp critical
 //		{
@@ -520,11 +691,12 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 //#pragma omp cancel parallel
 //	}
 
-	for(k=0; k<n_energies; k++)
+	for(k=0; k<source->n_energies; k++)
 		weights[k] = 0.;
 
 	// Create new rng
 	rng = polycap_rng_new();
+
 
 	i=0; //counter to monitor calculation proceeding
 	#pragma omp for
@@ -533,44 +705,44 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			// Create photon structure
 			photon = polycap_source_get_photon(source, rng, NULL);
 			// Launch photon
-			iesc = polycap_photon_launch(photon, n_energies, energies, &weights_temp, NULL);
-			//if iesc == 0 here a new photon should be simulated/started.
-			//if iesc == 1 check whether photon is in PC exit window
+			iesc = polycap_photon_launch(photon, source->n_energies, source->energies, &weights_temp, leak_calc, NULL);
+			//if iesc == 0 here a new photon should be simulated/started as the photon was absorbed within it.
+			//if iesc == 1 check whether photon is in PC exit window as photon reached end of PC
+			//if iesc == 2 a new photon should be simulated/started as the photon did not enter the PC (hit the glass walls)
 			//if iesc == -1 some error occured
 			if(iesc == 1) {
-				iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
-//				if(iesc == 0){
-//					iesc = -1;
-//				} else {
-//					iesc = 0;
-//				}
+				//different check for monocapillary case...
+				if(round(sqrt(12. * photon->description->n_cap - 3.)/6.-0.5) == 0.){ //monocapillary case
+					if(sqrt((photon->exit_coords.x)*(photon->exit_coords.x) + (photon->exit_coords.y)*(photon->exit_coords.y)) > description->profile->ext[description->profile->nmax]){
+						iesc = 0;
+					} else {
+						iesc = 1;
+					}
+				} else { //polycapillary case
+					iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
+				}
 			}
 			//Register succesfully started photon, as well as save start coordinates and direction
-			//TODO: reduce or remove this critical block
-			#pragma omp critical
-			{
 			if(iesc == 1){
-				sum_istart++;
-				efficiencies->images->src_start_coords[0] = realloc(efficiencies->images->src_start_coords[0], sizeof(double)*sum_istart);
-				efficiencies->images->src_start_coords[1] = realloc(efficiencies->images->src_start_coords[1], sizeof(double)*sum_istart);
-				efficiencies->images->src_start_coords[0][sum_istart-1] = photon->src_start_coords.x;
-				efficiencies->images->src_start_coords[1][sum_istart-1] = photon->src_start_coords.y;
-				efficiencies->images->pc_start_coords[0] = realloc(efficiencies->images->pc_start_coords[0], sizeof(double)*sum_istart);
-				efficiencies->images->pc_start_coords[1] = realloc(efficiencies->images->pc_start_coords[1], sizeof(double)*sum_istart);
-				efficiencies->images->pc_start_coords[0][sum_istart-1] = photon->start_coords.x;
-				efficiencies->images->pc_start_coords[1][sum_istart-1] = photon->start_coords.y;
-				efficiencies->images->pc_start_dir[0] = realloc(efficiencies->images->pc_start_dir[0], sizeof(double)*sum_istart);
-				efficiencies->images->pc_start_dir[1] = realloc(efficiencies->images->pc_start_dir[1], sizeof(double)*sum_istart);
-				efficiencies->images->pc_start_dir[0][sum_istart-1] = photon->start_direction.x;
-				efficiencies->images->pc_start_dir[1][sum_istart-1] = photon->start_direction.y;
+				istart_temp[thread_id]++;
+				efficiencies->images->src_start_coords[0][j] = photon->src_start_coords.x;
+				efficiencies->images->src_start_coords[1][j] = photon->src_start_coords.y;
+				efficiencies->images->pc_start_coords[0][j] = photon->start_coords.x;
+				efficiencies->images->pc_start_coords[1][j] = photon->start_coords.y;
+				efficiencies->images->pc_start_dir[0][j] = photon->start_direction.x;
+				efficiencies->images->pc_start_dir[1][j] = photon->start_direction.y;
+				efficiencies->images->pc_start_elecv[0][j] = photon->start_electric_vector.x;
+				efficiencies->images->pc_start_elecv[1][j] = photon->start_electric_vector.y;
 			}
-			if(iesc == 0) sum_not_entered++; //TODO: check the difference between simulated and estimated open area, likely to do with counting photons that got absorbed in PC here as well...
-			}
+			if(iesc == 0) //photon did not reach end of PC
+				not_transmitted_temp[thread_id]++;
+			if(iesc == 2) //photon never entered PC (hit capillary wall instead of opening)
+				not_entered_temp[thread_id]++;
 			if(iesc != 1) {
 				polycap_photon_free(photon); //Free photon here as a new one will be simulated
 				free(weights_temp);
 			}
-		} while(iesc == 0 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
+		} while(iesc == 0 || iesc == 2 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
 
 		if(thread_id == 0 && (double)i/((double)n_photons/(double)max_threads/10.) >= 1.){
 			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(n_photons/max_threads)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
@@ -579,20 +751,78 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		i++;//counter just to follow % completed
 
 		//save photon->weight in thread unique array
-		for(k=0; k<n_energies; k++){
+		for(k=0; k<source->n_energies; k++){
 			weights[k] += weights_temp[k];
-			efficiencies->images->exit_coord_weights[k+j*n_energies] = weights_temp[k];
+			efficiencies->images->exit_coord_weights[k+j*source->n_energies] = weights_temp[k];
 		}
 		//save photon exit coordinates and propagation vector
-		efficiencies->images->pc_exit_coords[0][j] = photon->exit_coords.x;
-		efficiencies->images->pc_exit_coords[1][j] = photon->exit_coords.y;
+		//Make sure to calculate exit_coord at capillary exit (Z = capillary length); currently the exit_coord is the coordinate of the last photon-wall interaction
+//printf("** coords: %lf, %lf, %lf; length: %lf\n", photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, );
+		efficiencies->images->pc_exit_coords[0][j] = photon->exit_coords.x + photon->exit_direction.x*
+			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
+		efficiencies->images->pc_exit_coords[1][j] = photon->exit_coords.y + photon->exit_direction.y*
+			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
 		efficiencies->images->pc_exit_dir[0][j] = photon->exit_direction.x;
 		efficiencies->images->pc_exit_dir[1][j] = photon->exit_direction.y;
+		efficiencies->images->pc_exit_elecv[0][j] = photon->exit_electric_vector.x;
+		efficiencies->images->pc_exit_elecv[1][j] = photon->exit_electric_vector.y;
+		efficiencies->images->pc_exit_nrefl[j] = photon->i_refl;
+		efficiencies->images->pc_exit_dtravel[j] = photon->d_travel + 
+			sqrt( (efficiencies->images->pc_exit_coords[0][j] - photon->exit_coords.x)*(efficiencies->images->pc_exit_coords[0][j] - photon->exit_coords.x) + 
+			(efficiencies->images->pc_exit_coords[1][j] - photon->exit_coords.y)*(efficiencies->images->pc_exit_coords[1][j] - photon->exit_coords.y) + 
+			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)*(description->profile->z[description->profile->nmax] - photon->exit_coords.z));
+
+		//Assign memory to arrays holding leak photon information (and fill them)
+		if(leak_calc){
+			n_leaks += photon->n_leaks;
+			if(n_leaks > leak_mem_size){
+				if (leak_mem_size == 0){
+					leak_mem_size = n_leaks;
+				} else {
+					leak_mem_size *= 2;
+					if (leak_mem_size < n_leaks) leak_mem_size = n_leaks; //not doing this could be dangerous at low values
+				}
+				leaks = realloc(leaks, sizeof(struct _polycap_leaks) * leak_mem_size);
+			}
+			n_recap += photon->n_recap;
+			if(n_recap > recap_mem_size){
+				if (recap_mem_size == 0){
+					recap_mem_size = n_recap;
+				} else {
+					recap_mem_size *= 2;
+					if (recap_mem_size < n_recap) recap_mem_size = n_recap; //not doing this could be dangerous at low values
+				}
+				recap = realloc(recap, sizeof(struct _polycap_leaks) * recap_mem_size);
+			}
+
+			//Write leak photon data.
+			if(photon->n_leaks > 0){
+			for(k=0; k<photon->n_leaks; k++){
+					leaks[n_leaks-photon->n_leaks+k].coords = photon->leaks[k].coords;
+					leaks[n_leaks-photon->n_leaks+k].direction = photon->leaks[k].direction;
+					leaks[n_leaks-photon->n_leaks+k].elecv = photon->leaks[k].elecv;
+					leaks[n_leaks-photon->n_leaks+k].n_refl = photon->leaks[k].n_refl;
+					leaks[n_leaks-photon->n_leaks+k].weight = malloc(sizeof(double)*source->n_energies);
+					memcpy(leaks[n_leaks-photon->n_leaks+k].weight, photon->leaks[k].weight, sizeof(double)*source->n_energies);
+				}
+			}
+			if(photon->n_recap > 0){
+				for(k=0; k<photon->n_recap; k++){
+					recap[n_recap-photon->n_recap+k].coords = photon->recap[k].coords;
+					recap[n_recap-photon->n_recap+k].direction = photon->recap[k].direction;
+					recap[n_recap-photon->n_recap+k].elecv = photon->recap[k].elecv;
+					recap[n_recap-photon->n_recap+k].n_refl = photon->recap[k].n_refl;
+					recap[n_recap-photon->n_recap+k].weight = malloc(sizeof(double)*source->n_energies);
+					memcpy(recap[n_recap-photon->n_recap+k].weight, photon->recap[k].weight, sizeof(double)*source->n_energies);
+				}
+			}
+		}
 
 		#pragma omp critical
 		{
 		sum_irefl += photon->i_refl;
 		}
+
 		//free photon structure (new one created for each for loop instance)
 		polycap_photon_free(photon);
 		free(weights_temp);
@@ -600,8 +830,72 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 
 	#pragma omp critical
 	{
-	for(i=0; i<n_energies; i++) sum_weights[i] += weights[i];
+	for(i=0; i<source->n_energies; i++) sum_weights[i] += weights[i];
+	if(leak_calc){
+		efficiencies->images->i_leak += n_leaks;
+		efficiencies->images->i_recap += n_recap;
 	}
+	}
+
+	if(leak_calc){
+		#pragma omp barrier //All threads must reach here before we continue.
+		#pragma omp single //Only one thread should allocate following memory. There is an automatic barrier at the end of this block.
+		{
+		efficiencies->images->leak_coords[0] = realloc(efficiencies->images->leak_coords[0], sizeof(double)* efficiencies->images->i_leak);
+		efficiencies->images->leak_coords[1] = realloc(efficiencies->images->leak_coords[1], sizeof(double)* efficiencies->images->i_leak);
+		efficiencies->images->leak_coords[2] = realloc(efficiencies->images->leak_coords[2], sizeof(double)* efficiencies->images->i_leak);
+		efficiencies->images->leak_dir[0] = realloc(efficiencies->images->leak_dir[0], sizeof(double)* efficiencies->images->i_leak);
+		efficiencies->images->leak_dir[1] = realloc(efficiencies->images->leak_dir[1], sizeof(double)* efficiencies->images->i_leak);
+		efficiencies->images->leak_n_refl = realloc(efficiencies->images->leak_n_refl, sizeof(int64_t)* efficiencies->images->i_leak);
+		efficiencies->images->leak_coord_weights = realloc(efficiencies->images->leak_coord_weights, sizeof(double)*source->n_energies* efficiencies->images->i_leak);
+		efficiencies->images->recap_coords[0] = realloc(efficiencies->images->recap_coords[0], sizeof(double)* efficiencies->images->i_recap);
+		efficiencies->images->recap_coords[1] = realloc(efficiencies->images->recap_coords[1], sizeof(double)* efficiencies->images->i_recap);
+		efficiencies->images->recap_coords[2] = realloc(efficiencies->images->recap_coords[2], sizeof(double)* efficiencies->images->i_recap);
+		efficiencies->images->recap_dir[0] = realloc(efficiencies->images->recap_dir[0], sizeof(double)* efficiencies->images->i_recap);
+		efficiencies->images->recap_dir[1] = realloc(efficiencies->images->recap_dir[1], sizeof(double)* efficiencies->images->i_recap);
+		efficiencies->images->recap_elecv[0] = realloc(efficiencies->images->recap_elecv[0], sizeof(double)* efficiencies->images->i_recap);
+		efficiencies->images->recap_elecv[1] = realloc(efficiencies->images->recap_elecv[1], sizeof(double)* efficiencies->images->i_recap);
+		efficiencies->images->recap_n_refl = realloc(efficiencies->images->recap_n_refl, sizeof(int64_t)* efficiencies->images->i_recap);
+		efficiencies->images->recap_coord_weights = realloc(efficiencies->images->recap_coord_weights, sizeof(double)*source->n_energies* efficiencies->images->i_recap);
+		leak_counter = 0;
+		recap_counter = 0;
+		}//#pragma omp single
+		#pragma omp critical //continue with all threads, but one at a time...
+		{
+		for(k=0; k < n_leaks; k++){
+			efficiencies->images->leak_coords[0][leak_counter] = leaks[k].coords.x;
+			efficiencies->images->leak_coords[1][leak_counter] = leaks[k].coords.y;
+			efficiencies->images->leak_coords[2][leak_counter] = leaks[k].coords.z;
+			efficiencies->images->leak_dir[0][leak_counter] = leaks[k].direction.x;
+			efficiencies->images->leak_dir[1][leak_counter] = leaks[k].direction.y;
+			efficiencies->images->leak_n_refl[leak_counter] = leaks[k].n_refl;
+			for(l=0; l < source->n_energies; l++)
+				efficiencies->images->leak_coord_weights[leak_counter*source->n_energies+l] = leaks[k].weight[l];
+			leak_counter++;
+			//Free leaks data
+			free(leaks[k].weight);
+		}
+		for(k=0; k < n_recap; k++){
+			efficiencies->images->recap_coords[0][recap_counter] = recap[k].coords.x;
+			efficiencies->images->recap_coords[1][recap_counter] = recap[k].coords.y;
+			efficiencies->images->recap_coords[2][recap_counter] = recap[k].coords.z;
+			efficiencies->images->recap_dir[0][recap_counter] = recap[k].direction.x;
+			efficiencies->images->recap_dir[1][recap_counter] = recap[k].direction.y;
+			efficiencies->images->recap_elecv[0][recap_counter] = recap[k].elecv.x;
+			efficiencies->images->recap_elecv[1][recap_counter] = recap[k].elecv.y;
+			efficiencies->images->recap_n_refl[recap_counter] = recap[k].n_refl;
+			for(l=0; l < source->n_energies; l++)
+				efficiencies->images->recap_coord_weights[recap_counter*source->n_energies+l] = recap[k].weight[l];
+			recap_counter++;
+			//Free recap data
+			free(recap[k].weight);
+		}
+		}//#pragma omp critical
+	}
+	if(leaks)
+		free(leaks);
+	if(recap)
+		free(recap);
 	polycap_rng_free(rng);
 	free(weights);
 } //#pragma omp parallel
@@ -609,21 +903,34 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 //	if (cancelled)
 //		return NULL;
 
-	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_istart);
-	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_istart/(sum_istart+sum_not_entered));
+	//add all started photons together
+	for(i=0; i < max_threads; i++){
+		sum_istart += istart_temp[i];
+		sum_not_entered += not_entered_temp[i];
+		sum_not_transmitted += not_transmitted_temp[i];
+	}
+	
+	//TODO: Continue working with simulated open area, as this should be a more honoust comparisson?
+	//This will also influence the efficiencies test output etc...
+//	description->open_area = (double)sum_istart/(sum_istart+sum_not_entered);
 
 	// Complete output structure
-	efficiencies->n_energies = n_energies;
+	efficiencies->n_energies = source->n_energies;
 	efficiencies->images->i_start = sum_istart;
 	efficiencies->images->i_exit = n_photons;
-	for(i=0; i<n_energies; i++){
-		efficiencies->energies[i] = energies[i];
+	for(i=0; i<source->n_energies; i++){
+		efficiencies->energies[i] = source->energies[i];
 		efficiencies->efficiencies[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;
 	}
 
+	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_istart);
+	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_istart/(sum_istart+sum_not_entered));
 
 	//free alloc'ed memory
 	free(sum_weights);
+	free(istart_temp);
+	free(not_entered_temp);
+	free(not_transmitted_temp);
 	return efficiencies;
 }
 //===========================================
@@ -635,6 +942,9 @@ void polycap_source_free(polycap_source *source)
 
 	if (source->description)
 		polycap_description_free(source->description);
+
+	if (source->energies)
+		free(source->energies);
 
 	free(source);
 }
