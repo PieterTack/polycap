@@ -378,14 +378,15 @@ cdef class Source:
 
     def get_transmission_efficiencies(self,
         int max_threads,
-        int n_photons):
+        int n_photons,
+        bool leak_calc = False):
 
         cdef polycap_error *error = NULL
         cdef polycap_transmission_efficiencies *transmission_efficiencies = polycap_source_get_transmission_efficiencies(
             self.source,
             max_threads,
             n_photons,
-            False, #leak_calc option
+            leak_calc, #leak_calc option
             NULL, # polycap_progress_monitor
             &error)
         set_exception(error)

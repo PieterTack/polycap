@@ -127,6 +127,8 @@ class TestPolycapSource(unittest.TestCase):
         source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, np.linspace(1, 25.0, 250))
         with self.assertRaises(TypeError):
             efficiencies = source.get_transmission_efficiencies(-1, None, 1000)
+        with self.assertRaises(TypeError):
+            efficiencies = source.get_transmission_efficiencies(-1, 1000, False, "extra arg")
 
     def test_source_good_get_transmission_efficiencies(self):
         source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, np.linspace(1, 25.0, 250))
