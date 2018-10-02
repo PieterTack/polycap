@@ -38,9 +38,22 @@ cdef extern from "polycap.h":
 cdef extern from "xraylib.h":
     int SymbolToAtomicNumber(const char *symbol)
     void xrlFree(void *)
+    void SetErrorMessages(int status)
+    cdef struct compoundData:
+        int nElements
+        double nAtomsAll
+        int *Elements
+        double *massFractions
+        double *nAtoms
+        double molarMass
+
+    void FreeCompoundData(compoundData *cd)
+    compoundData* CompoundParser(const char compoundString[])
 
 cdef extern from "config.h" nogil:
     char *version "VERSION"
+
+SetErrorMessages(0)
 
 __version__ = version
 
@@ -124,28 +137,44 @@ cdef class Description:
     cdef object profile_py
 
     def __cinit__(self, 
-        Profile profile,
+        Profile profile not None,
         double sig_rough,
         int64_t n_cap,
-        dict composition,
+        object composition not None,
         double density):
-        if profile is None:
-            raise ValueError("profile cannot be None")
-        if len(composition) == 0:
-            raise ValueError("composition cannot be empty")
-        # convert dict to numpy arrays
 
-        iz = list(map(ensure_int, composition.keys()))
-        iz = np.asarray(iz, dtype=np.int32)
-        wi = list(map(lambda x: float(x), composition.values()))
-        wi = np.asarray(wi, dtype=np.double)
+        cdef np.npy_intp dims[1]
+
+        if isinstance(composition, dict):
+            if len(composition) == 0:
+                raise ValueError("composition cannot be empty")
+            # convert dict to numpy arrays
+            iz = list(map(ensure_int, composition.keys()))
+            iz = np.asarray(iz, dtype=np.int32)
+            wi = list(map(lambda x: float(x), composition.values()))
+            wi = np.asarray(wi, dtype=np.double)
+            comp_len = len(composition)
+        elif isinstance(composition, str):
+            # try xraylib's compoundparser
+            cd = CompoundParser(composition.encode())
+            if cd == NULL:
+                raise ValueError("composition is not a valid chemical formula")
+            dims[0] = cd.nElements
+            iz = np.PyArray_EMPTY(1, dims, np.NPY_INT32, False)
+            memcpy(np.PyArray_DATA(iz), cd.Elements, sizeof(int) * cd.nElements)
+            wi = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+            memcpy(np.PyArray_DATA(wi), cd.massFractions, sizeof(double) * cd.nElements)
+            comp_len = cd.nElements
+            FreeCompoundData(cd)
+        else:
+            raise TypeError("composition must be a dictionary or a string")
 
         cdef polycap_error *error = NULL
         self.description = polycap_description_new(
             profile.profile,
             sig_rough,
             n_cap,
-            len(composition),
+            comp_len,
             <int*> np.PyArray_DATA(iz),
             <double*> np.PyArray_DATA(wi),
             density,

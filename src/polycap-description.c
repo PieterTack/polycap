@@ -98,6 +98,10 @@ polycap_description* polycap_description_new(polycap_profile *profile, double si
 	polycap_description *description;
 
 	//Perform source_temp and description argument sanity check
+	if (sig_rough < 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: sig_rough must be greater than or equal to zero");
+		return NULL;
+	}
 	if (n_cap <= 1){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: n_cap must be greater than 1");
 		return NULL;
@@ -114,6 +118,10 @@ polycap_description* polycap_description_new(polycap_profile *profile, double si
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: wi cannot be NULL");
 		return NULL;
 	}
+	if (density <= 0.0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: density must be greater than 0.0");
+		return NULL;
+	}
 	for(i=0; i<nelem; i++){
 		if (iz[i] < 1 || iz[i] > 111){
 			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: iz[i] must be greater than 0 and smaller than 111");
@@ -123,10 +131,6 @@ polycap_description* polycap_description_new(polycap_profile *profile, double si
 			fprintf(stderr, "iz[%d] -> %d\n", i, iz[i]);
 			fprintf(stderr, "wi[%d] -> %g\n", i, wi[i]);
 		}*/
-	}
-	if (density < 0.0){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: density must be greater than 0.0");
-		return NULL;
 	}
 
 	//allocate some memory
