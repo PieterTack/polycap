@@ -1,6 +1,6 @@
 if ENABLE_PYTHON
 pyexec_LTLIBRARIES = polycap.la 
-polycap_la_CFLAGS = $(PYTHON_CFLAGS) -Wno-error=cpp -fno-strict-aliasing
+polycap_la_CFLAGS = $(PYTHON_CFLAGS) -Wno-error=cpp -fno-strict-aliasing -Wno-error=attributes
 polycap_la_CPPFLAGS = @xraylib_CFLAGS@ -I$(top_srcdir)/include $(PYTHON_CPPFLAGS) $(NUMPY_HEADERS)
 polycap_la_LIBADD = ../src/libpolycap.la
 nodist_polycap_la_SOURCES = polycap-python.c
