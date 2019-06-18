@@ -161,7 +161,7 @@ struct _polycap_images
   double *pc_start_coords[2];
   double *pc_start_dir[2];
   double *pc_start_elecv[2];
-  double *pc_exit_coords[2];
+  double *pc_exit_coords[3];
   double *pc_exit_dir[2];
   double *pc_exit_elecv[2];
   int64_t *pc_exit_nrefl;

@@ -597,6 +597,13 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		free(sum_weights);
 		return NULL;
 	}
+	efficiencies->images->pc_exit_coords[2] = malloc(sizeof(double)*n_photons);
+	if(efficiencies->images->pc_exit_coords[2] == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_coords[2] -> %s", strerror(errno));
+		polycap_transmission_efficiencies_free(efficiencies);
+		free(sum_weights);
+		return NULL;
+	}
 	efficiencies->images->pc_exit_dir[0] = malloc(sizeof(double)*n_photons);
 	if(efficiencies->images->pc_exit_dir[0] == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for efficiencies->images->pc_exit_dir[0] -> %s", strerror(errno));
@@ -761,6 +768,8 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		efficiencies->images->pc_exit_coords[0][j] = photon->exit_coords.x + photon->exit_direction.x*
 			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
 		efficiencies->images->pc_exit_coords[1][j] = photon->exit_coords.y + photon->exit_direction.y*
+			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
+		efficiencies->images->pc_exit_coords[2][j] = photon->exit_coords.z + photon->exit_direction.z*
 			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
 		efficiencies->images->pc_exit_dir[0][j] = photon->exit_direction.x;
 		efficiencies->images->pc_exit_dir[1][j] = photon->exit_direction.y;
