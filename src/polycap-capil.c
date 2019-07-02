@@ -268,9 +268,10 @@ STATIC double polycap_refl_polar(double e, double theta, double density, double 
 	s_dir.y = surface_norm.z*photon->exit_direction.x - photon->exit_direction.z*surface_norm.x;
 	s_dir.z = surface_norm.x*photon->exit_direction.y - photon->exit_direction.x*surface_norm.y;
 	polycap_norm(&s_dir); //make it a unit vector, as we're not interested in the size of this vector. We prefer it to be size 1
-	p_dir.x = surface_norm.y*s_dir.z - s_dir.y*surface_norm.z;
-	p_dir.y = surface_norm.z*s_dir.x - s_dir.z*surface_norm.x;
-	p_dir.z = surface_norm.x*s_dir.y - s_dir.x*surface_norm.y;
+		//p direction is perpendicular to s_dir and photon incident direction
+	p_dir.x = photon->exit_direction.y*s_dir.z - s_dir.y*photon->exit_direction.z;
+	p_dir.y = photon->exit_direction.z*s_dir.x - s_dir.z*photon->exit_direction.x;
+	p_dir.z = photon->exit_direction.x*s_dir.y - s_dir.x*photon->exit_direction.y;
 	polycap_norm(&p_dir);
 
 	//So now we can define a new axis system where surface_norm = z, s_dir = x and the other orthogonal vector =z

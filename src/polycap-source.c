@@ -685,6 +685,9 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	polycap_leaks *recap = NULL; // define recap structure for each thread
 	int64_t n_recap=0;
 	int64_t leak_mem_size=0, recap_mem_size=0; //memory size indicator for leak and recap structure arrays
+	polycap_vector3 temp_vect; //temporary vector to store electric_vectors during projection onto photon direction
+	double cosalpha, alpha; //angle between initial electric vector and photon direction
+	double c_ae, c_be;
 
 	weights = malloc(sizeof(double)*source->n_energies);
 //	if(weights == NULL) {
@@ -738,8 +741,17 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				efficiencies->images->pc_start_coords[1][j] = photon->start_coords.y;
 				efficiencies->images->pc_start_dir[0][j] = photon->start_direction.x;
 				efficiencies->images->pc_start_dir[1][j] = photon->start_direction.y;
-				efficiencies->images->pc_start_elecv[0][j] = photon->start_electric_vector.x;
-				efficiencies->images->pc_start_elecv[1][j] = photon->start_electric_vector.y;
+				//the start_electric_vector here is along polycapillary axis, better to project this to photon direction axis (i.e. result should be 1 0 or 0 1)
+				cosalpha = polycap_scalar(photon->start_electric_vector, photon->start_direction);
+				alpha = acos(cosalpha);
+				c_ae = 1./sin(alpha);
+				c_be = -1.*c_ae*cosalpha;
+				temp_vect.x = photon->start_electric_vector.x * c_ae + photon->start_direction.x * c_be;
+				temp_vect.y = photon->start_electric_vector.y * c_ae + photon->start_direction.y * c_be;
+				temp_vect.z = photon->start_electric_vector.z * c_ae + photon->start_direction.z * c_be;
+				polycap_norm(&temp_vect);
+				efficiencies->images->pc_start_elecv[0][j] = round(temp_vect.x);
+				efficiencies->images->pc_start_elecv[1][j] = round(temp_vect.y);
 			}
 			if(iesc == 0) //photon did not reach end of PC
 				not_transmitted_temp[thread_id]++;
@@ -773,8 +785,17 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
 		efficiencies->images->pc_exit_dir[0][j] = photon->exit_direction.x;
 		efficiencies->images->pc_exit_dir[1][j] = photon->exit_direction.y;
-		efficiencies->images->pc_exit_elecv[0][j] = photon->exit_electric_vector.x;
-		efficiencies->images->pc_exit_elecv[1][j] = photon->exit_electric_vector.y;
+		//TODO: the electric_vector here is along polycapillary axis, better to project this to photon direction axis (i.e. result should be 1 0 or 0 1)
+		cosalpha = polycap_scalar(photon->start_electric_vector, photon->start_direction);
+		alpha = acos(cosalpha);
+		c_ae = 1./sin(alpha);
+		c_be = -1.*c_ae*cosalpha;
+		temp_vect.x = photon->exit_electric_vector.x * c_ae + photon->exit_direction.x * c_be;
+		temp_vect.y = photon->exit_electric_vector.y * c_ae + photon->exit_direction.y * c_be;
+		temp_vect.z = photon->exit_electric_vector.z * c_ae + photon->exit_direction.z * c_be;
+		polycap_norm(&temp_vect);
+		efficiencies->images->pc_exit_elecv[0][j] = round(temp_vect.x);
+		efficiencies->images->pc_exit_elecv[1][j] = round(temp_vect.y);
 		efficiencies->images->pc_exit_nrefl[j] = photon->i_refl;
 		efficiencies->images->pc_exit_dtravel[j] = photon->d_travel + 
 			sqrt( (efficiencies->images->pc_exit_coords[0][j] - photon->exit_coords.x)*(efficiencies->images->pc_exit_coords[0][j] - photon->exit_coords.x) + 
