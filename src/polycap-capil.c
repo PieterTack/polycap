@@ -364,7 +364,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 		r_rough = exp(-1.*cons1*cons1);
 
 		//reflectivity according to Fresnel expression
-		rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
+		//rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
 		rtot = polycap_refl_polar(photon->energies[i], M_PI_2-alfa, description->density, photon->scatf[i], photon->amu[i], surface_norm, photon, error);
 		photon->weight[i] = photon->weight[i] * rtot * r_rough;
 
@@ -575,7 +575,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 					photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
 					memcpy(photon->leaks[photon->n_leaks-1].weight, w_leak, sizeof(double)*photon->n_energies);
 				}
-				if(iesc_temp == 1){ //Save event as recap
+				else if(iesc_temp == 1){ //Save event as recap
 					photon->recap = realloc(photon->recap, sizeof(polycap_leaks) * ++photon->n_recap);
 					if(photon->recap == NULL){
 						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect#2: could not allocate memory for photon->recap -> %s", strerror(errno));

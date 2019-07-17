@@ -40,6 +40,10 @@ typedef struct {
 
 
 struct _polycap_leaks;
+/** Struct containing information about the simulated photon leak events such as position and direction, energy and transmission weights.
+ *
+ * This struct is a sub-structure of polycap_photon, and is freed along with polycap_photon_free().
+ */
 typedef struct _polycap_leaks                       polycap_leaks;	
 
 struct _polycap_photon;
@@ -75,6 +79,7 @@ polycap_photon* polycap_photon_new(
  * \param n_energies the amount of discrete energies for which the transmission efficiency will be calculated
  * \param energies an array containing the discrete energies for which the transmission efficiency will be calculated [keV]
  * \param weights an array that will contain the transmission efficiency values
+ * \param leak_calc True: perform leak calculation; False: do not perform leak calculation
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns an int: 0 if photon was absorbed by the polycapillary, 1 if photon reached the end of the polycapillary, -1 on error
  */

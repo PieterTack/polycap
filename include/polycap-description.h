@@ -44,8 +44,6 @@ typedef struct _polycap_description                 polycap_description;
  *
  * \param profile polycap_profile containing outer polycapillary and single capillary shape coordinates
  * \param sig_rough Surface rougness of the capillaries [Angstrom]
- * \param sig_wave Waviness of the capillaries; currently a dummy variable
- * \param corr_length Correlation length of the capillaries; currently a dummy variable
  * \param n_cap The amount of capillaries in the hexagonally packed polycapillary optic
  * \param nelem The amount of chemical elements present in the capillary matrix
  * \param iz Array of atomic numbers of the elements present in the capillary matrix

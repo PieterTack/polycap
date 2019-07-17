@@ -50,6 +50,9 @@ typedef struct _polycap_source                      polycap_source;
  * \param src_sigy the maximal divergence of photons along the y (vertical) direction [rad]. Negative values in src_sigx or src_sigy represent homogeneous polycapillary optic illumination.
  * \param src_shiftx lateral shift of the source centre along the X (horizontal) direction with respect to the polycapillary optic central axis [cm]
  * \param src_shifty lateral shift of the source centre along the Y (vertical) direction with respect to the polycapillary optic central axis [cm]
+ * \param hor_pol the polarisation factor of the simulated source (-1 <= hor_pol <= 1)
+ * \param n_energies the amount of discrete energies of which the source will emit photons
+ * \param energies an array containing the discrete energies of which the source will emit photons
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a new polycap_source, or \c NULL if an error occurred
  */
@@ -98,10 +101,9 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
  *
  * \param source a polycap_source
  * \param max_threads the amount of threads to use. Set to -1 to use the maximum available amount of threads.
- * \param n_energies the amount of discrete energies for which the transmission efficiency will be calculated
- * \param energies an array containing the discrete energies for which the transmission efficiency will be calculated [keV]
  * \param n_photons the amount of photons to simulate that reach the polycapillary end
  * \param progress_monitor a polycap_progress_monitor
+ * \param leak_calc True: perform leak calculation; False: do not perform leak calculation
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a new polycap_transmission_efficiencies, or \c NULL if an error occurred
  */
