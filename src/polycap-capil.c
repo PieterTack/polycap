@@ -165,43 +165,43 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 }
 
 //===========================================
-STATIC double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error) {
-	// theta is the glancing angle (angle between capillary surface and photon direction)
-	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
-	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
-	double complex rtot; //reflectivity
-
-	//argument sanity check
-	if (e < 1. || e > 100.){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: e must be greater than 1 and smaller than 100.");
-		return -1;
-	}
-	if (theta < 0.){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: theta must be greater than 0");
-		return -1;
-	}
-	if (density <= 0.){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: density must be greater than 0");
-		return -1;
-	}
-	if (scatf < 0.){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: scatf must be greater than 0");
-		return -1;
-	}
-	if (lin_abs_coeff < 0.){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: lin_abs_coeff must be greater than 0");
-		return -1;
-	}
-	
-
-	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
-	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
-
-	rtot = ((double complex)theta - csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I))) / ((double complex)theta + csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I)));
-	rtot = creal(cpow(cabs(rtot),2.));
-
-	return rtot;
-}
+//STATIC double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error) {
+//	// theta is the glancing angle (angle between capillary surface and photon direction)
+//	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
+//	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
+//	double complex rtot; //reflectivity
+//
+//	//argument sanity check
+//	if (e < 1. || e > 100.){
+//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: e must be greater than 1 and smaller than 100.");
+//		return -1;
+//	}
+//	if (theta < 0.){
+//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: theta must be greater than 0");
+//		return -1;
+//	}
+//	if (density <= 0.){
+//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: density must be greater than 0");
+//		return -1;
+//	}
+//	if (scatf < 0.){
+//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: scatf must be greater than 0");
+//		return -1;
+//	}
+//	if (lin_abs_coeff < 0.){
+//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: lin_abs_coeff must be greater than 0");
+//		return -1;
+//	}
+//	
+//
+//	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
+//	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
+//
+//	rtot = ((double complex)theta - csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I))) / ((double complex)theta + csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I)));
+//	rtot = creal(cpow(cabs(rtot),2.));
+//
+//	return rtot;
+//}
 //===========================================
 STATIC double polycap_refl_polar(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_vector3 surface_norm, polycap_photon *photon, polycap_error **error) {
 	// theta is the angle between photon direction and surface normal

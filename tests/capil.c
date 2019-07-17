@@ -56,41 +56,41 @@ void test_polycap_capil_segment() {
 	
 }
 
-void test_polycap_refl() {
-	polycap_error *error = NULL;
-	double test=0;
-	double e=10., theta, density=2.23, scatf=0.503696, lin_abs_coeff=42.544677;
-
-	//won't work
-	test = polycap_refl(-1, -1*M_PI, 0.,-1., -1., &error);
-	assert(test == -1);
-	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
-
-	//Should work
-	polycap_clear_error(&error);
-	theta = M_PI_2;
-	test = polycap_refl(e, theta, density, scatf, lin_abs_coeff, &error);
-	assert(test != -1);
-	assert(fabs(test - 0.) < 1.e-5);
-
-	polycap_clear_error(&error);
-	theta = 2.e-3;
-	test = polycap_refl(e, theta, density, scatf, lin_abs_coeff, &error);
-	assert(test != -1);
-	assert(fabs(test - 0.984522) < 1.e-5);
-
-	polycap_clear_error(&error);
-	theta = 3.1e-3;
-	test = polycap_refl(e, theta, density, scatf, lin_abs_coeff, &error);
-	assert(test != -1);
-	assert(fabs(test - 0.496310) < 1.e-5);
-
-	polycap_clear_error(&error);
-	theta = M_PI_2-0.78515; //Brewster's angle
-	test = polycap_refl(e, theta, density, scatf, lin_abs_coeff, &error);
-	assert(test != -1);
-
-}
+//void test_polycap_refl() {
+//	polycap_error *error = NULL;
+//	double test=0;
+//	double e=10., theta, density=2.23, scatf=0.503696, lin_abs_coeff=42.544677;
+//
+//	//won't work
+//	test = polycap_refl(-1, -1*M_PI, 0.,-1., -1., &error);
+//	assert(test == -1);
+//	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
+//
+//	//Should work
+//	polycap_clear_error(&error);
+//	theta = M_PI_2;
+//	test = polycap_refl(e, theta, density, scatf, lin_abs_coeff, &error);
+//	assert(test != -1);
+//	assert(fabs(test - 0.) < 1.e-5);
+//
+//	polycap_clear_error(&error);
+//	theta = 2.e-3;
+//	test = polycap_refl(e, theta, density, scatf, lin_abs_coeff, &error);
+//	assert(test != -1);
+//	assert(fabs(test - 0.984522) < 1.e-5);
+//
+//	polycap_clear_error(&error);
+//	theta = 3.1e-3;
+//	test = polycap_refl(e, theta, density, scatf, lin_abs_coeff, &error);
+//	assert(test != -1);
+//	assert(fabs(test - 0.496310) < 1.e-5);
+//
+//	polycap_clear_error(&error);
+//	theta = M_PI_2-0.78515; //Brewster's angle
+//	test = polycap_refl(e, theta, density, scatf, lin_abs_coeff, &error);
+//	assert(test != -1);
+//
+//}
 
 void test_polycap_refl_polar() {
 	polycap_error *error = NULL;
@@ -434,7 +434,7 @@ void test_polycap_capil_trace() {
 int main(int argc, char *argv[]) {
 
 	test_polycap_capil_segment();
-	test_polycap_refl();
+//	test_polycap_refl();
 	test_polycap_refl_polar();
 	test_polycap_capil_reflect();
 	test_polycap_capil_trace();
