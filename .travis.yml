@@ -11,11 +11,11 @@ matrix:
   include:
     - os: linux
       sudo: required
-      dist: trusty
+      dist: xenial
       addons:
         apt:
           sources:
-            - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable'
+            - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu xenial stable'
               key_url: 'http://xmi-apt.tomschoonjans.eu/xmi.packages.key'
             - ubuntu-toolchain-r-test
           packages:
@@ -31,11 +31,11 @@ matrix:
       env: CC='gcc-8' XRL_PYTHON2='/usr/bin/python' XRL_PYTHON3='/usr/bin/python3'
     - os: linux
       sudo: required
-      dist: trusty
+      dist: xenial
       addons:
         apt:
           sources:
-            - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable'
+            - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu xenial stable'
               key_url: 'http://xmi-apt.tomschoonjans.eu/xmi.packages.key'
             - ubuntu-toolchain-r-test
           packages:
