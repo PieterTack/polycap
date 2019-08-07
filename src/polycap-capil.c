@@ -366,15 +366,13 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 		//reflectivity according to Fresnel expression
 		//rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
 		rtot = polycap_refl_polar(photon->energies[i], M_PI_2-alfa, description->density, photon->scatf[i], photon->amu[i], surface_norm, photon, error);
-		photon->weight[i] = photon->weight[i] * rtot * r_rough;
-
 		//Check if any of the photons are capable of passing through the wall matrix.
 			//Note this could be a rather high fraction: at 30 keV approx 1.e-2% of photons can travel through 4.7cm of glass...
 		if(wall_trace > 0){
-			w_leak[i] = (1.-rtot) * photon->weight[i] * exp(-1.*d_travel*photon->amu[i]);
+			w_leak[i] = (1.-rtot * r_rough) * photon->weight[i] * exp(-1.*d_travel*photon->amu[i]);
 			if(w_leak[i] >= 1.e-4) leak_flag = 1;
 		}
-		
+		photon->weight[i] = photon->weight[i] * rtot * r_rough;
 	}
 
 
@@ -612,7 +610,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 
 //===========================================
 // trace photon from current interaction point through the capillary wall to neighbouring capillary (if any)
-// currently ignores the refraction of light when going from air to polycap medium
+//TODO: currently ignores the refraction of light when going from air to polycap medium
 HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *capx_cntr, int *capy_cntr, polycap_error **error)
 {
 	int i, photon_pos_check = 0, iesc = 0;

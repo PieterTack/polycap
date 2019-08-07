@@ -118,6 +118,13 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
  */
 void polycap_photon_free(polycap_photon *photon);
 
+/** Free a polycap_photon_leaks structure
+ * 
+ * \param leak a polycap_photon_leaks structure
+ * \param n_leaks the amount of leak events contained in the polycap_photon_leaks structure
+ */
+void polycap_leaks_free(polycap_leaks *leak, int64_t n_leaks);
+
 #ifdef __cplusplus
 }
 #endif

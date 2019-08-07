@@ -688,6 +688,12 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	polycap_vector3 temp_vect; //temporary vector to store electric_vectors during projection onto photon direction
 	double cosalpha, alpha; //angle between initial electric vector and photon direction
 	double c_ae, c_be;
+	polycap_leaks *leaks_temp = NULL; // define leaks_temp structure for each thread
+	int64_t n_leaks_temp = 0;
+	polycap_leaks *recap_temp = NULL; // define recap_temp structure for each thread
+	int64_t n_recap_temp = 0;
+	int64_t leak_mem_size_temp=0, recap_mem_size_temp=0; //memory size indicator for leak and recap temp structure arrays
+	polycap_vector3 central_axis; //polycapillary optic central axis; used in leak calculations
 
 	weights = malloc(sizeof(double)*source->n_energies);
 //	if(weights == NULL) {
@@ -732,7 +738,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
 				}
 			}
-			//Register succesfully started photon, as well as save start coordinates and direction
+			//Register succesfully transmitted photon, as well as save start coordinates and direction
 			if(iesc == 1){
 				istart_temp[thread_id]++;
 				efficiencies->images->src_start_coords[0][j] = photon->src_start_coords.x;
@@ -757,8 +763,108 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				not_transmitted_temp[thread_id]++;
 			if(iesc == 2) //photon never entered PC (hit capillary wall instead of opening)
 				not_entered_temp[thread_id]++;
+				// check if photon is then transmitted through wall etc
+				//   probably best to spawn polycap_capil_reflect() function here, as this inherently 
+				//	spawns polycap_capil_trace_wall() and polycap_capil_trace(), and stores it in a polycap_photon struct
+				//
+				// Update photon->exit_coords updated to start of capillary (currently still at source position)
+				photon->exit_coords.x = photon->src_start_coords.x + source->d_source*photon->start_direction.x/photon->start_direction.z;
+				photon->exit_coords.y = photon->src_start_coords.y + source->d_source*photon->start_direction.y/photon->start_direction.z;
+				photon->exit_coords.z = photon->src_start_coords.z + source->d_source*photon->start_direction.z/photon->start_direction.z;
+				polycap_norm(&photon->exit_coords);
+
+				central_axis.x = 0;
+				central_axis.y = 0;
+				central_axis.z = 1;
+				polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
+
+				//	NOTE: when using this scheme, for final total weight one will have to use
+				//		#not_transmitted and #not entered photons etc., as i_exit will not provide correct comparisson.
+			if(leak_calc) { //store potential leak and recap events for photons that did not reach optic exit window
+				if(iesc == 0 || iesc == 2){ 
+					// this photon did not reach end of PC or this photon hit capilary wall at optic entrance
+					//	but could contain leak info to pass on to future photons,
+					if(photon->n_leaks > 0){
+						n_leaks_temp += photon->n_leaks;
+						if(n_leaks_temp > leak_mem_size_temp){
+							if (leak_mem_size_temp == 0){
+								leak_mem_size_temp = n_leaks_temp;
+							} else {
+								leak_mem_size_temp *= 2;
+								if (leak_mem_size_temp < n_leaks_temp) leak_mem_size_temp = n_leaks_temp; //not doing this could be dangerous at low values
+							}
+							leaks_temp = realloc(leaks_temp, sizeof(struct _polycap_leaks) * leak_mem_size_temp);
+						}
+						for(k = 0; k < photon->n_leaks; k++){
+							leaks_temp[n_leaks_temp-photon->n_leaks+k].coords = photon->leaks[k].coords;
+							leaks_temp[n_leaks_temp-photon->n_leaks+k].direction = photon->leaks[k].direction;
+							leaks_temp[n_leaks_temp-photon->n_leaks+k].elecv = photon->leaks[k].elecv;
+							leaks_temp[n_leaks_temp-photon->n_leaks+k].n_refl = photon->leaks[k].n_refl;
+							leaks_temp[n_leaks_temp-photon->n_leaks+k].weight = malloc(sizeof(double)*source->n_energies);
+							memcpy(leaks_temp[n_leaks_temp-photon->n_leaks+k].weight, photon->leaks[k].weight, sizeof(double)*source->n_energies);
+						}
+					}
+					if(photon->n_recap > 0){
+						n_recap_temp += photon->n_recap;
+						if(n_recap_temp > recap_mem_size_temp){
+							if (recap_mem_size_temp == 0){
+								recap_mem_size_temp = n_recap_temp;
+							} else {
+								recap_mem_size_temp *= 2;
+								if (recap_mem_size_temp < n_recap_temp) recap_mem_size_temp = n_recap_temp; //not doing this could be dangerous at low values
+						}
+							recap_temp = realloc(recap_temp, sizeof(struct _polycap_leaks) * recap_mem_size_temp);
+						}
+						for(k=0; k<photon->n_recap; k++){
+							recap_temp[n_recap_temp-photon->n_recap+k].coords = photon->recap[k].coords;
+							recap_temp[n_recap_temp-photon->n_recap+k].direction = photon->recap[k].direction;
+							recap_temp[n_recap_temp-photon->n_recap+k].elecv = photon->recap[k].elecv;
+							recap_temp[n_recap_temp-photon->n_recap+k].n_refl = photon->recap[k].n_refl;
+							recap_temp[n_recap_temp-photon->n_recap+k].weight = malloc(sizeof(double)*source->n_energies);
+							memcpy(recap_temp[n_recap_temp-photon->n_recap+k].weight, photon->recap[k].weight, sizeof(double)*source->n_energies);
+						}
+					}	
+				}
+				if(iesc == 1 && n_leaks_temp > 0){ //this photon reached optic exit window,
+					// so pass on all previously acquired leak info (leak_temp, recap_temp) to this photon
+					if(n_leaks_temp > 0){
+						photon->n_leaks += n_leaks_temp;
+						photon->leaks = realloc(photon->leaks, sizeof(polycap_leaks) * photon->n_leaks);
+						for(k = 0; k < n_leaks_temp; k++){
+							photon->leaks[photon->n_leaks-n_leaks_temp+k].coords = leaks_temp[k].coords;
+							photon->leaks[photon->n_leaks-n_leaks_temp+k].direction = leaks_temp[k].direction;
+							photon->leaks[photon->n_leaks-n_leaks_temp+k].elecv = leaks_temp[k].elecv;
+							photon->leaks[photon->n_leaks-n_leaks_temp+k].n_refl = leaks_temp[k].n_refl;
+							photon->leaks[photon->n_leaks-n_leaks_temp+k].weight = malloc(sizeof(double)*source->n_energies);
+							memcpy(photon->leaks[photon->n_leaks-n_leaks_temp+k].weight, leaks_temp[k].weight, sizeof(double)*source->n_energies);
+						}	
+
+						//free the temp recap and leak structs
+						polycap_leaks_free(leaks_temp, n_leaks_temp);
+						//and set their memory counters to 0
+						leak_mem_size_temp = 0;
+						n_leaks_temp = 0;
+					}
+					if(n_recap_temp > 0){
+						for(k = 0; k < n_recap_temp; k++){
+							photon->recap[photon->n_recap-n_recap_temp+k].coords = recap_temp[k].coords;
+							photon->recap[photon->n_recap-n_recap_temp+k].direction = recap_temp[k].direction;
+							photon->recap[photon->n_recap-n_recap_temp+k].elecv = recap_temp[k].elecv;
+							photon->recap[photon->n_recap-n_recap_temp+k].n_refl = recap_temp[k].n_refl;
+							photon->recap[photon->n_recap-n_recap_temp+k].weight = malloc(sizeof(double)*source->n_energies);
+							memcpy(photon->recap[photon->n_recap-n_recap_temp+k].weight, recap_temp[k].weight, sizeof(double)*source->n_energies);
+						}	
+
+						//free the temp recap and leak structs
+						polycap_leaks_free(recap_temp, n_recap_temp);
+						//and set their memory counters to 0
+						recap_mem_size_temp = 0;
+						n_recap_temp = 0;
+					}
+				}
+			}
 			if(iesc != 1) {
-				polycap_photon_free(photon); //Free photon here as a new one will be simulated
+				polycap_photon_free(photon); //Free photon here as a new one will be simulated 
 				free(weights_temp);
 			}
 		} while(iesc == 0 || iesc == 2 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
@@ -785,7 +891,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			(description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
 		efficiencies->images->pc_exit_dir[0][j] = photon->exit_direction.x;
 		efficiencies->images->pc_exit_dir[1][j] = photon->exit_direction.y;
-		//TODO: the electric_vector here is along polycapillary axis, better to project this to photon direction axis (i.e. result should be 1 0 or 0 1)
+		// the electric_vector here is along polycapillary axis, better to project this to photon direction axis (i.e. result should be 1 0 or 0 1)
 		cosalpha = polycap_scalar(photon->start_electric_vector, photon->start_direction);
 		alpha = acos(cosalpha);
 		c_ae = 1./sin(alpha);
@@ -827,7 +933,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 
 			//Write leak photon data.
 			if(photon->n_leaks > 0){
-			for(k=0; k<photon->n_leaks; k++){
+				for(k=0; k<photon->n_leaks; k++){
 					leaks[n_leaks-photon->n_leaks+k].coords = photon->leaks[k].coords;
 					leaks[n_leaks-photon->n_leaks+k].direction = photon->leaks[k].direction;
 					leaks[n_leaks-photon->n_leaks+k].elecv = photon->leaks[k].elecv;

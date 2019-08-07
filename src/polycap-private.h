@@ -190,6 +190,5 @@ void polycap_description_check_weight(size_t nelem, double wi[], polycap_error *
 void polycap_photon_scatf(polycap_photon *photon, polycap_error **error);
 
 
-
 #endif
 
