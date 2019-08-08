@@ -39,12 +39,12 @@ typedef struct {
 } polycap_vector3;
 
 
-struct _polycap_leaks;
+struct _polycap_leak;
 /** Struct containing information about the simulated photon leak events such as position and direction, energy and transmission weights.
  *
  * This struct is a sub-structure of polycap_photon, and is freed along with polycap_photon_free().
  */
-typedef struct _polycap_leaks                       polycap_leaks;	
+typedef struct _polycap_leak                       polycap_leak;	
 
 struct _polycap_photon;
 /** Struct containing information about the simulated photon such as position and direction, energy and transmission weights.
@@ -117,13 +117,6 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
  * \param photon a polycap_photon
  */
 void polycap_photon_free(polycap_photon *photon);
-
-/** Free a polycap_photon_leaks structure
- * 
- * \param leak a polycap_photon_leaks structure
- * \param n_leaks the amount of leak events contained in the polycap_photon_leaks structure
- */
-void polycap_leaks_free(polycap_leaks *leak, int64_t n_leaks);
 
 #ifdef __cplusplus
 }

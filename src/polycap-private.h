@@ -73,6 +73,7 @@
 polycap_rng * polycap_rng_alloc(const polycap_rng_type * T);
 void polycap_rng_set(const polycap_rng * r, unsigned long int s);
 double polycap_rng_uniform(const polycap_rng * r);
+int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, bool leak_calc, polycap_error **error);
 
 //================================
 
@@ -111,7 +112,7 @@ struct _polycap_source
   double *energies;
   };
 
-struct _polycap_leaks
+struct _polycap_leak
   {
   polycap_vector3 coords;
   polycap_vector3 direction;
@@ -124,8 +125,8 @@ struct _polycap_photon
   {
   polycap_rng *rng;
   polycap_description *description;
-  polycap_leaks *leaks;
-  polycap_leaks *recap;
+  polycap_leak *leaks;
+  polycap_leak *recap;
   int64_t n_leaks;
   int64_t n_recap;
   polycap_vector3 start_coords;
@@ -188,7 +189,7 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *capx
 char *polycap_read_input_line(FILE *fptr, polycap_error **error);
 void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error);
 void polycap_photon_scatf(polycap_photon *photon, polycap_error **error);
-
+void polycap_leak_free(polycap_leak *leak, int64_t n_leaks);
 
 #endif
 

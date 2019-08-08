@@ -313,7 +313,7 @@ STATIC double polycap_refl_polar(double e, double theta, double density, double 
 //	this is done by simply adding r_p and r_s
 }
 //===========================================
-STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, bool leak_calc, polycap_error **error)
+int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, bool leak_calc, polycap_error **error)
 {
 	int i, iesc=0, wall_trace=0, iesc_temp=0;
 	double cons1, r_rough;
@@ -389,7 +389,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 		if(wall_trace == 3){ //photon reached end of capillary through side walls
 			// Save coordinates/direction and weights in appropriate way
 			// 	A single simulated photon can result in many leaks along the way
-			photon->leaks = realloc(photon->leaks, sizeof(polycap_leaks) * ++photon->n_leaks);
+			photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * ++photon->n_leaks);
 			if(photon->leaks == NULL){
 				polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
 				free(w_leak);
@@ -405,7 +405,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 		if(wall_trace == 2){ //photon reached end of capillary tip inside wall
 			// Save coordinates/direction and weights in appropriate way
 			// 	A single simulated photon can result in many leaks along the way
-			photon->recap = realloc(photon->recap, sizeof(polycap_leaks) * ++photon->n_recap);
+			photon->recap = realloc(photon->recap, sizeof(polycap_leak) * ++photon->n_recap);
 			if(photon->recap == NULL){
 				polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->recap -> %s", strerror(errno));
 				free(w_leak);
@@ -505,7 +505,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 			photon->n_leaks += phot_temp->n_leaks;
 			photon->n_recap += phot_temp->n_recap;
 			if(phot_temp->n_leaks > 0){
-				photon->leaks = realloc(photon->leaks, sizeof(polycap_leaks) * photon->n_leaks);
+				photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * photon->n_leaks);
 				if(photon->leaks == NULL){
 					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
 					polycap_photon_free(phot_temp);
@@ -524,7 +524,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 				}
 			}
 			if(phot_temp->n_recap > 0){
-				photon->recap = realloc(photon->recap, sizeof(polycap_leaks) * photon->n_recap);
+				photon->recap = realloc(photon->recap, sizeof(polycap_leak) * photon->n_recap);
 				if(photon->recap == NULL){
 					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: *could not allocate memory for photon->recap -> %s", strerror(errno));
 					polycap_photon_free(phot_temp);
@@ -557,7 +557,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 				//iesc_temp == 0: photon outside of PC boundaries
 				//iesc_temp == 1: photon within PC boundaries
 				if(iesc_temp == 0){ //Save event as leak
-					photon->leaks = realloc(photon->leaks, sizeof(polycap_leaks) * ++photon->n_leaks);
+					photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * ++photon->n_leaks);
 					if(photon->leaks == NULL){
 						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect#2: could not allocate memory for photon->leaks -> %s", strerror(errno));
 						polycap_photon_free(phot_temp);
@@ -574,7 +574,7 @@ STATIC int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_ve
 					memcpy(photon->leaks[photon->n_leaks-1].weight, w_leak, sizeof(double)*photon->n_energies);
 				}
 				else if(iesc_temp == 1){ //Save event as recap
-					photon->recap = realloc(photon->recap, sizeof(polycap_leaks) * ++photon->n_recap);
+					photon->recap = realloc(photon->recap, sizeof(polycap_leak) * ++photon->n_recap);
 					if(photon->recap == NULL){
 						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect#2: could not allocate memory for photon->recap -> %s", strerror(errno));
 						polycap_photon_free(phot_temp);

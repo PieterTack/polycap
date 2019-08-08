@@ -680,17 +680,17 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	double *weights;
 	double *weights_temp;
 	//polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
-	polycap_leaks *leaks = NULL; // define leaks structure for each thread
+	polycap_leak *leaks = NULL; // define leaks structure for each thread
 	int64_t n_leaks=0;
-	polycap_leaks *recap = NULL; // define recap structure for each thread
+	polycap_leak *recap = NULL; // define recap structure for each thread
 	int64_t n_recap=0;
 	int64_t leak_mem_size=0, recap_mem_size=0; //memory size indicator for leak and recap structure arrays
 	polycap_vector3 temp_vect; //temporary vector to store electric_vectors during projection onto photon direction
 	double cosalpha, alpha; //angle between initial electric vector and photon direction
 	double c_ae, c_be;
-	polycap_leaks *leaks_temp = NULL; // define leaks_temp structure for each thread
+	polycap_leak *leaks_temp = NULL; // define leaks_temp structure for each thread
 	int64_t n_leaks_temp = 0;
-	polycap_leaks *recap_temp = NULL; // define recap_temp structure for each thread
+	polycap_leak *recap_temp = NULL; // define recap_temp structure for each thread
 	int64_t n_recap_temp = 0;
 	int64_t leak_mem_size_temp=0, recap_mem_size_temp=0; //memory size indicator for leak and recap temp structure arrays
 	polycap_vector3 central_axis; //polycapillary optic central axis; used in leak calculations
@@ -759,9 +759,9 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				efficiencies->images->pc_start_elecv[0][j] = round(temp_vect.x);
 				efficiencies->images->pc_start_elecv[1][j] = round(temp_vect.y);
 			}
-			if(iesc == 0) //photon did not reach end of PC
-				not_transmitted_temp[thread_id]++;
-			if(iesc == 2) //photon never entered PC (hit capillary wall instead of opening)
+			if(iesc == 0)
+				not_transmitted_temp[thread_id]++; //photon did not reach end of PC
+			if(iesc == 2){ //photon never entered PC (hit capillary wall instead of opening)
 				not_entered_temp[thread_id]++;
 				// check if photon is then transmitted through wall etc
 				//   probably best to spawn polycap_capil_reflect() function here, as this inherently 
@@ -780,6 +780,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 
 				//	NOTE: when using this scheme, for final total weight one will have to use
 				//		#not_transmitted and #not entered photons etc., as i_exit will not provide correct comparisson.
+				}
 			if(leak_calc) { //store potential leak and recap events for photons that did not reach optic exit window
 				if(iesc == 0 || iesc == 2){ 
 					// this photon did not reach end of PC or this photon hit capilary wall at optic entrance
@@ -793,7 +794,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 								leak_mem_size_temp *= 2;
 								if (leak_mem_size_temp < n_leaks_temp) leak_mem_size_temp = n_leaks_temp; //not doing this could be dangerous at low values
 							}
-							leaks_temp = realloc(leaks_temp, sizeof(struct _polycap_leaks) * leak_mem_size_temp);
+							leaks_temp = realloc(leaks_temp, sizeof(struct _polycap_leak) * leak_mem_size_temp);
 						}
 						for(k = 0; k < photon->n_leaks; k++){
 							leaks_temp[n_leaks_temp-photon->n_leaks+k].coords = photon->leaks[k].coords;
@@ -813,7 +814,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 								recap_mem_size_temp *= 2;
 								if (recap_mem_size_temp < n_recap_temp) recap_mem_size_temp = n_recap_temp; //not doing this could be dangerous at low values
 						}
-							recap_temp = realloc(recap_temp, sizeof(struct _polycap_leaks) * recap_mem_size_temp);
+							recap_temp = realloc(recap_temp, sizeof(struct _polycap_leak) * recap_mem_size_temp);
 						}
 						for(k=0; k<photon->n_recap; k++){
 							recap_temp[n_recap_temp-photon->n_recap+k].coords = photon->recap[k].coords;
@@ -829,7 +830,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					// so pass on all previously acquired leak info (leak_temp, recap_temp) to this photon
 					if(n_leaks_temp > 0){
 						photon->n_leaks += n_leaks_temp;
-						photon->leaks = realloc(photon->leaks, sizeof(polycap_leaks) * photon->n_leaks);
+						photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * photon->n_leaks);
 						for(k = 0; k < n_leaks_temp; k++){
 							photon->leaks[photon->n_leaks-n_leaks_temp+k].coords = leaks_temp[k].coords;
 							photon->leaks[photon->n_leaks-n_leaks_temp+k].direction = leaks_temp[k].direction;
@@ -840,7 +841,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 						}	
 
 						//free the temp recap and leak structs
-						polycap_leaks_free(leaks_temp, n_leaks_temp);
+						polycap_leak_free(leaks_temp, n_leaks_temp);
 						//and set their memory counters to 0
 						leak_mem_size_temp = 0;
 						n_leaks_temp = 0;
@@ -856,7 +857,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 						}	
 
 						//free the temp recap and leak structs
-						polycap_leaks_free(recap_temp, n_recap_temp);
+						polycap_leak_free(recap_temp, n_recap_temp);
 						//and set their memory counters to 0
 						recap_mem_size_temp = 0;
 						n_recap_temp = 0;
@@ -918,7 +919,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					leak_mem_size *= 2;
 					if (leak_mem_size < n_leaks) leak_mem_size = n_leaks; //not doing this could be dangerous at low values
 				}
-				leaks = realloc(leaks, sizeof(struct _polycap_leaks) * leak_mem_size);
+				leaks = realloc(leaks, sizeof(struct _polycap_leak) * leak_mem_size);
 			}
 			n_recap += photon->n_recap;
 			if(n_recap > recap_mem_size){
@@ -928,7 +929,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					recap_mem_size *= 2;
 					if (recap_mem_size < n_recap) recap_mem_size = n_recap; //not doing this could be dangerous at low values
 				}
-				recap = realloc(recap, sizeof(struct _polycap_leaks) * recap_mem_size);
+				recap = realloc(recap, sizeof(struct _polycap_leak) * recap_mem_size);
 			}
 
 			//Write leak photon data.
