@@ -778,7 +778,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				central_axis.z = 1;
 				polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
 
-				//	NOTE: when using this scheme, for final total weight one will have to use
+				//	TODO: when using this scheme, for final total weight one will have to use
 				//		#not_transmitted and #not entered photons etc., as i_exit will not provide correct comparisson.
 			}
 			if(leak_calc) { //store potential leak and recap events for photons that did not reach optic exit window
@@ -813,10 +813,10 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 							} else {
 								recap_mem_size_temp *= 2;
 								if (recap_mem_size_temp < n_recap_temp) recap_mem_size_temp = n_recap_temp; //not doing this could be dangerous at low values
-						}
+							}
 							recap_temp = realloc(recap_temp, sizeof(struct _polycap_leak) * recap_mem_size_temp);
 						}
-						for(k=0; k<photon->n_recap; k++){
+						for(k = 0; k < photon->n_recap; k++){
 							recap_temp[n_recap_temp-photon->n_recap+k].coords = photon->recap[k].coords;
 							recap_temp[n_recap_temp-photon->n_recap+k].direction = photon->recap[k].direction;
 							recap_temp[n_recap_temp-photon->n_recap+k].elecv = photon->recap[k].elecv;
@@ -830,7 +830,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					// so pass on all previously acquired leak info (leak_temp, recap_temp) to this photon
 					if(n_leaks_temp > 0){
 						photon->n_leaks += n_leaks_temp;
-						photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * photon->n_leaks);
+						photon->leaks = realloc(photon->leaks, sizeof(struct _polycap_leak) * photon->n_leaks);
 						for(k = 0; k < n_leaks_temp; k++){
 							photon->leaks[photon->n_leaks-n_leaks_temp+k].coords = leaks_temp[k].coords;
 							photon->leaks[photon->n_leaks-n_leaks_temp+k].direction = leaks_temp[k].direction;
@@ -843,13 +843,14 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 						//free the temp recap and leak structs
 						if(leaks_temp)
 							polycap_leak_free(leaks_temp, n_leaks_temp);
+						leaks_temp = NULL;
 						//and set their memory counters to 0
 						leak_mem_size_temp = 0;
 						n_leaks_temp = 0;
 					}
 					if(n_recap_temp > 0){
 						photon->n_recap += n_recap_temp;
-						photon->recap = realloc(photon->recap, sizeof(polycap_leak) * photon->n_recap);
+						photon->recap = realloc(photon->recap, sizeof(struct _polycap_leak) * photon->n_recap);
 						for(k = 0; k < n_recap_temp; k++){
 							photon->recap[photon->n_recap-n_recap_temp+k].coords = recap_temp[k].coords;
 							photon->recap[photon->n_recap-n_recap_temp+k].direction = recap_temp[k].direction;
@@ -862,6 +863,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 						//free the temp recap and leak structs
 						if(recap_temp)
 							polycap_leak_free(recap_temp, n_recap_temp);
+						recap_temp = NULL;
 						//and set their memory counters to 0
 						recap_mem_size_temp = 0;
 						n_recap_temp = 0;

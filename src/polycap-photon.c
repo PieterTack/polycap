@@ -462,13 +462,6 @@ void polycap_photon_free(polycap_photon *photon)
 		polycap_leak_free(photon->leaks, photon->n_leaks);
 	if (photon->recap)
 		polycap_leak_free(photon->recap, photon->n_recap);
-//	if (photon->recap){
-//		for(i=0; i<photon->n_recap; i++){
-//			if (photon->recap[i].weight)
-//				free(photon->recap[i].weight);
-//		}
-//		free(photon->recap);
-//	}
 	free(photon);
 }
 

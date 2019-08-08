@@ -120,6 +120,7 @@ struct _polycap_leak
   double *weight;
   int64_t n_refl;
   };
+typedef struct _polycap_leak 	polycap_leak;
 
 struct _polycap_photon
   {
