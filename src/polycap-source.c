@@ -780,7 +780,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 
 				//	NOTE: when using this scheme, for final total weight one will have to use
 				//		#not_transmitted and #not entered photons etc., as i_exit will not provide correct comparisson.
-				}
+			}
 			if(leak_calc) { //store potential leak and recap events for photons that did not reach optic exit window
 				if(iesc == 0 || iesc == 2){ 
 					// this photon did not reach end of PC or this photon hit capilary wall at optic entrance
@@ -826,7 +826,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 						}
 					}	
 				}
-				if(iesc == 1 && n_leaks_temp > 0){ //this photon reached optic exit window,
+				if(iesc == 1){ //this photon reached optic exit window,
 					// so pass on all previously acquired leak info (leak_temp, recap_temp) to this photon
 					if(n_leaks_temp > 0){
 						photon->n_leaks += n_leaks_temp;
@@ -841,12 +841,15 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 						}	
 
 						//free the temp recap and leak structs
-						polycap_leak_free(leaks_temp, n_leaks_temp);
+						if(leaks_temp)
+							polycap_leak_free(leaks_temp, n_leaks_temp);
 						//and set their memory counters to 0
 						leak_mem_size_temp = 0;
 						n_leaks_temp = 0;
 					}
 					if(n_recap_temp > 0){
+						photon->n_recap += n_recap_temp;
+						photon->recap = realloc(photon->recap, sizeof(polycap_leak) * photon->n_recap);
 						for(k = 0; k < n_recap_temp; k++){
 							photon->recap[photon->n_recap-n_recap_temp+k].coords = recap_temp[k].coords;
 							photon->recap[photon->n_recap-n_recap_temp+k].direction = recap_temp[k].direction;
@@ -857,13 +860,14 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 						}	
 
 						//free the temp recap and leak structs
-						polycap_leak_free(recap_temp, n_recap_temp);
+						if(recap_temp)
+							polycap_leak_free(recap_temp, n_recap_temp);
 						//and set their memory counters to 0
 						recap_mem_size_temp = 0;
 						n_recap_temp = 0;
 					}
 				}
-			}
+			} // if(leak_calc)
 			if(iesc != 1) {
 				polycap_photon_free(photon); //Free photon here as a new one will be simulated 
 				free(weights_temp);
