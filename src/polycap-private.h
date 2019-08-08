@@ -34,7 +34,6 @@
   int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa, polycap_error **error);
   double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error);
   double polycap_refl_polar(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_vector3 surface_norm, polycap_photon *photon, polycap_error **error);
-  int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, bool leak_calc, polycap_error **error);
 #else
   #define STATIC static
   #define HIDDEN __attribute__((visibility("hidden")))

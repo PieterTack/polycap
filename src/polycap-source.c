@@ -422,8 +422,8 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, int n_photons, bool leak_calc, polycap_progress_monitor *progress_monitor, polycap_error **error)
 {
 	int i, j;
-	int64_t sum_istart=0, sum_irefl=0, sum_not_entered=0, sum_not_transmitted=0;
-	int64_t *istart_temp, *not_entered_temp, *not_transmitted_temp;
+	int64_t sum_iexit=0, sum_irefl=0, sum_not_entered=0, sum_not_transmitted=0;
+	int64_t *iexit_temp, *not_entered_temp, *not_transmitted_temp;
 	int64_t leak_counter, recap_counter;
 	double *sum_weights;
 	polycap_transmission_efficiencies *efficiencies;
@@ -476,9 +476,9 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		sum_weights[i] = 0.;
 
 	// Thread specific started photon counter
-	istart_temp = malloc(sizeof(int64_t)*max_threads);
-	if(istart_temp == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for istart_temp -> %s", strerror(errno));
+	iexit_temp = malloc(sizeof(int64_t)*max_threads);
+	if(iexit_temp == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_transmission_efficiencies: could not allocate memory for iexit_temp -> %s", strerror(errno));
 		return NULL;
 	}
 	not_entered_temp = malloc(sizeof(int64_t)*max_threads);
@@ -492,7 +492,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		return NULL;
 	}
 	for(i=0; i < max_threads; i++){
-		istart_temp[i] = 0;
+		iexit_temp[i] = 0;
 		not_entered_temp[i] = 0;
 		not_transmitted_temp[i] = 0;
 	}
@@ -740,7 +740,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			}
 			//Register succesfully transmitted photon, as well as save start coordinates and direction
 			if(iesc == 1){
-				istart_temp[thread_id]++;
+				iexit_temp[thread_id]++;
 				efficiencies->images->src_start_coords[0][j] = photon->src_start_coords.x;
 				efficiencies->images->src_start_coords[1][j] = photon->src_start_coords.y;
 				efficiencies->images->pc_start_coords[0][j] = photon->start_coords.x;
@@ -1048,30 +1048,30 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 
 	//add all started photons together
 	for(i=0; i < max_threads; i++){
-		sum_istart += istart_temp[i];
+		sum_iexit += iexit_temp[i];
 		sum_not_entered += not_entered_temp[i];
 		sum_not_transmitted += not_transmitted_temp[i];
 	}
 	
 	//TODO: Continue working with simulated open area, as this should be a more honoust comparisson?
 	//This will also influence the efficiencies test output etc...
-//	description->open_area = (double)sum_istart/(sum_istart+sum_not_entered);
+//	description->open_area = (double)sum_iexit/(sum_iexit+sum_not_entered);
 
 	// Complete output structure
 	efficiencies->n_energies = source->n_energies;
-	efficiencies->images->i_start = sum_istart;
-	efficiencies->images->i_exit = n_photons;
+	efficiencies->images->i_start = sum_iexit+sum_not_entered+sum_not_transmitted;
+	efficiencies->images->i_exit = sum_iexit;
 	for(i=0; i<source->n_energies; i++){
 		efficiencies->energies[i] = source->energies[i];
-		efficiencies->efficiencies[i] = (sum_weights[i] / (double)sum_istart) * description->open_area;
+		efficiencies->efficiencies[i] = (sum_weights[i] / (double)sum_iexit) * description->open_area;
 	}
 
-	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_istart);
-	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_istart/(sum_istart+sum_not_entered));
+	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_iexit+sum_not_entered);
+	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_iexit/(sum_iexit+sum_not_entered));
 
 	//free alloc'ed memory
 	free(sum_weights);
-	free(istart_temp);
+	free(iexit_temp);
 	free(not_entered_temp);
 	free(not_transmitted_temp);
 	return efficiencies;
