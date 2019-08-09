@@ -1,0 +1,121 @@
+/** \mainpage
+ *
+ * **Polycap** is a library for C with Python bindings that allows for the simulation of X-ray photons in poly- and monocapillary optics with multi-core processing abilities.
+ * This code allows for the study of the influence of the capillary shape, its deviations, surface roughness, reflector material, X-ray energy, source size, distance and divergence on
+ * the optic's efficiency, working distance and focal spot size.
+ *
+ * For each simulated photon, characterized by a three dimensional position, direction and electric field vector, the transmission efficiency through the optic is calculated
+ * as a result of a series of reflections within the capillary optic. Additionally, each transmitted photon is characterized by its exit coordinate, direction and electric field vector
+ * as well as traveled photon path length within the polycapillary optic. These parameters are saved in an HDF5 output file.
+ *
+ * At each photon - capillary wall interaction the reflectivity is determined by the Fresnel equation:
+ * \f[
+	R_{f}(\theta,E) = \left| 
+		\frac{\theta - \sqrt{\theta^{2} - 2\delta(E)}}{\theta + \sqrt{\theta^{2} - 2\delta(E)}}
+		\right|^{2}
+   \f]
+ * with \f$\theta\f$ the glancing angle of the incident radiation and  \f$\delta\f$ defined as \f$\delta = \alpha - i\beta\f$ with
+ *\f[
+	\alpha = \left(\frac{hc}{E}\right)^{2}
+		\frac{N_{A}r_{0}\rho}{2\pi}
+		\sum\limits_{j=1}^N \frac{w_{j}}{A_{j}} (Z_{j} + f_{j}^{'})
+	\\
+	\beta = \left(\frac{hc}{E}\right)^{2}
+		\frac{N_{A}r_{0}\rho}{2\pi}
+		\sum\limits_{j=1}^N \frac{w_{j}}{A_{j}} f_{j}^{"} = \frac{hc}{4\pi} \frac{\mu_{L}}{E}
+  \f]
+ * Here \f$h\f$ is Planck's constant, \f$c\f$ the light velocity, \f$E\f$ the photon energy, \f$N_{A}\f$ Avogadro's number, \f$r_{0}\f$ the classical electron radius, \f$\rho\f$ the material density, \f$N\f$ the number of elements with weight fraction \f$w_{j}\f$, \f$A_{j}\f$ the atomic weight, \f$Z_{j}\f$ the atomic number and \f$f_{j}\f$ the atomic scattering for element \f$j\f$ and \f$\mu_{L}\f$ the linear attenuation coefficient.
+ * By propagating the photon through the capillary and determining the reflectivity at each point a final transmission efficiency, exit coordinate and direction is obtained.
+ * This process can then be repeated for multiple photons as a means to simulate an X-ray source with known distance, size and divergence propagating through the capillary optic.
+ *
+ * \authors Pieter Tack, Tom Schoonjans, Laszlo Vincze
+ *
+ * \page installation_instructions Installation instructions
+ *  
+ * \section requirements Requirements
+ * \subsection xraylib xraylib
+ * **Polycap** makes use of **xraylib** to obtain values for the linear attenuation coefficient, as well as atomic scattering factors for the elements in the capillary matrix.
+ * **xraylib** provides access to some of the most respected databases of physical data in the field of X-rays.
+ * The core of **xraylib** is a library, written in ANSI C, containing over 40 functions to be used to retrieve data from these databases.
+ * This C library can be directly linked with any program written in C, C++ or Objective-C.
+ * Furthermore, the **xraylib** package contains bindings to several popular programming languages: Fortran 2003, Perl, Python, Java, IDL, Lua, Ruby, PHP and .NET,
+ * as well as a command-line utility which can be used as a pocket-calculator. See [The xraylib library for X-ray—matter interactions. Recent developments](https://www.sciencedirect.com/science/article/pii/S0584854711001984).
+ *
+ * Information on obtaining and installing can be found [in the official documentation](https://github.com/tschoonj/xraylib/wiki/Installation-instructions).
+ * 
+ * \subsection hdf5 HDF5
+ * The **HDF5** library is used by **polycap** to save all output information in a single, structured and compact file. This software library runs on a range of computational platforms, from laptops to massively parallel systems, and implements a high-level API with C, C++, Fortran 90, and Java interfaces.
+ * It contains a rich set of integrated performance features that allow for access time and storage space optimizations as well as tools and applications for managing, manipulating, viewing, and analyzing the data in the collection.
+ *
+ * The **HDF5** source code can be downloaded from [this](https://support.hdfgroup.org/HDF5/release/obtainsrc.html#conf) source. However, it should be available using most package managers (apt, yum, dnf, Homebrew, MacPorts, MSYS2 etc).
+ * 
+ * \subsection openMP OpenMP
+ * The **Polycap** code make use of **OpenMP** for its multi-core processing capabilities.
+ * As such, the compiler used to compile the **Polycap** code must implement **OpenMP** functionality. Check the [OpenMP.org](https://www.openmp.org/resources/openmp-compilers-tools/) website for a complete list of compilers implementing **OpenMP**.
+ *
+ * It is strongly advised to use the [GNU GCC](https://gcc.gnu.org/install/) compiler to compile **Polycap**.
+ * 
+ * \subsection gsl GNU Scientific Library
+ * TODO
+ *
+ *
+ * \subsection easyrng easyRNG
+ * **Polycap** uses **easyRNG**'s random number generators when present at compilation time. If not, it will make use of the GNU Scientific Library for this purpose.
+ * **easyRNG** is a simple library for C and Fortran providing access to several pseudo-random
+ * number generators and pseudo-random number distributions.
+ *
+ * It doesn't include any implementations of generators or distributions, but is instead a thin wrapper
+ * around the \c random templates of the C++ Standard Library that have been defined in the 2011 revision of the C++ standard.
+ *
+ * The API is modelled after the [GNU Scientific Library (GSL)](https://www.gnu.org/software/gsl/manual/html_node/index.html), and its Fortran bindings [FGSL](http://www.lrz.de/services/software/mathematik/gsl/fortran/).
+ * Preliminary tests suggest that easyRNG's performance of its Mersenne Twister random number generators is only slightly worse than its GSL counterparts, but this stronly depends on which implementation of the C++ Standard Library was used.
+ * 
+ * The main reason to use this library over GSL or FGSL is its license. While GSL and FGSL are covered by the GNU General Public License version 3, easyRNG is available under the 3-clause BSD license, allowing for use in closed-source/commercial software packages.
+ *
+ * The source code release tarballs are hosted on the Github repository, in the [releases section](https://github.com/tschoonj/easyRNG/releases).
+ *
+ * \subsection python Python bindings
+ * **Polycap** ships with support for Python. In order to generate these at build time, you will need a complete installation of Python, including the headers, as well as Cython and Numpy. These should be easy to install with any package manager. We support both Python 2.7 and 3.x
+ *
+ * \section downloading4 Downloading the Polycap Software
+ * 
+ * TODO
+ *
+ * \subsection head Github repository
+ *                                                                                                                    
+ * People interested in running the latest development version will have to clone the Github repository.             
+ * Make sure you have the above mentioned dependencies installed, as well as the GNU autotools (autoconf, automake and libtool).
+ *
+ *       git clone git@github.com:PieterTack/polycap.git                                                             
+ *       cd polycap
+ *       autoreconf -i
+ *       ./configure
+ *       make
+ *       make check
+ *       make install
+ *
+ * \page usage Usage
+ * 
+ * \section c_usage From C/C++/Objective-C
+ *
+ * Include the polycap header in your code:
+ * \code
+ * #include <polycap.h>
+ * \endcode
+ *
+ * Assuming your program source file is called \c program.c, compile it with:
+ * \code
+ * gcc program.c -o program `pkg-config --cflags --libs libpolycap`
+ * \endcode
+ *
+ * \section python_usage From Python
+ *
+ * Import the polycap module in your code:
+ * \code{.py}
+ * import polycap
+ * \endcode
+ *
+ * \page examples Examples
+ * TODO
+ */
+

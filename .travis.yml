@@ -11,11 +11,11 @@ matrix:
   include:
     - os: linux
       sudo: required
-      dist: trusty
+      dist: xenial
       addons:
         apt:
           sources:
-            - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable'
+            - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu xenial stable'
               key_url: 'http://xmi-apt.tomschoonjans.eu/xmi.packages.key'
             - ubuntu-toolchain-r-test
           packages:
@@ -31,11 +31,11 @@ matrix:
       env: CC='gcc-8' XRL_PYTHON2='/usr/bin/python' XRL_PYTHON3='/usr/bin/python3'
     - os: linux
       sudo: required
-      dist: trusty
+      dist: xenial
       addons:
         apt:
           sources:
-            - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu trusty stable'
+            - sourceline: 'deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu xenial stable'
               key_url: 'http://xmi-apt.tomschoonjans.eu/xmi.packages.key'
             - ubuntu-toolchain-r-test
           packages:
@@ -70,17 +70,18 @@ matrix:
 before_install:
   - |
     if [ "$TRAVIS_OS_NAME" == "osx" ] ; then
+      rm -rf $(brew --prefix)/lib/python*
+      rm -rf $(brew --prefix)/bin/f2py*
       brew cask uninstall --force oclint
       brew uninstall --force --ignore-dependencies $(brew list) || exit 1
       brew update || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
-      brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl python python@2 || exit 1
+      brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl python python@2 numpy || exit 1
       brew install $HOMEBREW_ARGS tschoonj/tap/xraylib || exit 1
       brew cleanup -s || exit 1
       rm -rf $(brew --cache) || exit 1
-      /usr/local/opt/python@2/bin/pip2.7 install Cython numpy || exit 1
-      /usr/local/bin/pip3 install numpy || exit 1
+      /usr/local/opt/python@2/bin/pip2.7 install numpy || exit 1
     else
       sudo pip install Cython || exit 1
       export PATH=/usr/local/bin:$PATH

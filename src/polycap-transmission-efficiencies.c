@@ -331,19 +331,19 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Create PC_Start group
 	PC_Start_id = H5Gcreate2(file, "/PC_Start", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	//Copy coordiante data to temporary array for straightforward HDF5 writing
-	data_temp = malloc(sizeof(double)*efficiencies->images->i_start*2);
+	data_temp = malloc(sizeof(double)*efficiencies->images->i_exit*2);
 	if(data_temp == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 		return false;
 	}
 
-	for(j=0;j<efficiencies->images->i_start;j++){
+	for(j=0;j<efficiencies->images->i_exit;j++){
 		data_temp[j] = efficiencies->images->pc_start_coords[0][j];
-		data_temp[j+efficiencies->images->i_start] = efficiencies->images->pc_start_coords[1][j];
+		data_temp[j+efficiencies->images->i_exit] = efficiencies->images->pc_start_coords[1][j];
 	}
 	//Define temporary dataset dimension
 	dim[0] = 2;
-	dim[1] = efficiencies->images->i_start;
+	dim[1] = efficiencies->images->i_exit;
 	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Start/Coordinates", data_temp,"[cm,cm]", error))
 		return false;
 	//Free data_temp
@@ -351,18 +351,18 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	
 	//Write simulated polycap start direction
 	//Copy direction data to temporary array for straightforward HDF5 writing
-	data_temp = malloc(sizeof(double)*efficiencies->images->i_start*2);
+	data_temp = malloc(sizeof(double)*efficiencies->images->i_exit*2);
 	if(data_temp == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 		return false;
 	}
-	for(j=0;j<efficiencies->images->i_start;j++){
+	for(j=0;j<efficiencies->images->i_exit;j++){
 		data_temp[j] = efficiencies->images->pc_start_dir[0][j];
-		data_temp[j+efficiencies->images->i_start] = efficiencies->images->pc_start_dir[1][j];
+		data_temp[j+efficiencies->images->i_exit] = efficiencies->images->pc_start_dir[1][j];
 	}
 	//Define temporary dataset dimension
 	dim[0] = 2;
-	dim[1] = efficiencies->images->i_start;
+	dim[1] = efficiencies->images->i_exit;
 	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Start/Direction", data_temp,"[cm,cm]", error))
 		return false;
 	//Free data_temp
@@ -370,18 +370,18 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 
 	//Write simulated polycap start electric vectors
 	//Copy direction data to temporary array for straightforward HDF5 writing
-	data_temp = malloc(sizeof(double)*efficiencies->images->i_start*2);
+	data_temp = malloc(sizeof(double)*efficiencies->images->i_exit*2);
 	if(data_temp == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 		return false;
 	}
-	for(j=0;j<efficiencies->images->i_start;j++){
+	for(j=0;j<efficiencies->images->i_exit;j++){
 		data_temp[j] = efficiencies->images->pc_start_elecv[0][j];
-		data_temp[j+efficiencies->images->i_start] = efficiencies->images->pc_start_elecv[1][j];
+		data_temp[j+efficiencies->images->i_exit] = efficiencies->images->pc_start_elecv[1][j];
 	}
 	//Define temporary dataset dimension
 	dim[0] = 2;
-	dim[1] = efficiencies->images->i_start;
+	dim[1] = efficiencies->images->i_exit;
 	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Start/Electric_Vector", data_temp,"[cm,cm]", error))
 		return false;
 	//Free data_temp
@@ -391,7 +391,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Create PC_Exit group
 	PC_Exit_id = H5Gcreate2(file, "/PC_Exit", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	//Copy coordinate data to temporary array for straightforward HDF5 writing
-	data_temp = malloc(sizeof(double)*efficiencies->images->i_exit*2);
+	data_temp = malloc(sizeof(double)*efficiencies->images->i_exit*3);
 	if(data_temp == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 		return false;
@@ -399,11 +399,12 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	for(j=0;j<efficiencies->images->i_exit;j++){
 		data_temp[j] = efficiencies->images->pc_exit_coords[0][j];
 		data_temp[j+efficiencies->images->i_exit] = efficiencies->images->pc_exit_coords[1][j];
+		data_temp[j+efficiencies->images->i_exit*2] = efficiencies->images->pc_exit_coords[2][j];
 	}
 	//Define temporary dataset dimension
-	dim[0] = 2;
+	dim[0] = 3;
 	dim[1] = efficiencies->images->i_exit;
-	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Exit/Coordinates", data_temp,"[cm,cm]", error))
+	if (!polycap_h5_write_dataset(file, 2, dim, "/PC_Exit/Coordinates", data_temp,"[cm,cm,cm]", error))
 		return false;
 	//Free data_temp
 	free(data_temp);
@@ -443,18 +444,18 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 
 	//Write simulated source start coordinates
 	//Copy coordiante data to temporary array for straightforward HDF5 writing
-	data_temp = malloc(sizeof(double)*efficiencies->images->i_start*2);
+	data_temp = malloc(sizeof(double)*efficiencies->images->i_exit*2);
 	if(data_temp == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 		return false;
 	}
-	for(j=0;j<efficiencies->images->i_start;j++){
+	for(j=0;j<efficiencies->images->i_exit;j++){
 		data_temp[j] = efficiencies->images->src_start_coords[0][j];
-		data_temp[j+efficiencies->images->i_start] = efficiencies->images->src_start_coords[1][j];
+		data_temp[j+efficiencies->images->i_exit] = efficiencies->images->src_start_coords[1][j];
 	}
 	//Define temporary dataset dimension
 	dim[0] = 2;
-	dim[1] = efficiencies->images->i_start;
+	dim[1] = efficiencies->images->i_exit;
 	if (!polycap_h5_write_dataset(file, 2, dim, "/Source_Start_Coordinates", data_temp,"[cm,cm]", error))
 		return false;
 
@@ -546,7 +547,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 			for(k=0; k<efficiencies->images->i_leak; k++){
 				data_temp[j] += efficiencies->images->leak_coord_weights[k*efficiencies->n_energies+j];
 			}
-			data_temp[j] = data_temp[j] / (double)efficiencies->images->i_exit;
+			data_temp[j] = data_temp[j] / (double)efficiencies->images->i_start;
 		}
 		n_energies_temp = efficiencies->n_energies;
 		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Leaks/Weight_Total", data_temp,"a.u.", error))
@@ -642,7 +643,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 			for(k=0; k<efficiencies->images->i_recap; k++){
 				data_temp[j] += efficiencies->images->recap_coord_weights[k*efficiencies->n_energies+j];
 			}
-			data_temp[j] = data_temp[j] / (double)efficiencies->images->i_exit;
+			data_temp[j] = data_temp[j] / (double)efficiencies->images->i_start;
 		}
 		n_energies_temp = efficiencies->n_energies;
 		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Recap/Weight_Total", data_temp,"a.u.", error))
@@ -785,6 +786,8 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 			free(efficiencies->images->pc_exit_coords[0]);
 		if (efficiencies->images->pc_exit_coords[1])
 			free(efficiencies->images->pc_exit_coords[1]);
+		if (efficiencies->images->pc_exit_coords[2])
+			free(efficiencies->images->pc_exit_coords[2]);
 		if (efficiencies->images->pc_exit_dir[0])
 			free(efficiencies->images->pc_exit_dir[0]);
 		if (efficiencies->images->pc_exit_dir[1])

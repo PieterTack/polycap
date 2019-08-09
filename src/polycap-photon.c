@@ -431,11 +431,23 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 }
 
 //===========================================
+// free a polycap_leak structure
+void polycap_leak_free(polycap_leak *leak, int64_t n_leaks)
+{
+	int i;
+	
+	if (leak == NULL)
+		return;
+	for(i = 0; i < n_leaks; i++){
+		if (leak[i].weight)
+			free(leak[i].weight);
+	}
+	free(leak);
+}
+//===========================================
 // free a polycap_photon
 void polycap_photon_free(polycap_photon *photon)
 {
-	int i;
-
 	if (photon == NULL)
 		return;
 	if (photon->energies)
@@ -446,20 +458,10 @@ void polycap_photon_free(polycap_photon *photon)
 		free(photon->amu);
 	if (photon->scatf)
 		free(photon->scatf);
-	if (photon->leaks){
-		for(i=0; i<photon->n_leaks; i++){
-			if (photon->leaks[i].weight)
-				free(photon->leaks[i].weight);
-		}
-		free(photon->leaks);
-	}
-	if (photon->recap){
-		for(i=0; i<photon->n_recap; i++){
-			if (photon->recap[i].weight)
-				free(photon->recap[i].weight);
-		}
-		free(photon->recap);
-	}
+	if (photon->leaks)
+		polycap_leak_free(photon->leaks, photon->n_leaks);
+	if (photon->recap)
+		polycap_leak_free(photon->recap, photon->n_recap);
 	free(photon);
 }
 
