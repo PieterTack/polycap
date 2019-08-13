@@ -92,6 +92,7 @@ typedef struct {
  * \param ... parameters for message format
  * \returns a new polycap_error
  */
+POLYCAP_EXTERN
 polycap_error* polycap_error_new(enum polycap_error_code code, const char *format, ...) GNUC_PRINTF (2, 3);
 
 /** Creates a new polycap_error with the given code and message
@@ -100,6 +101,7 @@ polycap_error* polycap_error_new(enum polycap_error_code code, const char *forma
  * \param message an error message
  * \returns a new polycap_error
  */
+POLYCAP_EXTERN
 polycap_error* polycap_error_new_literal(enum polycap_error_code code, const char *message);
 
 /** Creates a new polycap_error with a va_list
@@ -109,12 +111,14 @@ polycap_error* polycap_error_new_literal(enum polycap_error_code code, const cha
  * \param args a va_list of arguments
  * \returns a new polycap_error, or \c NULL if an error occurred
  */
+POLYCAP_EXTERN
 polycap_error* polycap_error_new_valist(enum polycap_error_code code, const char *format, va_list args) GNUC_PRINTF(2, 0);
 
 /** Frees a polycap_error
  *
  * \param error a polycap_error
  */
+POLYCAP_EXTERN
 void polycap_error_free(polycap_error *error);
 
 /** Copies a polycap_error
@@ -122,6 +126,7 @@ void polycap_error_free(polycap_error *error);
  * \param error a polycap_error
  * \returns a new polycap_error, or \c NULL if a \c NULL polycap_error was supplied
  */
+POLYCAP_EXTERN
 polycap_error* polycap_error_copy(const polycap_error *error);
 
 /** Matches a polycap_error_code to a polycap_error
@@ -130,6 +135,7 @@ polycap_error* polycap_error_copy(const polycap_error *error);
  * \param code error code
  * \returns true or false
  */
+POLYCAP_EXTERN
 bool polycap_error_matches(const polycap_error *error, enum polycap_error_code code);
 
 /** Sets a polycap_error
@@ -139,6 +145,7 @@ bool polycap_error_matches(const polycap_error *error, enum polycap_error_code c
  * \param format printf()-style format for error message
  * \param ... parameters for message format
  */
+POLYCAP_EXTERN
 void polycap_set_error(polycap_error **err, enum polycap_error_code code , const char *format, ...) GNUC_PRINTF (3, 4);
 
 /** Sets an error message to a polycap_error
@@ -147,6 +154,7 @@ void polycap_set_error(polycap_error **err, enum polycap_error_code code , const
  * \param code error code
  * \param message an error message
  */
+POLYCAP_EXTERN
 void polycap_set_error_literal(polycap_error **err, enum polycap_error_code code, const char *message);
 
 /** Propagate an error
@@ -154,12 +162,14 @@ void polycap_set_error_literal(polycap_error **err, enum polycap_error_code code
  * \param dest a pointer to a polycap_error
  * \param src a polycap_error
  */
+POLYCAP_EXTERN
 void polycap_propagate_error(polycap_error **dest, polycap_error *src);
 
 /** Clears a polycap_error, and sets the pointer to \c NULL
  *
  * \param err a pointer to a polycap_error
  */
+POLYCAP_EXTERN
 void polycap_clear_error(polycap_error **err);
 
 #ifdef __cplusplus

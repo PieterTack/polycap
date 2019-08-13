@@ -56,6 +56,7 @@ typedef struct _polycap_source                      polycap_source;
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a new polycap_source, or \c NULL if an error occurred
  */
+POLYCAP_EXTERN
 polycap_source* polycap_source_new(
 	polycap_description *description,
 	double d_source,
@@ -74,6 +75,7 @@ polycap_source* polycap_source_new(
  *
  * \param source a polycap_source instance
  */
+POLYCAP_EXTERN
 void polycap_source_free(polycap_source *source);
 
 /** Create a new random polycap_photon based on polycap_source
@@ -84,6 +86,7 @@ void polycap_source_free(polycap_source *source);
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a new polycap_photon, or \c NULL if an error occurred
  */
+POLYCAP_EXTERN
 polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *rng, polycap_error **error);
 
 //TODO: This will recursively call the appropriate polycap_profile_new_* routines. Again here a XML variant could be useful...
@@ -93,6 +96,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a new polycap_source, or \c NULL if an error occurred
  */
+POLYCAP_EXTERN
 polycap_source* polycap_source_new_from_file(const char *filename, polycap_error **error);
 
 /** Obtain the transmission efficiencies for a given array of energies, and a full polycap_description.
@@ -107,6 +111,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a new polycap_transmission_efficiencies, or \c NULL if an error occurred
  */
+POLYCAP_EXTERN
 polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	polycap_source *source,
 	int max_threads,
@@ -120,6 +125,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
  * \param source a polycap_source
  * \returns a new polycap_description
  */
+POLYCAP_EXTERN
 const polycap_description* polycap_source_get_description(polycap_source *source);
 
 

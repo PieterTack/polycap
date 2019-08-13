@@ -15,7 +15,7 @@ libpolycap_la_SOURCES = \
 	$(NULL)
 libpolycap_la_CPPFLAGS = @easyRNG_CFLAGS@ @gsl_CFLAGS@ @xraylib_CFLAGS@ -I$(top_srcdir)/include @HDF5_CFLAGS@
 libpolycap_la_LIBADD = @easyRNG_LIBS@ @gsl_LIBS@ @xraylib_LIBS@ @HDF5_LIBS@ -lm
-libpolycap_la_CFLAGS = @OPENMP_CFLAGS@ -Wno-error=attributes
+libpolycap_la_CFLAGS = @OPENMP_CFLAGS@ -Wno-error=attributes $(HIDDEN_VISIBILITY_CFLAGS)
 libpolycap_la_LDFLAGS = @OPENMP_CFLAGS@ @LDFLAGS_LIBPOLYCAP@
 
 check_LTLIBRARIES = libpolycap-check.la

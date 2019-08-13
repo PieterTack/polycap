@@ -611,7 +611,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 //===========================================
 // trace photon from current interaction point through the capillary wall to neighbouring capillary (if any)
 //TODO: currently ignores the refraction of light when going from air to polycap medium
-HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *capx_cntr, int *capy_cntr, polycap_error **error)
+int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *capx_cntr, int *capy_cntr, polycap_error **error)
 {
 	int i, photon_pos_check = 0, iesc = 0;
 	int z_id = 0; 
@@ -726,7 +726,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 }
 //===========================================
 // trace photon through capillary
-HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, bool leak_calc, polycap_error **error)
+int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, bool leak_calc, polycap_error **error)
 {
 	int i, iesc=0;
 	double cap_rad0, cap_rad1;

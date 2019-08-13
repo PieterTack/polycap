@@ -12,7 +12,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
-#include <polycap-profile.h>
+#include <polycap.h>
 #include <assert.h>
 #include <stddef.h>
 
