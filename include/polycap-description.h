@@ -52,6 +52,7 @@ typedef struct _polycap_description                 polycap_description;
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a new polycap_description, or \c NULL if an error occurred
  */
+POLYCAP_EXTERN
 polycap_description* polycap_description_new(
 	polycap_profile *profile,
 	double sig_rough,
@@ -66,11 +67,13 @@ polycap_description* polycap_description_new(
  * \param description polycap_description to extract a polycap_profile from
  * \returns a new polycap_profile
  */
+POLYCAP_EXTERN
 const polycap_profile* polycap_description_get_profile(polycap_description *description);
 
 /** free a polycap_description struct
  * \param description polycap_description to free
  */
+POLYCAP_EXTERN
 void polycap_description_free(polycap_description *description);
 
 #ifdef __cplusplus
