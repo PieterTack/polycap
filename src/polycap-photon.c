@@ -335,8 +335,20 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 
 	//Check whether photon start coordinate is within capillary (within capillary center at distance < capillary radius)
 	d_ph_capcen = sqrt( (photon->start_coords.x-capx_0)*(photon->start_coords.x-capx_0) + (photon->start_coords.y-capy_0)*(photon->start_coords.y-capy_0) );
-	if(d_ph_capcen > description->profile->cap[0]){
-		return 2; //simulates new photon
+	if(d_ph_capcen > description->profile->cap[0]){ //photon hits capillary wall on entrance
+		//Check whether photon is transmitted through wall (i.e. generates leak or recap events)
+		if(leak_calc){
+			photon->exit_coords.x = photon->start_coords.x;
+			photon->exit_coords.y = photon->start_coords.y;
+			photon->exit_coords.z = photon->start_coords.z;
+			polycap_norm(&photon->exit_coords);
+			photon->exit_direction.x = photon->start_direction.x;
+			photon->exit_direction.y = photon->start_direction.y;
+			photon->exit_direction.z = photon->start_direction.z;
+
+			polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
+		}
+		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies()
 	}
 
 	//define selected capillary axis X and Y coordinates
@@ -366,15 +378,17 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 
 	
 	//polycap_capil_trace should be ran description->profile->nmax at most,
-	//which means it essentially reflected once every known capillary coordinate
+	//	which means it essentially reflected once every known capillary coordinate
+	//Photon will also contain all info on potential leak and recap events ( if(leak_calc) )
 	for(i=0; i<=description->profile->nmax; i++){
 		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, leak_calc, error);
 		if(iesc != 0){ //as long as iesc = 0 photon is still reflecting in capillary
-		//iesc == -2, which means this photon has reached its final point (weight[0] <1e-4)
+		//iesc == -2, which means this photon has reached its final point (weight[0] <1e-4) //TODO: make this weight[*] < 1e-4
 		//alternatively, iesc can be 1 due to not finding intersection point, as the photon reached the end of the capillary
 			break;
 		}
 	}
+
 
 	//Store photon->weight in weights array
 	memcpy(*weights, photon->weight, sizeof(double)*n_energies);

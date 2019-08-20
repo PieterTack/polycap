@@ -693,7 +693,6 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	polycap_leak *recap_temp = NULL; // define recap_temp structure for each thread
 	int64_t n_recap_temp = 0;
 	int64_t leak_mem_size_temp=0, recap_mem_size_temp=0; //memory size indicator for leak and recap temp structure arrays
-	polycap_vector3 central_axis; //polycapillary optic central axis; used in leak calculations
 
 	weights = malloc(sizeof(double)*source->n_energies);
 //	if(weights == NULL) {
@@ -761,30 +760,10 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			}
 			if(iesc == 0)
 				not_transmitted_temp[thread_id]++; //photon did not reach end of PC
-			if(iesc == 2){ //photon never entered PC (hit capillary wall instead of opening)
-				not_entered_temp[thread_id]++;
-				// check if photon is then transmitted through wall etc
-				//   probably best to spawn polycap_capil_reflect() function here, as this inherently 
-				//	spawns polycap_capil_trace_wall() and polycap_capil_trace(), and stores it in a polycap_photon struct
-				//
-				// Update photon->exit_coords updated to start of capillary (currently still at source position)
-				if(leak_calc) {
-					photon->exit_coords.x = photon->src_start_coords.x + source->d_source*photon->start_direction.x/photon->start_direction.z;
-					photon->exit_coords.y = photon->src_start_coords.y + source->d_source*photon->start_direction.y/photon->start_direction.z;
-					photon->exit_coords.z = photon->src_start_coords.z + source->d_source*photon->start_direction.z/photon->start_direction.z;
-					polycap_norm(&photon->exit_coords);
-					photon->exit_direction.x = photon->start_direction.x;
-					photon->exit_direction.y = photon->start_direction.y;
-					photon->exit_direction.z = photon->start_direction.z;
-
-					central_axis.x = 0;
-					central_axis.y = 0;
-					central_axis.z = 1;
-					polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
-				}
-			}
+			if(iesc == 2)
+				not_entered_temp[thread_id]++; //photon never entered PC (hit capillary wall instead of opening)
 			if(leak_calc) { //store potential leak and recap events for photons that did not reach optic exit window
-				if(iesc == 0 || iesc == 2){ 
+				if(iesc != 1){ 
 					// this photon did not reach end of PC or this photon hit capilary wall at optic entrance
 					//	but could contain leak info to pass on to future photons,
 					if(photon->n_leaks > 0){
@@ -828,7 +807,8 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 						}
 					}	
 				}
-				if(iesc == 1){ //this photon reached optic exit window,
+				else
+				{ //this photon reached optic exit window,
 					// so pass on all previously acquired leak info (leak_temp, recap_temp) to this photon
 					if(n_leaks_temp > 0){
 						photon->n_leaks += n_leaks_temp;
