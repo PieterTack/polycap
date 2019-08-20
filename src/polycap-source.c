@@ -768,18 +768,20 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				//	spawns polycap_capil_trace_wall() and polycap_capil_trace(), and stores it in a polycap_photon struct
 				//
 				// Update photon->exit_coords updated to start of capillary (currently still at source position)
-				photon->exit_coords.x = photon->src_start_coords.x + source->d_source*photon->start_direction.x/photon->start_direction.z;
-				photon->exit_coords.y = photon->src_start_coords.y + source->d_source*photon->start_direction.y/photon->start_direction.z;
-				photon->exit_coords.z = photon->src_start_coords.z + source->d_source*photon->start_direction.z/photon->start_direction.z;
-				polycap_norm(&photon->exit_coords);
+				if(leak_calc) {
+					photon->exit_coords.x = photon->src_start_coords.x + source->d_source*photon->start_direction.x/photon->start_direction.z;
+					photon->exit_coords.y = photon->src_start_coords.y + source->d_source*photon->start_direction.y/photon->start_direction.z;
+					photon->exit_coords.z = photon->src_start_coords.z + source->d_source*photon->start_direction.z/photon->start_direction.z;
+					polycap_norm(&photon->exit_coords);
+					photon->exit_direction.x = photon->start_direction.x;
+					photon->exit_direction.y = photon->start_direction.y;
+					photon->exit_direction.z = photon->start_direction.z;
 
-				central_axis.x = 0;
-				central_axis.y = 0;
-				central_axis.z = 1;
-				polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
-
-				//	TODO: when using this scheme, for final total weight one will have to use
-				//		#not_transmitted and #not entered photons etc., as i_exit will not provide correct comparisson.
+					central_axis.x = 0;
+					central_axis.y = 0;
+					central_axis.z = 1;
+					polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
+				}
 			}
 			if(leak_calc) { //store potential leak and recap events for photons that did not reach optic exit window
 				if(iesc == 0 || iesc == 2){ 
