@@ -341,10 +341,10 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 			photon->exit_coords.x = photon->start_coords.x;
 			photon->exit_coords.y = photon->start_coords.y;
 			photon->exit_coords.z = photon->start_coords.z;
-			polycap_norm(&photon->exit_coords);
 			photon->exit_direction.x = photon->start_direction.x;
 			photon->exit_direction.y = photon->start_direction.y;
 			photon->exit_direction.z = photon->start_direction.z;
+			polycap_norm(&photon->exit_direction);
 
 			polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
 		}
