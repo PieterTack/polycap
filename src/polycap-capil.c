@@ -440,6 +440,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 				polycap_photon_free(phot_temp);
 				return -1;
 			}
+			//TODO: perhaps amu and scatf best defined by polycap_photon_scatf()
 			phot_temp->amu = malloc(sizeof(double)*phot_temp->n_energies);
 			if(phot_temp->amu == NULL){
 				polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for phot_temp->amu -> %s", strerror(errno));
