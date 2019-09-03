@@ -204,6 +204,7 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 //}
 //===========================================
 STATIC double polycap_refl_polar(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_vector3 surface_norm, polycap_photon *photon, polycap_error **error) {
+//TODO: now photon structure has to be supplied, theta has become redundant (can be derived from surface norm and photon->exit_direction)
 	// theta is the angle between photon direction and surface normal
 	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
 	// surface_norm is the surface normal vector
@@ -419,6 +420,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			memcpy(photon->recap[photon->n_recap-1].weight, w_leak, sizeof(double)*photon->n_energies);
 		}
 		if(wall_trace == 1){ // photon entered new capillary through the capillary walls
+//printf("we're here...\n");
 			// in fact new photon tracing should occur starting at position within the new capillary (if weights are sufficiently high)...
 			// to do so, make new (temporary) photon, as well as current capillary central axes arrays
 			// and call polycap_capil_trace().
@@ -486,6 +488,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			}
 			//polycap_capil_trace should be ran description->profile->nmax at most,
 			//which means it essentially reflected once every known capillary coordinate
+			//TODO: make ix_temp more appropriate than 0 (i.e. find ix_temp closer to current interaction)
 			for(i=0; i<=description->profile->nmax; i++){
 				iesc_temp = polycap_capil_trace(ix_temp, phot_temp, description, capx_temp, capy_temp, leak_calc, error);
 				if(iesc_temp != 0){ //as long as iesc_temp = 0 photon is still reflecting in capillary
@@ -499,13 +502,14 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			//phot_temp reflect photon->i_refl times before starting its reflection inside new capillary, so add this to total amount
 			//same for d_travel
 			phot_temp->i_refl += photon->i_refl;
-			phot_temp->d_travel = phot_temp->d_travel + photon->d_travel + d_travel; //NOTE: this is total traveled distance, however the weight has been adjusted already for the distance d_travel, so post-simulation air-absorption correction may induce some errors here. Users are advised to not perform air absorption corrections for leaked photons.
+			phot_temp->d_travel = phot_temp->d_travel + photon->d_travel + d_travel; //NOTE: this is total traveled distance, however the weight has been adjusted already for the distance d_travel, so post-simulation air-absorption correction may induce some errors here. Users are advised to not perform air absorption corrections for leaked photons. //TODO: when adding our own internal air absorption, this will become a redundant note
 
 			//	Store these 'additional' photons as leaked photons... 
 			// 	A single simulated photon can result in many leaks along the way
 			photon->n_leaks += phot_temp->n_leaks;
 			photon->n_recap += phot_temp->n_recap;
 			if(phot_temp->n_leaks > 0){
+//printf("	Then here1...\n");
 				photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * photon->n_leaks);
 				if(photon->leaks == NULL){
 					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
@@ -525,6 +529,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 				}
 			}
 			if(phot_temp->n_recap > 0){
+//printf("	Or here2...\n");
 				photon->recap = realloc(photon->recap, sizeof(polycap_leak) * photon->n_recap);
 				if(photon->recap == NULL){
 					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: *could not allocate memory for photon->recap -> %s", strerror(errno));
@@ -548,6 +553,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			//Store as a recap photon.
 			//It would be nice if one could differentiate between photons that only leaked, photons that first leaked and then reflected and photons that first leaked, reflected and then leaked again etc... No idea how to make this clear efficiently.
 			if(iesc_temp == 1){
+//printf("	**Important case3...\n");
 				//make an additional check whether photon is in PC boundaries (or monocap) at optic exit distance
 				//	and save as recap or leak accordingly
 				// NOTE: capil_trace does not update exit coordinates if no next intersection point was found, so extrapolate the photons
@@ -558,6 +564,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 				//iesc_temp == 0: photon outside of PC boundaries
 				//iesc_temp == 1: photon within PC boundaries
 				if(iesc_temp == 0){ //Save event as leak
+//printf("	**This one4...\n");
 					photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * ++photon->n_leaks);
 					if(photon->leaks == NULL){
 						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect#2: could not allocate memory for photon->leaks -> %s", strerror(errno));
@@ -575,6 +582,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 					memcpy(photon->leaks[photon->n_leaks-1].weight, w_leak, sizeof(double)*photon->n_energies);
 				}
 				else if(iesc_temp == 1){ //Save event as recap
+//printf("	**Or this one5...\n");
 					photon->recap = realloc(photon->recap, sizeof(polycap_leak) * ++photon->n_recap);
 					if(photon->recap == NULL){
 						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect#2: could not allocate memory for photon->recap -> %s", strerror(errno));
