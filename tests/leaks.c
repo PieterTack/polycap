@@ -244,6 +244,7 @@ void test_polycap_capil_leak() {
 	photon = NULL;
 
 	//photon transmitting through 1 capillary wall to next capillary, not yet at exit window
+	//	generates succesful transmitted event, as well as 2 leak events
 	//re-prepare photon struct
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
@@ -252,21 +253,20 @@ void test_polycap_capil_leak() {
 	photon->n_energies = 1;
 	photon->energies = malloc(sizeof(double)*photon->n_energies);
 	photon->weight = malloc(sizeof(double)*photon->n_energies);
-	photon->energies[0] = 40; //set 80keV photon
+	photon->energies[0] = 40; //set 40keV photon
 	photon->weight[0] = 1.; //weight == 100%
 	photon->i_refl = 0; //set reflections to 0
         photon->n_leaks = 0; //set leaks to 0
         photon->n_recap = 0; //set recap photons to 0
 	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
-//	photon->start_coords.x = 0.00034; //photon should hit right next to centre capillary
-	photon->start_coords.x = 0.205449; //photon hits within second outer shell
+	photon->start_coords.x = 0.2051; //photon hits within second outer shell
 	photon->start_coords.y = 0.;
 	photon->start_coords.z = 0.;
-//	photon->start_direction.x = 0.00333;
-	photon->start_direction.x = 0.001; //TODO: find angle/vector at which 50% of photon reflects and 50% transmits. Then one should find case with both recap and leak events
+	photon->start_direction.x = 0.001;
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.;
+	polycap_norm(&photon->start_direction);
 	//	photon should have multiple leak and/or recap events (polycap_capil_trace_wall() returned 1)
 	i_capx = round( (photon->start_coords.x-(photon->start_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (description->profile->ext[0] / (n_shells)) );
 	i_capy = round( (photon->start_coords.y)/(description->profile->ext[0]/(n_shells)*sin(M_PI/3.)) );
@@ -305,10 +305,90 @@ void test_polycap_capil_leak() {
 	photon->exit_coords.z = photon->start_coords.z;
 	alfa = M_PI_2 - alfa;
 	test = polycap_capil_reflect(photon, alfa, surface_norm, true, &error);
-//	assert(test == -2); //almost no fraction would reflect, it's all transmitted/leaked
-printf("test: %i\n", test);
-printf("	n_recap:%" PRId64 ", n_leaks:%" PRId64 " \n", photon->n_recap, photon->n_leaks);
-//printf("	w_leak[0]: %lf, w_rec[0]: %lf, w_tr[0]: %lf\n", photon->leaks[0].weight[0], photon->recap[0].weight[0], photon->weight[0]);
+	assert(test == 0);
+	assert(photon->n_leaks == 2);
+	assert(photon->n_recap == 0);
+	assert(fabs(photon->leaks[0].weight[0]-0.7355) < 0.0000005);
+	assert(fabs(photon->leaks[1].weight[0]-0.000507) < 0.0000005);
+	assert(fabs(photon->weight[0]-0.010727) < 0.0000005);
+
+	polycap_free(cap_x);
+	cap_x = NULL;
+	polycap_free(cap_y);
+	cap_y = NULL;
+	polycap_photon_free(photon);
+	photon = NULL;
+
+	//photon transmitting through 1 capillary wall to next capillary, not yet at exit window
+	//	creates succesful transmitted event, leak event, as well as recap events
+	//re-prepare photon struct
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	assert(photon != NULL);
+	polycap_clear_error(&error);
+	//prepare photon struct
+	photon->n_energies = 1;
+	photon->energies = malloc(sizeof(double)*photon->n_energies);
+	photon->weight = malloc(sizeof(double)*photon->n_energies);
+	photon->energies[0] = 40; //set 40keV photon
+	photon->weight[0] = 1.; //weight == 100%
+	photon->i_refl = 0; //set reflections to 0
+        photon->n_leaks = 0; //set leaks to 0
+        photon->n_recap = 0; //set recap photons to 0
+	polycap_photon_scatf(photon, &error);
+	polycap_clear_error(&error);
+	photon->start_coords.x = 0.0585;
+	photon->start_coords.y = 0.;
+	photon->start_coords.z = 0.;
+	photon->start_direction.x = 0.001;
+	photon->start_direction.y = 0.;
+	photon->start_direction.z = 1.;
+	polycap_norm(&photon->start_direction);
+	//	photon should have multiple leak and/or recap events (polycap_capil_trace_wall() returned 1)
+	i_capx = round( (photon->start_coords.x-(photon->start_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (description->profile->ext[0] / (n_shells)) );
+	i_capy = round( (photon->start_coords.y)/(description->profile->ext[0]/(n_shells)*sin(M_PI/3.)) );
+	capx_0 = i_capx * description->profile->ext[0]/(n_shells) + i_capy * description->profile->ext[0]/(n_shells)*cos(M_PI/3.);
+	capy_0 = i_capy * (description->profile->ext[0]/(n_shells))*sin(M_PI/3.);
+	cap_x = malloc(sizeof(double)*(description->profile->nmax+1));
+	cap_y = malloc(sizeof(double)*(description->profile->nmax+1));
+	for(i=0; i<=description->profile->nmax; i++){
+		cap_x[i] = description->profile->ext[i] * capx_0 / description->profile->ext[0];
+		cap_y[i] = description->profile->ext[i] * capy_0 / description->profile->ext[0];
+	}
+	//now find interaction of current photon with wall
+	//	obtain an angle and surface norm from polycap_capil_segment()
+	for(i=1; i<=description->profile->nmax; i++){
+		cap_coord0.x = cap_x[i-1];
+		cap_coord0.y = cap_y[i-1];
+		cap_coord0.z = description->profile->z[i-1];
+		rad0 = description->profile->cap[i-1];
+		cap_coord1.x = cap_x[i];
+		cap_coord1.y = cap_y[i];
+		cap_coord1.z = description->profile->z[i];
+		rad1 = description->profile->cap[i];
+		test = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, &photon->start_coords, photon->start_direction, &surface_norm, &alfa, &error);
+			//photon->start_coords now contains coordinates of next intersection point
+		if(test == 0) {
+			break;
+		}
+	}
+	assert(test == 0);
+	polycap_clear_error(&error);
+	photon->exit_direction.x = photon->start_direction.x;
+	photon->exit_direction.y = photon->start_direction.y;
+	photon->exit_direction.z = photon->start_direction.z;
+	photon->exit_coords.x = photon->start_coords.x;
+	photon->exit_coords.y = photon->start_coords.y;
+	photon->exit_coords.z = photon->start_coords.z;
+	alfa = M_PI_2 - alfa;
+	test = polycap_capil_reflect(photon, alfa, surface_norm, true, &error);
+	assert(test == 0);
+	assert(photon->n_leaks == 1);
+	assert(photon->n_recap == 3);
+	assert(fabs(photon->leaks[0].weight[0]-0.020679) < 0.0000005);
+	assert(fabs(photon->recap[0].weight[0]-0.000145) < 0.0000005);
+	assert(fabs(photon->recap[1].weight[0]-0.000322) < 0.0000005);
+	assert(fabs(photon->recap[2].weight[0]-0.000120) < 0.0000005);
+	assert(fabs(photon->weight[0]-0.018004) < 0.0000005);
 
 	polycap_free(cap_x);
 	cap_x = NULL;
@@ -363,7 +443,7 @@ void test_polycap_photon_leak() {
 	polycap_clear_error(&error);
 
 	//Single photon that should leak through polycapillary
-	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error); //TODO: set leak_calc to true
+	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
 	assert(photon != NULL);
 	assert(test == 2);
 	assert(photon->n_leaks == 1);
@@ -371,12 +451,35 @@ void test_polycap_photon_leak() {
 	assert(photon->leaks[0].weight[0] > 0.);
 	assert(photon->n_recap < 1);
 	polycap_free(weights);
-
+	weights = NULL;
 
 	//Single photon that should cause recap event
-//	polycap_clear_error(&error);
-//	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...
-//	polycap_free(photon->weight); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_clear_error(&error);
+	polycap_photon_free(photon);
+	photon = NULL;
+	start_coords.x = 0.0585;
+	start_coords.y = 0.;
+	start_coords.z = 0.;
+	start_direction.x = 0.001;
+	start_direction.y = 0.;
+	start_direction.z = 1.;
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	assert(photon != NULL);
+	polycap_clear_error(&error);
+
+	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
+	assert(photon != NULL);
+	assert(test == 0);
+	assert(photon->n_leaks == 1);
+	assert(photon->n_recap == 1);
+	assert(fabs(photon->leaks[0].weight[0]-0.201971) < 0.0000005);
+	assert(fabs(photon->recap[0].weight[0]-0.000199) < 0.0000005);
+	assert(fabs(weights[0]-0.000003) < 0.0000005);
+
+	polycap_clear_error(&error);
+	polycap_free(weights);
+	weights = NULL;
+
 
 	polycap_description_free(description);
 	polycap_photon_free(photon);
@@ -428,8 +531,8 @@ int main(int argc, char *argv[]) {
 
 	test_polycap_capil_trace_wall_leak();
 	test_polycap_capil_leak();
-//	test_polycap_photon_leak();
-//	test_polycap_source_leak();
+	test_polycap_photon_leak();
+	test_polycap_source_leak();
 
 	return 0;
 }

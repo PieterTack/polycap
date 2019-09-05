@@ -345,7 +345,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 		return -1;
 	}
 
-	w_leak = malloc(sizeof(double)*photon->n_energies);
+	w_leak = malloc(sizeof(double)*photon->n_energies); //TODO: leaks here
 	if(w_leak == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for w_leak -> %s", strerror(errno));
 		return -1;
@@ -353,8 +353,13 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 
 	//for halo effect one calculates here the distance traveled through the capillary wall d_travel
 	//	if leak_calc is false wall_trace will remain 0 and the whole leak calculation will be skipped
-	if(leak_calc)
+	if(leak_calc){
 		wall_trace = polycap_capil_trace_wall(photon, &d_travel, &capx_cntr, &capy_cntr, error);
+		if(wall_trace == -1){
+			free(w_leak);
+			return -1;
+		}
+	}
 		//wall_trace == 1: photon path enters a new (neighbouring) capillary
 		//wall_trace == 2: photon path reaches end of (poly)capillary by traveling through the glass wall
 		//wall_trace == 3: photon path escapes (poly)capillary through the side walls.
@@ -367,6 +372,11 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 		//reflectivity according to Fresnel expression
 		//rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
 		rtot = polycap_refl_polar(photon->energies[i], M_PI_2-alfa, description->density, photon->scatf[i], photon->amu[i], surface_norm, photon, error);
+		if( (double)rtot < 0. || (double)rtot > 1.){
+			polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_capil_reflect: rtot should be greater than or equal to 0 and smaller than or equal to 1 -> %s", strerror(errno));
+			free(w_leak);
+			return -1;
+		}
 		//Check if any of the photons are capable of passing through the wall matrix.
 			//Note this could be a rather high fraction: at 30 keV approx 1.e-2% of photons can travel through 4.7cm of glass...
 		if(wall_trace > 0){
@@ -420,7 +430,6 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			memcpy(photon->recap[photon->n_recap-1].weight, w_leak, sizeof(double)*photon->n_energies);
 		}
 		if(wall_trace == 1){ // photon entered new capillary through the capillary walls
-//printf("we're here...\n");
 			// in fact new photon tracing should occur starting at position within the new capillary (if weights are sufficiently high)...
 			// to do so, make new (temporary) photon, as well as current capillary central axes arrays
 			// and call polycap_capil_trace().
@@ -434,12 +443,14 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			if(phot_temp->energies == NULL){
 				polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for phot_temp->energies -> %s", strerror(errno));
 				polycap_photon_free(phot_temp);
+				free(w_leak);
 				return -1;
 			}
 			phot_temp->weight = malloc(sizeof(double)*phot_temp->n_energies);
 			if(phot_temp->weight == NULL){
 				polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for phot_temp->weight -> %s", strerror(errno));
 				polycap_photon_free(phot_temp);
+				free(w_leak);
 				return -1;
 			}
 			//TODO: perhaps amu and scatf best defined by polycap_photon_scatf()
@@ -447,12 +458,14 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			if(phot_temp->amu == NULL){
 				polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for phot_temp->amu -> %s", strerror(errno));
 				polycap_photon_free(phot_temp);
+				free(w_leak);
 				return -1;
 			}
 			phot_temp->scatf = malloc(sizeof(double)*phot_temp->n_energies);
 			if(phot_temp->scatf == NULL){
 				polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for phot_temp->scatf -> %s", strerror(errno));
 				polycap_photon_free(phot_temp);
+				free(w_leak);
 				return -1;
 			}
 			for(i=0; i<photon->n_energies; i++){
@@ -492,12 +505,20 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			for(i=0; i<=description->profile->nmax; i++){
 				iesc_temp = polycap_capil_trace(ix_temp, phot_temp, description, capx_temp, capy_temp, leak_calc, error);
 				if(iesc_temp != 0){ //as long as iesc_temp = 0 photon is still reflecting in capillary
-				//iesc_temp == -2, which means this photon has reached its final point (weight[0] <1e-4)
-				//alternatively, iesc_temp can be 1 due to not finding intersection point, as the photon reached the end of the capillary
+				//iesc_temp == -2, which means this photon has reached its final point (weight[*] <1e-4)
+				//alternatively, iesc_temp can be 1 due to not finding intersection point, as the photon reached the end of the capillary/is outside of the optic
 				break;
 				}
 			}
 			//phot_temp reached end of capillary (iesc_temp==1) or was absorbed (iesc_temp==-2)
+			//iesc_temp could be == -1 if errors occurred...
+			if(iesc_temp == -1){
+				polycap_photon_free(phot_temp);
+				free(capx_temp);
+				free(capy_temp);
+				free(w_leak);
+				return -1;
+			}
 
 			//phot_temp reflect photon->i_refl times before starting its reflection inside new capillary, so add this to total amount
 			//same for d_travel
@@ -509,7 +530,6 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			photon->n_leaks += phot_temp->n_leaks;
 			photon->n_recap += phot_temp->n_recap;
 			if(phot_temp->n_leaks > 0){
-//printf("	Then here1...\n");
 				photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * photon->n_leaks);
 				if(photon->leaks == NULL){
 					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->leaks -> %s", strerror(errno));
@@ -529,7 +549,6 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 				}
 			}
 			if(phot_temp->n_recap > 0){
-//printf("	Or here2...\n");
 				photon->recap = realloc(photon->recap, sizeof(polycap_leak) * photon->n_recap);
 				if(photon->recap == NULL){
 					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: *could not allocate memory for photon->recap -> %s", strerror(errno));
@@ -553,7 +572,6 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			//Store as a recap photon.
 			//It would be nice if one could differentiate between photons that only leaked, photons that first leaked and then reflected and photons that first leaked, reflected and then leaked again etc... No idea how to make this clear efficiently.
 			if(iesc_temp == 1){
-//printf("	**Important case3...\n");
 				//make an additional check whether photon is in PC boundaries (or monocap) at optic exit distance
 				//	and save as recap or leak accordingly
 				// NOTE: capil_trace does not update exit coordinates if no next intersection point was found, so extrapolate the photons
@@ -564,7 +582,6 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 				//iesc_temp == 0: photon outside of PC boundaries
 				//iesc_temp == 1: photon within PC boundaries
 				if(iesc_temp == 0){ //Save event as leak
-//printf("	**This one4...\n");
 					photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * ++photon->n_leaks);
 					if(photon->leaks == NULL){
 						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect#2: could not allocate memory for photon->leaks -> %s", strerror(errno));
@@ -579,10 +596,9 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 					photon->leaks[photon->n_leaks-1].elecv = photon->exit_electric_vector;
 					photon->leaks[photon->n_leaks-1].n_refl = photon->i_refl;
 					photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
-					memcpy(photon->leaks[photon->n_leaks-1].weight, w_leak, sizeof(double)*photon->n_energies);
+					memcpy(photon->leaks[photon->n_leaks-1].weight, phot_temp->weight, sizeof(double)*photon->n_energies);
 				}
 				else if(iesc_temp == 1){ //Save event as recap
-//printf("	**Or this one5...\n");
 					photon->recap = realloc(photon->recap, sizeof(polycap_leak) * ++photon->n_recap);
 					if(photon->recap == NULL){
 						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect#2: could not allocate memory for photon->recap -> %s", strerror(errno));
@@ -629,6 +645,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	polycap_vector3 new_photon_coords, photon_coord_rel; //coordinates of the photon after projection along Z
 	double n_shells; //amount of capillary shells in polycapillary
 	int i_capx, i_capy; //indices of selected capillary
+	int i_capx_max, i_capy_max; //maxmal indices of polycapillary along path from optic centre to current photon coordinate
 	double capx_0, capy_0; //coordinates of selected capillary at polycap entrance
 	double d_ph_capcen; //distance between photon start coordinates and selected capillary center
 
@@ -638,7 +655,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	if(photon->exit_coords.z >= photon->description->profile->z[photon->description->profile->nmax])
 		return 0; //photon already at end of polycap, so there is no wall to travel through anyway
 	for(i=0; i <= photon->description->profile->nmax; i++){
-		if(photon->description->profile->z[i] < photon->exit_coords.z)
+		if(photon->description->profile->z[i] <= photon->exit_coords.z)
 			z_id = i;
 	}
 	//	interpolate the exterior size between index z_id and next point
@@ -692,7 +709,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 			// obtain the capillary indices of the capillary region the photon is currently in
 			i_capx = round( (new_photon_coords.x-(new_photon_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (photon->description->profile->ext[z_id] / (n_shells)) );
 			i_capy = round( (new_photon_coords.y)/(photon->description->profile->ext[z_id]/(n_shells)*sin(M_PI/3.)) );
-			// convert these indices to centre capillary coordinates
+			// convert the obtained indices to centre capillary coordinates
 			capx_0 = i_capx * photon->description->profile->ext[z_id]/(n_shells) + i_capy * photon->description->profile->ext[z_id]/(n_shells)*cos(M_PI/3.);
 			capy_0 = i_capy * (photon->description->profile->ext[z_id]/(n_shells))*sin(M_PI/3.);
 
@@ -711,6 +728,29 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	//Or photon is in outer glass wall at end of PC (iesc == 0)
 	if(iesc == 0) iesc = 2;
 
+	// An additional check must be made to make sure the photon actually is outside of capillary (above checks only test for reaching final shell, yet in some cases there are not more capillaries beyond this position)
+	//	determine angle between X-axis and given coordinate (at z[z_id])
+	//	using this angle, determine what outer shell index should be
+	//	check if current i_capx or i_capy are at these values (i.e. is this the outer capillary we're in?)
+	//		perhaps this check should occur after escaping from do...while clause
+	if(n_shells != 0 && z_id < photon->description->profile->nmax){ //Only do this for polycapillary case
+		i_capx_max = round( (photon->description->profile->ext[z_id]*cos(atan(new_photon_coords.y/new_photon_coords.x)) - (photon->description->profile->ext[z_id]*sin(atan(new_photon_coords.y/new_photon_coords.x))*cos(M_PI/3.)/sin(M_PI/3.)) ) / (photon->description->profile->ext[z_id] / (n_shells)) );
+		i_capy_max = round( (photon->description->profile->ext[z_id]*sin(atan(new_photon_coords.y/new_photon_coords.x))) / (photon->description->profile->ext[z_id]/(n_shells)*sin(M_PI/3.)) );
+		if(fabs(i_capx) >= fabs(i_capx_max) && fabs(i_capy) >= fabs(i_capy_max)){ //photon entered region where no other capillaries are anymore (either it's outside, or about to go outside)
+			iesc = 2; // should eventually return 3
+			// adjust d_travel to go to actual outside of optic
+			do{
+				z_id++;
+				d_proj = (photon->description->profile->z[z_id] - photon->exit_coords.z) / photon->exit_direction.z;
+				new_photon_coords.x = photon->exit_coords.x + d_proj * photon->exit_direction.x;
+				new_photon_coords.y = photon->exit_coords.y + d_proj * photon->exit_direction.y;
+				new_photon_coords.z = photon->description->profile->z[z_id];
+				photon_pos_check = polycap_photon_within_pc_boundary(photon->description->profile->ext[z_id], new_photon_coords, error);
+			} while(photon_pos_check == 1 && z_id < photon->description->profile->nmax); //stops do..while when photon_pos_check == 0, i.e. when photon is completely outside optic
+		}
+	}
+
+	// Calculate traveled distance through capillary wall
 	photon_coord_rel.x = new_photon_coords.x - photon->exit_coords.x;
 	photon_coord_rel.y = new_photon_coords.y - photon->exit_coords.y;
 	photon_coord_rel.z = new_photon_coords.z - photon->exit_coords.z;
@@ -813,7 +853,7 @@ HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_descript
 			
 			iesc = polycap_capil_reflect(photon, alfa, surface_norm, leak_calc, error);
 
-			if(iesc != -2){
+			if(iesc != -2 && iesc != -1){
 				photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(alfa) * surface_norm.x;
 				photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(alfa) * surface_norm.y;
 				photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(alfa) * surface_norm.z;
