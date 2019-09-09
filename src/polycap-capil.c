@@ -736,7 +736,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	if(n_shells != 0 && z_id < photon->description->profile->nmax){ //Only do this for polycapillary case
 		i_capx_max = round( (photon->description->profile->ext[z_id]*cos(atan(new_photon_coords.y/new_photon_coords.x)) - (photon->description->profile->ext[z_id]*sin(atan(new_photon_coords.y/new_photon_coords.x))*cos(M_PI/3.)/sin(M_PI/3.)) ) / (photon->description->profile->ext[z_id] / (n_shells)) );
 		i_capy_max = round( (photon->description->profile->ext[z_id]*sin(atan(new_photon_coords.y/new_photon_coords.x))) / (photon->description->profile->ext[z_id]/(n_shells)*sin(M_PI/3.)) );
-		if(fabs(i_capx) >= fabs(i_capx_max) && fabs(i_capy) >= fabs(i_capy_max)){ //photon entered region where no other capillaries are anymore (either it's outside, or about to go outside)
+		if(abs(i_capx) >= abs(i_capx_max) && abs(i_capy) >= abs(i_capy_max)){ //photon entered region where no other capillaries are anymore (either it's outside, or about to go outside)
 			iesc = 2; // should eventually return 3
 			// adjust d_travel to go to actual outside of optic
 			do{
