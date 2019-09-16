@@ -345,7 +345,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 		return -1;
 	}
 
-	w_leak = malloc(sizeof(double)*photon->n_energies); //TODO: leaks here
+	w_leak = malloc(sizeof(double)*photon->n_energies);
 	if(w_leak == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for w_leak -> %s", strerror(errno));
 		return -1;
@@ -434,7 +434,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 			// to do so, make new (temporary) photon, as well as current capillary central axes arrays
 			// and call polycap_capil_trace().
 			// 	Calling polycap_photon_launch() instead would set weights to 1, which could lead to unnecessary calculation
-			phot_temp = polycap_photon_new(description, photon->rng, leak_coords, photon->exit_direction, photon->exit_electric_vector, error);
+			phot_temp = polycap_photon_new(photon->description, photon->rng, leak_coords, photon->exit_direction, photon->exit_electric_vector, error);
 			phot_temp->i_refl = 0; //set reflections to 0
 			phot_temp->n_leaks = 0; //set leaks to 0
 			phot_temp->n_recap = 0; //set recap to 0
