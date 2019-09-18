@@ -184,7 +184,7 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 				slope = rad_ext_upstream / focal_dist_upstream;
 				b = (-1.*(rad_ext_upstream-rad_ext_downstream)*(rad_ext_upstream-rad_ext_downstream)-slope*length*(rad_ext_upstream-rad_ext_downstream)) / (slope*length+2.*(rad_ext_upstream-rad_ext_downstream));
 				k = rad_ext_downstream - b;
-				a = sqrt((b*b*length)/(slope*(rad_ext_upstream-k)));
+				a = sqrt(fabs((b*b*length)/(slope*(rad_ext_upstream-k))));
 				for(i=0;i<=nmax;i++){
 					profile->z[i] = length/nmax*i; //z coordinates, from 0 to length
 					profile->cap[i] = (rad_int_downstream-rad_int_upstream)/length*profile->z[i] + rad_int_upstream; //single capillary shape always conical
