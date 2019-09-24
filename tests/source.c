@@ -211,7 +211,6 @@ void test_polycap_source_get_transmission_efficiencies() {
 
 	assert(polycap_transmission_efficiencies_write_hdf5(efficiencies, "temp.h5", &error));
 	unlink("temp.h5"); // cleanup
-	
 
 	polycap_transmission_efficiencies_free(efficiencies);
 	polycap_source_free(source);

@@ -403,6 +403,27 @@ void test_polycap_capil_trace() {
 	assert(fabs(photon->exit_coords.z - 0.004948) < 1.e-5);
 	polycap_photon_free(photon);
 
+	//Works but photon is absorbed
+	*ix = 0;
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	assert(photon != NULL);
+	polycap_clear_error(&error);
+	photon->n_energies = 1.;
+	photon->energies = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->energies != NULL);
+	photon->weight = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->weight != NULL);
+	polycap_clear_error(&error);
+	photon->energies[0] = energies;
+	photon->weight[0] = 0.9e-4;
+	photon->i_refl = 0;
+	//calculate attenuation coefficients and scattering factors
+	polycap_photon_scatf(photon, &error);
+	polycap_clear_error(&error);
+	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
+	assert(test == -2);
+	polycap_photon_free(photon);
+	
 	//Should work, but does not find reflection point
 	*ix = 0;
 	start_direction.x = 0.0;
