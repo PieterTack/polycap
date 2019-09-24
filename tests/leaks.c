@@ -849,8 +849,8 @@ void test_polycap_source_leak() {
 	assert(efficiencies2 != NULL);
 printf("with leaks: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies->efficiencies[0], efficiencies->efficiencies[1], efficiencies->efficiencies[2], efficiencies->efficiencies[3], efficiencies->efficiencies[4], efficiencies->efficiencies[5], efficiencies->efficiencies[6]);
 printf("no leaks: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies2->efficiencies[0], efficiencies2->efficiencies[1], efficiencies2->efficiencies[2], efficiencies2->efficiencies[3], efficiencies2->efficiencies[4], efficiencies2->efficiencies[5], efficiencies2->efficiencies[6]);
-printf("**i_exit: withleaks: %li noleaks: %li\n", efficiencies->images->i_exit, efficiencies2->images->i_exit);
-printf("**i_start: withleaks: %li noleaks: %li\n", efficiencies->images->i_start, efficiencies2->images->i_start);
+printf("**i_exit: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_exit, efficiencies2->images->i_exit);
+printf("**i_start: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_start, efficiencies2->images->i_start);
 	assert(efficiencies2->images->i_exit == n_photons);
 	assert(fabs(efficiencies2->efficiencies[0] - efficiencies->efficiencies[0]) <= 0.005); //1 keV
 	assert(fabs(efficiencies2->efficiencies[1] - efficiencies->efficiencies[1]) <= 0.005); //5 keV
