@@ -192,10 +192,10 @@ void test_polycap_source_get_transmission_efficiencies() {
 	polycap_clear_error(&error);
 	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, 30000, false, NULL, &error);
 	assert(efficiencies != NULL);
-	assert(fabs(efficiencies->efficiencies[0] - 0.354) <= 0.005); //1 keV
-	assert(fabs(efficiencies->efficiencies[1] - 0.295) <= 0.005); //5 keV
-	assert(fabs(efficiencies->efficiencies[2] - 0.117) <= 0.005); //10 keV
-	assert(fabs(efficiencies->efficiencies[3] - 0.045) <= 0.005); //15 keV
+	assert(fabs(efficiencies->efficiencies[0] - 0.353) <= 0.005); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - 0.291) <= 0.005); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - 0.115) <= 0.005); //10 keV
+	assert(fabs(efficiencies->efficiencies[3] - 0.043) <= 0.005); //15 keV
 	assert(fabs(efficiencies->efficiencies[4] - 0.021) <= 0.005); //20 keV
 	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.005); //25 keV
 	assert(fabs(efficiencies->efficiencies[6] - 0.007) <= 0.005); //30 keV

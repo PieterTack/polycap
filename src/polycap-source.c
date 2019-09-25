@@ -732,14 +732,17 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			if(iesc == 1) {
 				//check whether photon is within optic exit window
 					//different check for monocapillary case...
+				temp_vect.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
+				temp_vect.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
+				temp_vect.z = description->profile->z[description->profile->nmax];
 				if(round(sqrt(12. * photon->description->n_cap - 3.)/6.-0.5) == 0.){ //monocapillary case
-					if(sqrt((photon->exit_coords.x)*(photon->exit_coords.x) + (photon->exit_coords.y)*(photon->exit_coords.y)) > description->profile->ext[description->profile->nmax]){ //TODO: this check will fail with monocap offsets from central axis (001)!
+					if(sqrt((temp_vect.x)*(temp_vect.x) + (temp_vect.y)*(temp_vect.y)) > description->profile->ext[description->profile->nmax]){ //TODO: this check will fail with monocap offsets from central axis (001)! 
 						iesc = 0;
 					} else {
 						iesc = 1;
 					}
 				} else { //polycapillary case
-					iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
+					iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],temp_vect, NULL);
 				}
 			}
 //if(iesc == 0) printf("***Does this occur?\n"); //TODO This almost never occurs with leak_calc, often without leak_calc??

@@ -333,21 +333,21 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		capy_0 = i_capy * (description->profile->ext[0]/(n_shells))*sin(M_PI/3.);
 	}
 
+	//Set exit coordinates and direction equal to start coordinates and direction in order to get a clean launch
+	photon->exit_coords.x = photon->start_coords.x;
+	photon->exit_coords.y = photon->start_coords.y;
+	photon->exit_coords.z = photon->start_coords.z;
+	photon->exit_direction.x = photon->start_direction.x;
+	photon->exit_direction.y = photon->start_direction.y;
+	photon->exit_direction.z = photon->start_direction.z;
+	polycap_norm(&photon->exit_direction);
+
 	//Check whether photon start coordinate is within capillary (within capillary center at distance < capillary radius)
 	d_ph_capcen = sqrt( (photon->start_coords.x-capx_0)*(photon->start_coords.x-capx_0) + (photon->start_coords.y-capy_0)*(photon->start_coords.y-capy_0) );
 	if(d_ph_capcen > description->profile->cap[0]){ //photon hits capillary wall on entrance
 		//Check whether photon is transmitted through wall (i.e. generates leak or recap events)
-		if(leak_calc){
-			photon->exit_coords.x = photon->start_coords.x;
-			photon->exit_coords.y = photon->start_coords.y;
-			photon->exit_coords.z = photon->start_coords.z;
-			photon->exit_direction.x = photon->start_direction.x;
-			photon->exit_direction.y = photon->start_direction.y;
-			photon->exit_direction.z = photon->start_direction.z;
-			polycap_norm(&photon->exit_direction);
-
+		if(leak_calc)
 			polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
-		}
 		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies()
 	}
 
@@ -388,7 +388,6 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 			break;
 		}
 	}
-if(leak_calc) printf("	photon_launch: capil_trace returned %i\n", iesc);
 
 
 	//Store photon->weight in weights array

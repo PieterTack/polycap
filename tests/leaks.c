@@ -864,11 +864,11 @@ void test_polycap_source_leak() {
 	}
 	printf("----\n");
 	
-//	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, n_photons, true, NULL, &error);
-//	assert(efficiencies != NULL);
-//	assert(efficiencies->images->i_exit == n_photons);
-//	assert(efficiencies->images->i_leak > 0);
-//	assert(efficiencies->images->i_recap > 0);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, n_photons, true, NULL, &error);
+	assert(efficiencies != NULL);
+	assert(efficiencies->images->i_exit == n_photons);
+	assert(efficiencies->images->i_leak > 0);
+	assert(efficiencies->images->i_recap > 0);
 //	assert(fabs(efficiencies->efficiencies[0] - 0.401) <= 0.05); //1 keV
 //	assert(fabs(efficiencies->efficiencies[1] - 0.370) <= 0.05); //5 keV
 //	assert(fabs(efficiencies->efficiencies[2] - 0.210) <= 0.05); //10 keV
@@ -876,28 +876,28 @@ void test_polycap_source_leak() {
 //	assert(fabs(efficiencies->efficiencies[4] - 0.042) <= 0.05); //20 keV
 //	assert(fabs(efficiencies->efficiencies[5] - 0.021) <= 0.05); //25 keV
 //	assert(fabs(efficiencies->efficiencies[6] - 0.012) <= 0.05); //30 keV
-//
-//	//Now redo test without leaks, to check for differences in non-leak event transmission efficiency
-//	polycap_clear_error(&error);
-//	efficiencies2 = polycap_source_get_transmission_efficiencies(source, -1, n_photons, false, NULL, &error);
-//	assert(efficiencies2 != NULL);
-//printf("with leaks: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies->efficiencies[0], efficiencies->efficiencies[1], efficiencies->efficiencies[2], efficiencies->efficiencies[3], efficiencies->efficiencies[4], efficiencies->efficiencies[5], efficiencies->efficiencies[6]);
-//printf("no leaks: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies2->efficiencies[0], efficiencies2->efficiencies[1], efficiencies2->efficiencies[2], efficiencies2->efficiencies[3], efficiencies2->efficiencies[4], efficiencies2->efficiencies[5], efficiencies2->efficiencies[6]);
-//printf("**i_exit: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_exit, efficiencies2->images->i_exit);
-//printf("**i_start: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_start, efficiencies2->images->i_start);
-//	assert(efficiencies2->images->i_exit == n_photons);
-//	assert(fabs(efficiencies2->efficiencies[0] - efficiencies->efficiencies[0]) <= 0.005); //1 keV
-//	assert(fabs(efficiencies2->efficiencies[1] - efficiencies->efficiencies[1]) <= 0.005); //5 keV
-//	assert(fabs(efficiencies2->efficiencies[2] - efficiencies->efficiencies[2]) <= 0.005); //10 keV
-//	assert(fabs(efficiencies2->efficiencies[3] - efficiencies->efficiencies[3]) <= 0.005); //15 keV
-//	assert(fabs(efficiencies2->efficiencies[4] - efficiencies->efficiencies[4]) <= 0.005); //20 keV
-//	assert(fabs(efficiencies2->efficiencies[5] - efficiencies->efficiencies[5]) <= 0.005); //25 keV
-//	assert(fabs(efficiencies2->efficiencies[6] - efficiencies->efficiencies[6]) <= 0.005); //30 keV
+
+	//Now redo test without leaks, to check for differences in non-leak event transmission efficiency
+	polycap_clear_error(&error);
+	efficiencies2 = polycap_source_get_transmission_efficiencies(source, -1, n_photons, false, NULL, &error);
+	assert(efficiencies2 != NULL);
+printf("with leaks: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies->efficiencies[0], efficiencies->efficiencies[1], efficiencies->efficiencies[2], efficiencies->efficiencies[3], efficiencies->efficiencies[4], efficiencies->efficiencies[5], efficiencies->efficiencies[6]);
+printf("no leaks: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies2->efficiencies[0], efficiencies2->efficiencies[1], efficiencies2->efficiencies[2], efficiencies2->efficiencies[3], efficiencies2->efficiencies[4], efficiencies2->efficiencies[5], efficiencies2->efficiencies[6]);
+printf("**i_exit: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_exit, efficiencies2->images->i_exit);
+printf("**i_start: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_start, efficiencies2->images->i_start);
+	assert(efficiencies2->images->i_exit == n_photons);
+	assert(fabs(efficiencies2->efficiencies[0] - efficiencies->efficiencies[0]) <= 0.005); //1 keV
+	assert(fabs(efficiencies2->efficiencies[1] - efficiencies->efficiencies[1]) <= 0.005); //5 keV
+	assert(fabs(efficiencies2->efficiencies[2] - efficiencies->efficiencies[2]) <= 0.005); //10 keV
+	assert(fabs(efficiencies2->efficiencies[3] - efficiencies->efficiencies[3]) <= 0.005); //15 keV
+	assert(fabs(efficiencies2->efficiencies[4] - efficiencies->efficiencies[4]) <= 0.005); //20 keV
+	assert(fabs(efficiencies2->efficiencies[5] - efficiencies->efficiencies[5]) <= 0.005); //25 keV
+	assert(fabs(efficiencies2->efficiencies[6] - efficiencies->efficiencies[6]) <= 0.005); //30 keV
 	
 
 	polycap_description_free(description);
-//	polycap_transmission_efficiencies_free(efficiencies);
-//	polycap_transmission_efficiencies_free(efficiencies2);
+	polycap_transmission_efficiencies_free(efficiencies);
+	polycap_transmission_efficiencies_free(efficiencies2);
 	polycap_source_free(source);
 }
 

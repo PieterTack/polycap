@@ -655,8 +655,8 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	if(photon->exit_coords.z >= photon->description->profile->z[photon->description->profile->nmax])
 		return 0; //photon already at end of polycap, so there is no wall to travel through anyway
 	for(i=0; i < photon->description->profile->nmax; i++){
-		if(photon->description->profile->z[i] > photon->exit_coords.z)
-			z_id = i-1;
+		if(photon->description->profile->z[i] <= photon->exit_coords.z)
+			z_id = i;
 	}
 	//	interpolate the exterior size between index z_id and next point
 	if(photon->description->profile->z[z_id] != photon->exit_coords.z){
@@ -834,6 +834,7 @@ HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_descript
 	}
 
 	if(iesc != 0){
+if(leak_calc == false) printf("	capil_segment != 0: iesc = %i\n",iesc);
 		iesc = 1;
 	} else { //iesc == 0, so broke out of above for loop and thus found next interaction point
 		photon_coord_rel.x = photon_coord.x - photon->exit_coords.x;
