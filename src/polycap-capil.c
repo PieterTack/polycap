@@ -654,9 +654,9 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	// 	current coordinates are photon->exit_coords
 	if(photon->exit_coords.z >= photon->description->profile->z[photon->description->profile->nmax])
 		return 0; //photon already at end of polycap, so there is no wall to travel through anyway
-	for(i=0; i <= photon->description->profile->nmax; i++){
-		if(photon->description->profile->z[i] <= photon->exit_coords.z)
-			z_id = i;
+	for(i=0; i < photon->description->profile->nmax; i++){
+		if(photon->description->profile->z[i] > photon->exit_coords.z)
+			z_id = i-1;
 	}
 	//	interpolate the exterior size between index z_id and next point
 	if(photon->description->profile->z[z_id] != photon->exit_coords.z){
@@ -683,6 +683,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 		//iesc == 1: photon within PC boundaries
 		if(photon_pos_check == 0){
 			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_trace_wall: photon_pos_check: photon not within polycapillary boundaries");
+printf("capil_trace_wall situation1: ext: %lf, phot.x: %lf, y:%lf, z:%lf\n", current_polycap_ext, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z);
 			return -1;
 		}
 	}

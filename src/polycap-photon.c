@@ -383,11 +383,12 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	for(i=0; i<=description->profile->nmax; i++){
 		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, leak_calc, error);
 		if(iesc != 0){ //as long as iesc = 0 photon is still reflecting in capillary
-		//iesc == -2, which means this photon has reached its final point (weight[0] <1e-4)
+		//iesc == -2, which means this photon has reached its final point (weight[*] <1e-4)
 		//alternatively, iesc can be 1 due to not finding intersection point, as the photon reached the end of the capillary
 			break;
 		}
 	}
+if(leak_calc) printf("	photon_launch: capil_trace returned %i\n", iesc);
 
 
 	//Store photon->weight in weights array
