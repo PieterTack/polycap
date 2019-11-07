@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 	polycap_source *source;
 	polycap_transmission_efficiencies *efficiencies;
 	int nthreads = -1;
-	int n_photons = 50000;
+	int n_photons = 10000;
 	char *filename;
 	bool leak_calc = false;
 	polycap_error *error = NULL;

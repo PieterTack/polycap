@@ -46,7 +46,8 @@ void test_polycap_capil_segment() {
 	polycap_clear_error(&error);
 	test = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, &photon_coord, photon_dir, &surface_norm, &alfa, &error);
 	assert(test == 0);
-	assert(fabs(alfa - 1.563725) < 1.e-5);
+//	assert(fabs(alfa - 1.563725) < 1.e-5); //value before phot_dir was normalized in segment function
+	assert(fabs(alfa - 1.500203) < 1.e-5);
 	assert(fabs(photon_coord.x - 0.003536) < 1.e-5);
 	assert(fabs(photon_coord.y - (-0.003536)) < 1.e-5);
 	assert(fabs(photon_coord.z - 0.070711) < 1.e-5);
@@ -389,18 +390,53 @@ void test_polycap_capil_trace() {
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
+
 	//Should work, finds new reflection point
 	polycap_clear_error(&error);
 	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
-	assert(test == 0);
+	assert(test == -2); //new reflection found, but weight is too low
+	assert(photon->weight[0] < 1.e-4);
 	assert(*ix == 0);
-	assert(photon->i_refl == 1);
-	assert(fabs(photon->exit_direction.x - (-0.049915)) < 1.e-5);
-	assert(fabs(photon->exit_direction.y - 0.049915) < 1.e-5);
-	assert(fabs(photon->exit_direction.z - 0.997505) < 1.e-5);
+	assert(photon->i_refl == 0);
+	assert(fabs(photon->exit_direction.x - 0.049875) < 1.e-5);
+	assert(fabs(photon->exit_direction.y - (-0.049875)) < 1.e-5);
+	assert(fabs(photon->exit_direction.z - 0.997509) < 1.e-5);
 	assert(fabs(photon->exit_coords.x - 0.000247) < 1.e-5);
 	assert(fabs(photon->exit_coords.y - (-0.000247)) < 1.e-5);
 	assert(fabs(photon->exit_coords.z - 0.004948) < 1.e-5);
+	polycap_photon_free(photon);
+
+	//works, with reflection and sufficient weight
+	*ix = 0;
+	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	assert(photon != NULL);
+	polycap_clear_error(&error);
+	photon->n_energies = 1.;
+	photon->energies = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->energies != NULL);
+	photon->weight = malloc(sizeof(double)*photon->n_energies);
+	assert(photon->weight != NULL);
+	polycap_clear_error(&error);
+	photon->energies[0] = energies;
+	photon->weight[0] = 1.;
+	photon->i_refl = 0;
+	//calculate attenuation coefficients and scattering factors
+	polycap_photon_scatf(photon, &error);
+	polycap_clear_error(&error);
+	photon->exit_direction.x = 3.e-5;
+	photon->exit_direction.y = 3.e-5;
+	photon->exit_direction.z = 0.999;
+	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
+	assert(test == 0);
+	assert(fabs(photon->weight[0] - 0.999585 ) < 1.e-4);
+	assert(*ix == 552);
+	assert(photon->i_refl == 1);
+	assert(fabs(photon->exit_direction.x - (-0.000069)) < 1.e-5);
+	assert(fabs(photon->exit_direction.y - (-0.000069)) < 1.e-5);
+	assert(fabs(photon->exit_direction.z - 1.) < 1.e-5);
+	assert(fabs(photon->exit_coords.x - 0.000149) < 1.e-5);
+	assert(fabs(photon->exit_coords.y - 0.000149) < 1.e-5);
+	assert(fabs(photon->exit_coords.z - 4.975778) < 1.e-5);
 	polycap_photon_free(photon);
 
 	//Works but photon is absorbed
