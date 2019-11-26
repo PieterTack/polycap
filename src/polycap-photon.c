@@ -213,7 +213,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	double weight;
 	int i, photon_pos_check, iesc=0;
 	double n_shells; //amount of capillary shells in polycapillary
-	int i_capx, i_capy; //indices of selected capillary
+	double q_i, r_i; //indices of selected capillary
 	double capx_0, capy_0; //coordinates of selected capillary at polycap entrance
 	double *cap_x, *cap_y; //arrays containing selected capillary central axis coordinates
 	int ix_val = 0;
@@ -269,6 +269,13 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	polycap_description *description = photon->description;
 	if (description == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: description cannot be NULL");
+		return -1;
+	}
+	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
+	if(polycap_description_validate_profile(description, error) != 1){
+printf("Shit happened %i\n",polycap_description_validate_profile(description, NULL));
+		polycap_clear_error(error);
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
 		return -1;
 	}
 
@@ -338,11 +345,27 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		capy_0 = 0;
 	} else {    // proper polycapillary case
 		//obtain selected capillary indices
-		i_capx = round( (photon->start_coords.x-(photon->start_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (current_polycap_ext / (n_shells)) );
-		i_capy = round( (photon->start_coords.y)/(current_polycap_ext/(n_shells)*sin(M_PI/3.)) );
+		r_i = photon->start_coords.y * (2./3) / (sqrt(5./16)*photon->description->profile->ext[z_id]/(n_shells+1));
+		q_i = (photon->start_coords.y/3 + photon->start_coords.x/(2.*sin(M_PI/3.))) / (sqrt(5./16)*photon->description->profile->ext[z_id]/(n_shells+1));
+printf("before: q: %lf, r: %lf, n_shells: %lf\n",q_i,r_i, n_shells);
+		if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
+			q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
+			r_i = round(r_i);
+		} else if (fabs(r_i - round(r_i)) >  fabs(-1.*q_i-r_i - round(-1.*q_i-r_i))){
+			r_i = -1.*round(q_i) - round(-1.*q_i-r_i);
+			q_i = round(q_i);
+		} else {
+			q_i = round(q_i);
+			r_i = round(r_i);
+		}
+printf("after: q: %lf, r: %lf\n",q_i,r_i);
 		//convert indexed capillary centre to coordinates
-		capx_0 = i_capx * description->profile->ext[0]/(n_shells) + i_capy * description->profile->ext[0]/(n_shells)*cos(M_PI/3.);
-		capy_0 = i_capy * (description->profile->ext[0]/(n_shells))*sin(M_PI/3.);
+		capy_0 = r_i * (3./2) * sqrt(5./16)*(photon->description->profile->ext[i]/(n_shells+1));
+		capx_0 = (2* q_i-r_i) * sin(M_PI/3.) * sqrt(5./16)*(photon->description->profile->ext[i]/(n_shells+1));
+photon->exit_coords.x = capx_0;
+photon->exit_coords.y = capy_0;
+photon->exit_coords.z = 0;
+printf("	check: phot: %i, cap: %i\n", polycap_photon_within_pc_boundary(current_polycap_ext, photon->start_coords, NULL), polycap_photon_within_pc_boundary(current_polycap_ext, photon->exit_coords, NULL));
 	}
 
 	//Set exit coordinates and direction equal to start coordinates and direction in order to get a clean launch

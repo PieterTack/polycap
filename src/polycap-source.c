@@ -357,7 +357,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	polycap_description_check_weight(description->nelem, description->wi, error);
 
 	// Calculate open area
-	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
+	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap; //TODO: n_cap should here be the actual number of capillaries used, not the theoretically supplied one (i.e. 200000 capillaries does not form perfect hexagonal stacking, so a few less/more are simulated)
 
 	//Perform source and description argument sanity check
 	if (source->d_source < 0.0){

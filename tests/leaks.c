@@ -913,9 +913,6 @@ double energies[9]={1,5,10,15,20,25,30};
 //	start_direction.z = 1.0;
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 
-for(test=0;test<=description->profile->nmax;test++){
-	printf("id: %i, open area: %lf\n", test, (description->profile->cap[test]/description->profile->ext[test]) * (description->profile->cap[test]/description->profile->ext[test]) * description->n_cap);
-}
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 	test = polycap_photon_launch(photon, 7., energies, &weights, true, &error);
@@ -943,16 +940,20 @@ void test_polycap_source_leak() {
 	double rad_int_downstream = 9.9153E-5;
 	double focal_dist_upstream = 1000.0;
 	double focal_dist_downstream = 0.5;
-//	polycap_rng *rng;
-//	polycap_rng *rng2;
 
+/*	polycap_rng *rng;
+	polycap_rng *rng2;
+*/
 	int n_photons = 2000;
-//	int i,j;
-//	int iesc1=0, iesc2=0;
-//	double *weights1;
-//	double *weights2;
-//	polycap_photon *photon;
-//	polycap_photon *photon2;
+
+/*	int i,j;
+	int iesc1=0, iesc2=0;
+	double *weights1;
+	double *weights2;
+	polycap_photon *photon;
+	polycap_photon *photon2;
+*/
+
 	polycap_transmission_efficiencies *efficiencies;
 	polycap_transmission_efficiencies *efficiencies2;
 
@@ -968,30 +969,32 @@ void test_polycap_source_leak() {
 	polycap_clear_error(&error);
 	assert(source != NULL);
 
+/*
 	// Create new rng
-//	rng = polycap_rng_new_with_seed(20000);
-//	rng2 = polycap_rng_new_with_seed(20000);
+	rng = polycap_rng_new_with_seed(20000);
+	rng2 = polycap_rng_new_with_seed(20000);
 
 	//Let's first test wether polycap_photon_launch returns the same value for a large amount of random photons, independent of leak_calc
-//	for(i=0; i<n_photons; i++){
-//		photon = polycap_source_get_photon(source, rng, NULL);
-//		iesc1 = polycap_photon_launch(photon, source->n_energies, source->energies, &weights1, true, NULL);
-//		photon2 = polycap_source_get_photon(source, rng2, NULL);
-//		iesc2 = polycap_photon_launch(photon2, source->n_energies, source->energies, &weights2, false, NULL);
-//		if(iesc1 != iesc2){
-//			printf("----\n");
-//			printf("i: %i, iesc1: %i, iesc2: %i\n", i, iesc1, iesc2);
-//			printf("photon start x: %lf, y: %lf, z: %lf, dirx: %lf, y: %lf, z: %lf\n", photon->start_coords.x, photon->start_coords.y, photon->start_coords.z, photon->start_direction.x, photon->start_direction.y, photon->start_direction.z);
-//			for(j=0;j<source->n_energies;j++) printf("Energy: %lf, Weights1: %lf, Weights2: %lf\n", source->energies[j], weights1[j], weights2[j]);
-//		}
-//		assert(iesc1 == iesc2);
-//		free(weights1);
-//		weights1 = NULL;
-//		free(weights2);
-//		weights2 = NULL;
-//		polycap_photon_free(photon);
-//		polycap_photon_free(photon2);
-//	}
+	for(i=0; i<n_photons; i++){
+		photon = polycap_source_get_photon(source, rng, NULL);
+		iesc1 = polycap_photon_launch(photon, source->n_energies, source->energies, &weights1, true, NULL);
+		photon2 = polycap_source_get_photon(source, rng2, NULL);
+		iesc2 = polycap_photon_launch(photon2, source->n_energies, source->energies, &weights2, false, NULL);
+		if(iesc1 != iesc2){
+			printf("----\n");
+			printf("i: %i, iesc1: %i, iesc2: %i\n", i, iesc1, iesc2);
+			printf("photon start x: %lf, y: %lf, z: %lf, dirx: %lf, y: %lf, z: %lf\n", photon->start_coords.x, photon->start_coords.y, photon->start_coords.z, photon->start_direction.x, photon->start_direction.y, photon->start_direction.z);
+			for(j=0;j<source->n_energies;j++) printf("Energy: %lf, Weights1: %lf, Weights2: %lf\n", source->energies[j], weights1[j], weights2[j]);
+		}
+		assert(iesc1 == iesc2);
+		free(weights1);
+		weights1 = NULL;
+		free(weights2);
+		weights2 = NULL;
+		polycap_photon_free(photon);
+		polycap_photon_free(photon2);
+	}
+*/
 	
 	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, n_photons, true, NULL, &error);
 	assert(efficiencies != NULL);

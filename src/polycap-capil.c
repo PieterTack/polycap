@@ -323,7 +323,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 	double cons1, r_rough;
 	double complex rtot; //reflectivity
 	double *w_leak; //leak weight
-	int capx_cntr, capy_cntr; //indices of neighbouring capillary photon traveled towards
+	int r_cntr, q_cntr; //indices of neighbouring capillary photon traveled towards
 	double d_travel;  //distance photon traveled through the capillary wall
 	int leak_flag=0, weight_flag=0;
 	polycap_vector3 leak_coords;
@@ -361,7 +361,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 	//for halo effect one calculates here the distance traveled through the capillary wall d_travel
 	//	if leak_calc is false wall_trace will remain 0 and the whole leak calculation will be skipped
 	if(leak_calc){
-		wall_trace = polycap_capil_trace_wall(photon, &d_travel, &capx_cntr, &capy_cntr, error);
+		wall_trace = polycap_capil_trace_wall(photon, &d_travel, &r_cntr, &q_cntr, error);
 		if(wall_trace == -1){
 			free(w_leak);
 			return -1;
@@ -514,8 +514,8 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 					capx_temp[i] = 0.;
 					capy_temp[i] = 0.;
 				} else {
-					capx_temp[i] = (description->profile->ext[i] * capx_cntr) / n_shells + ((capy_cntr * description->profile->ext[i]) / n_shells) * cos(M_PI/3.);
-					capy_temp[i] = ((description->profile->ext[i] * capy_cntr) / n_shells) * sin(M_PI/3.);
+					capy_temp[i] = r_cntr * (3./2) * sqrt(5./16)*(description->profile->ext[i]/(n_shells+1));
+					capx_temp[i] = (r_cntr + 2* q_cntr) * sin(M_PI/3.) * sqrt(5./16)*(description->profile->ext[i]/(n_shells+1));
 				}
 			}
 			//polycap_capil_trace should be ran description->profile->nmax at most,
@@ -652,7 +652,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 //===========================================
 // trace photon from current interaction point through the capillary wall to neighbouring capillary (if any)
 //TODO: currently ignores the refraction of light when going from air to polycap medium
-HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *capx_cntr, int *capy_cntr, polycap_error **error)
+HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cntr, int *q_cntr, polycap_error **error)
 {
 	int i, photon_pos_check = 0, iesc = 0;
 	int z_id = 0; 
@@ -660,8 +660,7 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	double d_proj = 0; //projection distance between photon coordinate and new point (relative to photon propagation in Z)
 	polycap_vector3 new_photon_coords, photon_coord_rel; //coordinates of the photon after projection along Z
 	double n_shells; //amount of capillary shells in polycapillary
-	int i_capx, i_capy; //indices of selected capillary
-	int i_capx_max, i_capy_max; //maxmal indices of polycapillary along path from optic centre to current photon coordinate
+	double r_i, q_i; //indices of selected capillary
 	double capx_0, capy_0; //coordinates of selected capillary at polycap entrance
 	double d_ph_capcen; //distance between photon start coordinates and selected capillary center
 
@@ -726,11 +725,21 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 
 		} else {    // proper polycapillary case
 			// obtain the capillary indices of the capillary region the photon is currently in
-			i_capx = round( (new_photon_coords.x-(new_photon_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (photon->description->profile->ext[z_id] / (n_shells)) );
-			i_capy = round( (new_photon_coords.y)/(photon->description->profile->ext[z_id]/(n_shells)*sin(M_PI/3.)) );
+			r_i = new_photon_coords.y * (2./3) / (sqrt(5./16)*photon->description->profile->ext[z_id]/(n_shells+1));
+			q_i = (new_photon_coords.y/3 + new_photon_coords.x/(2.*sin(M_PI/3.))) / (sqrt(5./16)*photon->description->profile->ext[z_id]/(n_shells+1));
+			if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
+				q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
+				r_i = round(r_i);
+			} else if (fabs(r_i - round(r_i)) >  fabs(-1.*q_i-r_i - round(-1.*q_i-r_i))){
+				r_i = -1.*round(q_i) - round(-1.*q_i-r_i);
+				q_i = round(q_i);
+			} else {
+				q_i = round(q_i);
+				r_i = round(r_i);
+			}
 			// convert the obtained indices to centre capillary coordinates
-			capx_0 = i_capx * photon->description->profile->ext[z_id]/(n_shells) + i_capy * photon->description->profile->ext[z_id]/(n_shells)*cos(M_PI/3.);
-			capy_0 = i_capy * (photon->description->profile->ext[z_id]/(n_shells))*sin(M_PI/3.);
+			capy_0 = r_i * (3./2) * sqrt(5./16)*(photon->description->profile->ext[i]/(n_shells+1));
+			capx_0 = (2* q_i - r_i) * sin(M_PI/3.) * sqrt(5./16)*(photon->description->profile->ext[i]/(n_shells+1));
 
 			//Check whether photon coordinate is within capillary (within capillary center at distance < capillary radius)
 			d_ph_capcen = sqrt( (new_photon_coords.x-capx_0)*(new_photon_coords.x-capx_0) + (new_photon_coords.y-capy_0)*(new_photon_coords.y-capy_0) );
@@ -748,14 +757,8 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	if(iesc == 0) iesc = 2;
 
 	// An additional check must be made to make sure the photon actually is outside of capillary (above checks only test for reaching final shell, yet in some cases there are not more capillaries beyond this position)
-	//	determine angle between X-axis and given coordinate (at z[z_id])
-	//	using this angle, determine what outer shell index should be
-	//	check if current i_capx or i_capy are at these values (i.e. is this the outer capillary we're in?)
-	//		perhaps this check should occur after escaping from do...while clause
 	if(n_shells != 0 && z_id < photon->description->profile->nmax){ //Only do this for polycapillary case
-		i_capx_max = round( (photon->description->profile->ext[z_id]*cos(atan(new_photon_coords.y/new_photon_coords.x)) - (photon->description->profile->ext[z_id]*sin(atan(new_photon_coords.y/new_photon_coords.x))*cos(M_PI/3.)/sin(M_PI/3.)) ) / (photon->description->profile->ext[z_id] / (n_shells)) );
-		i_capy_max = round( (photon->description->profile->ext[z_id]*sin(atan(new_photon_coords.y/new_photon_coords.x))) / (photon->description->profile->ext[z_id]/(n_shells)*sin(M_PI/3.)) );
-		if(abs(i_capx) >= abs(i_capx_max) && abs(i_capy) >= abs(i_capy_max)){ //photon entered region where no other capillaries are anymore (either it's outside, or about to go outside)
+		if(fabs(q_i) > n_shells || fabs(r_i) > n_shells || fabs(-1.*q_i-r_i) > n_shells){ //photon entered region where no other capillaries are anymore (either it's outside, or about to go outside)
 			iesc = 2; // should eventually return 3
 			// adjust d_travel to go to actual outside of optic
 			do{
@@ -775,8 +778,8 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	photon_coord_rel.z = new_photon_coords.z - photon->exit_coords.z;
 	*d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));
 	//returned the indices of the capillary where the photon is currently in
-	*capx_cntr = i_capx;
-	*capy_cntr = i_capy;
+	*r_cntr = abs(r_i);
+	*q_cntr = abs(q_i);
 	if(iesc == 1){ //photon is within a new capillary
 		if(z_id >= photon->description->profile->nmax){ // photon reached end of polycap in the glass wall
 			return 2;
@@ -845,14 +848,14 @@ HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_descript
 	photon_dir.z = photon->exit_direction.z;
 
 	//look for guess of proper interaction index along z axis
-//	for(i=*ix+1; i<=description->profile->nmax; i++){
-//		temp_phot.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i-1]-photon->exit_coords.z)/photon->exit_direction.z;
-//		temp_phot.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i-1]-photon->exit_coords.z)/photon->exit_direction.z;
-//		temp_phot.z = description->profile->z[i-1];
-//		d_phot = sqrt( (temp_phot.x-cap_x[i-1])*(temp_phot.x-cap_x[i-1]) + (temp_phot.y-cap_y[i-1])*(temp_phot.y-cap_y[i-1])  );
-//		if( d_phot < description->profile->cap[i-1])
-//			*ix=i-1;
-//	}
+	for(i=*ix+1; i<=description->profile->nmax; i++){
+		temp_phot.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i-1]-photon->exit_coords.z)/photon->exit_direction.z;
+		temp_phot.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i-1]-photon->exit_coords.z)/photon->exit_direction.z;
+		temp_phot.z = description->profile->z[i-1];
+		d_phot = sqrt( (temp_phot.x-cap_x[i-1])*(temp_phot.x-cap_x[i-1]) + (temp_phot.y-cap_y[i-1])*(temp_phot.y-cap_y[i-1])  );
+		if( d_phot < description->profile->cap[i-1])
+			*ix=i-1;
+	}
 
 	for(i=*ix+1; i<=description->profile->nmax; i++){
 		//check if photon would still be inside optic at these positions (it should be!)
@@ -861,6 +864,7 @@ HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_descript
 		temp_phot.z = description->profile->z[i-1];
 		if(polycap_photon_within_pc_boundary(description->profile->ext[i-1], temp_phot, error) == 0){ //often occurs
 			printf("	Error2: photon escaping from optic!: x: %lf, y: %lf, z: %lf, i-1: %i, ext: %lf, d: %lf\n", temp_phot.x, temp_phot.y, temp_phot.z, i-1, description->profile->ext[i-1], sqrt(temp_phot.x*temp_phot.x+temp_phot.y*temp_phot.y));
+//	so here photon is not within polycap, but is within radial distance of capillary with central axis [cap_x,cap_y]
 //			return -2;
 		}
 		cap_coord0.x = cap_x[i-1];
@@ -872,10 +876,12 @@ HIDDEN int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_descript
 		cap_coord1.z = description->profile->z[i];
 		cap_rad1 = description->profile->cap[i];
 		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, &photon_coord, photon_dir, &surface_norm, &alfa, error);
+
 //TODO: this check only works for polycap. Make monocap case.
 current_polycap_ext = ((photon->description->profile->ext[i-1] - photon->description->profile->ext[i])/
 	(photon->description->profile->z[i-1] - photon->description->profile->z[i])) * 
 	(photon_coord.z - photon->description->profile->z[i]) + photon->description->profile->ext[i-1];
+/*
 //TODO: check if photon_coord and location of next intersection point are in same capillary...
 int i_capx, i_capy;
 double n_shells;
@@ -886,10 +892,11 @@ i_capy = round( (photon_coord.y)/(current_polycap_ext/(n_shells)*sin(M_PI/3.)) )
 //printf("Segment end: iesc: %i, phot.z: %lf, z[i-1]: %lf, z[i]: %lf // phot start.x: %lf, y: %lf, z: %lf, dir.x: %lf, y: %lf, z: %lf\n", iesc, photon_coord.z, photon->description->profile->z[i-1], photon->description->profile->z[i], photon->start_coords.x, photon->start_coords.y, photon->start_coords.z, photon->start_direction.x, photon->start_direction.y, photon->start_direction.z);
 //printf("	*phot_coord.x: %lf, y: %lf, z: %lf, i_refl: %li, i-1: %i, ext_cur: %lf\n", photon_coord.x, photon_coord.y, photon_coord.z, photon->i_refl, i-1, current_polycap_ext);
 //printf("	*phot_coord capx: %i, capy: %i, n_shells: %lf\n", i_capx, i_capy, n_shells);
+*/
 		if(iesc == 0){
 			//check if photon is inside optic
 			if(polycap_photon_within_pc_boundary(current_polycap_ext, photon_coord, error) == 0){
-//printf("	Segment end: photon not in polycap!!\n");
+printf("	Segment end: photon not in polycap!!\n");
 return -2;
 			}
 			*ix = i-1;
