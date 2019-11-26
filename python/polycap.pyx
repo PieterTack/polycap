@@ -11,6 +11,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
+
+cdef extern from "config.h":
+    char *version "VERSION"
+
+cdef extern from "polycap.h":
+    void polycap_free(void *)
+
 from error cimport *
 from rng cimport *
 from profile cimport *
@@ -25,15 +32,14 @@ cimport numpy as np
 import numpy as np
 import sys
 
+__version__ = version
+
 np.import_array()
 
 cdef extern from "Python.h":
     ctypedef void PyObject
     PyObject* PyErr_Occurred()
     void PyErr_SetString(object type, const char *message)
-
-cdef extern from "polycap.h":
-    void polycap_free(void *)
 
 cdef extern from "xraylib.h":
     int SymbolToAtomicNumber(const char *symbol)
@@ -50,12 +56,7 @@ cdef extern from "xraylib.h":
     void FreeCompoundData(compoundData *cd)
     compoundData* CompoundParser(const char compoundString[])
 
-cdef extern from "config.h" nogil:
-    char *version "VERSION"
-
 SetErrorMessages(0)
-
-__version__ = version
 
 error_map = {
     POLYCAP_ERROR_MEMORY: MemoryError,

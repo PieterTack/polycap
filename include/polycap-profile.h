@@ -65,6 +65,7 @@ typedef struct _polycap_profile                     polycap_profile;
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a new polycap_profile, or \c NULL if an error occurred
  */
+POLYCAP_EXTERN
 polycap_profile* polycap_profile_new(
 	polycap_profile_type type,
 	double length,
@@ -88,6 +89,7 @@ polycap_profile* polycap_profile_new(
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a new polycap_profile, or \c NULL if an error occurred
  */
+POLYCAP_EXTERN
 polycap_profile* polycap_profile_new_from_file(
 	const char *single_cap_profile_file,
 	const char *central_axis_file,
@@ -98,6 +100,7 @@ polycap_profile* polycap_profile_new_from_file(
  *
  * \param profile a polycap_profile
  */
+POLYCAP_EXTERN
 void polycap_profile_free(polycap_profile *profile);
 
 #ifdef __cplusplus

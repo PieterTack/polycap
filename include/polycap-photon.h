@@ -56,6 +56,7 @@ typedef struct _polycap_photon                      polycap_photon;
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a new polycap_photon, or \c NULL if an error occurred
  */
+POLYCAP_EXTERN
 polycap_photon* polycap_photon_new(
 	polycap_description *description,
 	polycap_rng *rng,
@@ -76,6 +77,7 @@ polycap_photon* polycap_photon_new(
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns an int: 0 if photon was absorbed by the polycapillary, 1 if photon reached the end of the polycapillary, -1 on error
  */
+POLYCAP_EXTERN
 int polycap_photon_launch(
 	polycap_photon *photon, 
 	size_t n_energies,
@@ -89,6 +91,7 @@ int polycap_photon_launch(
  * \param photon a polycap_photon
  * \returns exit coordinates
  */
+POLYCAP_EXTERN
 polycap_vector3 polycap_photon_get_exit_coords(polycap_photon *photon);
 
 /** Retrieve exit direction vector from a polycap_photon
@@ -96,6 +99,7 @@ polycap_vector3 polycap_photon_get_exit_coords(polycap_photon *photon);
  * \param photon a polycap_photon
  * \returns exit direction vector
  */
+POLYCAP_EXTERN
 polycap_vector3 polycap_photon_get_exit_direction(polycap_photon *photon);
 
 /** Retrieve exit electric field vector from a polycap_photon
@@ -103,12 +107,14 @@ polycap_vector3 polycap_photon_get_exit_direction(polycap_photon *photon);
  * \param photon a polycap_photon
  * \returns exit electric field vector
  */
+POLYCAP_EXTERN
 polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
 
 /** Free a polycap_photon
  * 
  * \param photon a polycap_photon
  */
+POLYCAP_EXTERN
 void polycap_photon_free(polycap_photon *photon);
 
 #ifdef __cplusplus

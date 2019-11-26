@@ -21,6 +21,10 @@
 #ifndef POLYCAP_H
 #define POLYCAP_H
 
+#ifndef POLYCAP_EXTERN
+#define POLYCAP_EXTERN extern
+#endif
+
 #include "polycap-error.h"
 #include "polycap-profile.h"
 #include "polycap-description.h"
@@ -45,6 +49,7 @@ extern "C" {
  * Use this function to free memory allocated by polycap methods that do not have a corresponding free function.
  * \param data Pointer to the memory block that needs to be free'ed
  */
+POLYCAP_EXTERN
 void polycap_free(void *data);
 
 #ifdef __cplusplus

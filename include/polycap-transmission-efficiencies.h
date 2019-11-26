@@ -40,6 +40,7 @@ typedef struct _polycap_transmission_efficiencies   polycap_transmission_efficie
  *
  * \param efficiencies a polycap_transmission_efficiencies
  */
+POLYCAP_EXTERN
 void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *efficiencies);
 
 /** Write polycap_transmission_efficiencies data to a hdf5 file
@@ -49,6 +50,7 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns true or false, or \c NULL if an error occurred
  */
+POLYCAP_EXTERN
 bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficiencies *efficiencies, const char *filename, polycap_error **error);
 
 /** Extract data from a polycap_transmission_efficiencies struct. returned arrays should be freed by the user with polycap_free() or free().
@@ -60,6 +62,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns true or false
  */
+POLYCAP_EXTERN
 bool polycap_transmission_efficiencies_get_data(polycap_transmission_efficiencies *efficiencies, size_t *n_energies, double **energies_arr, double **efficiencies_arr, polycap_error **error);
 
 #ifdef __cplusplus

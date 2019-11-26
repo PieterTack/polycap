@@ -40,6 +40,7 @@ typedef struct _polycap_rng                         polycap_rng;
  *
  * \returns a new polycap_rng
  */
+POLYCAP_EXTERN
 polycap_rng* polycap_rng_new(void);
 
 /** get a new rng with seed provided by caller
@@ -47,12 +48,14 @@ polycap_rng* polycap_rng_new(void);
  * \param seed a seed provided by the caller
  * \returns a new polycap_rng
  */
+POLYCAP_EXTERN
 polycap_rng* polycap_rng_new_with_seed(unsigned long int seed);
 
 /** free a polycap_rng structure
  *
  * \param rng a polycap_rng
  */
+POLYCAP_EXTERN
 void polycap_rng_free(polycap_rng *rng);
 
 #ifdef __cplusplus

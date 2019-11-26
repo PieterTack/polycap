@@ -22,7 +22,7 @@ m4_ifdef([AM_PROG_AR],[AM_PROG_AR])
 #at least version 2.0 of libtool is required for creating the fortran bindings
 LT_PREREQ([2.0.0])
 #dlopen is necessary for IDL bindings
-LT_INIT([dlopen disable-fast-install win32-dll])
+LT_INIT([dlopen disable-fast-install win32-dll disable-static])
 #AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
 
@@ -58,6 +58,40 @@ AC_CHECK_FUNC([vasprintf], [], [AC_MSG_ERROR([vasprintf must be present on the s
 AC_CHECK_FUNC([strdup], [], [AC_MSG_ERROR([strdup must be present on the system])])
 AC_CHECK_FUNC([gettimeofday], [], [AC_MSG_ERROR([strdup must be present on the system])])
 CFLAGS=$CFLAGS_BKP
+
+# Symbol visibility handling.
+#
+# Taken from gtksourceview and modified where necessary
+HIDDEN_VISIBILITY_CFLAGS=""
+case "$host" in
+    *-*-mingw*)
+        dnl on mingw32 we do -fvisibility=hidden and __declspec(dllexport)
+        AC_DEFINE([POLYCAP_EXTERN], [__attribute__((visibility("default"))) __declspec(dllexport) extern],
+                  [defines how to decorate public symbols while building])
+        HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
+        ;;
+    *)
+        dnl on other compilers, check if we can do -fvisibility=hidden
+        SAVED_CFLAGS="${CFLAGS}"
+        CFLAGS="-fvisibility=hidden"
+        AC_MSG_CHECKING([for -fvisibility=hidden compiler flag])
+        AC_TRY_COMPILE([], [return 0],
+                       AC_MSG_RESULT(yes)
+                       enable_fvisibility_hidden=yes,
+                       AC_MSG_RESULT(no)
+                       enable_fvisibility_hidden=no)
+        CFLAGS="${SAVED_CFLAGS}"
+
+        AS_IF([test "${enable_fvisibility_hidden}" = "yes"], [
+            AC_DEFINE([POLYCAP_EXTERN], [__attribute__((visibility("default"))) extern],
+                      [defines how to decorate public symbols while building])
+            HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
+        ])
+        ;;
+esac
+AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
+
+
 
 #initialize pkg-config
 PKG_PROG_PKG_CONFIG
