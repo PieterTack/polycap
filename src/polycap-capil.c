@@ -652,7 +652,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 //===========================================
 // trace photon from current interaction point through the capillary wall to neighbouring capillary (if any)
 //TODO: currently ignores the refraction of light when going from air to polycap medium
-HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cntr, int *q_cntr, polycap_error **error)
+int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cntr, int *q_cntr, polycap_error **error)
 {
 	int i, photon_pos_check = 0, iesc = 0;
 	int z_id = 0; 
@@ -778,8 +778,8 @@ HIDDEN int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, in
 	photon_coord_rel.z = new_photon_coords.z - photon->exit_coords.z;
 	*d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));
 	//returned the indices of the capillary where the photon is currently in
-	*r_cntr = abs(r_i);
-	*q_cntr = abs(q_i);
+	*r_cntr = fabs(r_i);
+	*q_cntr = fabs(q_i);
 	if(iesc == 1){ //photon is within a new capillary
 		if(z_id >= photon->description->profile->nmax){ // photon reached end of polycap in the glass wall
 			return 2;
