@@ -271,13 +271,6 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: description cannot be NULL");
 		return -1;
 	}
-	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
-	if(polycap_description_validate_profile(description, error) != 1){
-printf("Shit happened %i\n",polycap_description_validate_profile(description, NULL));
-		polycap_clear_error(error);
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
-		return -1;
-	}
 
 	//fill in energy array and initiate weights
 	*weights = malloc(sizeof(double)*n_energies);
@@ -347,7 +340,6 @@ printf("Shit happened %i\n",polycap_description_validate_profile(description, NU
 		//obtain selected capillary indices
 		r_i = photon->start_coords.y * (2./3) / (sqrt(5./16)*photon->description->profile->ext[z_id]/(n_shells+1));
 		q_i = (photon->start_coords.y/3 + photon->start_coords.x/(2.*sin(M_PI/3.))) / (sqrt(5./16)*photon->description->profile->ext[z_id]/(n_shells+1));
-printf("before: q: %lf, r: %lf, n_shells: %lf\n",q_i,r_i, n_shells);
 		if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
 			q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
 			r_i = round(r_i);
@@ -358,14 +350,9 @@ printf("before: q: %lf, r: %lf, n_shells: %lf\n",q_i,r_i, n_shells);
 			q_i = round(q_i);
 			r_i = round(r_i);
 		}
-printf("after: q: %lf, r: %lf\n",q_i,r_i);
 		//convert indexed capillary centre to coordinates
 		capy_0 = r_i * (3./2) * sqrt(5./16)*(photon->description->profile->ext[i]/(n_shells+1));
 		capx_0 = (2* q_i-r_i) * sin(M_PI/3.) * sqrt(5./16)*(photon->description->profile->ext[i]/(n_shells+1));
-photon->exit_coords.x = capx_0;
-photon->exit_coords.y = capy_0;
-photon->exit_coords.z = 0;
-printf("	check: phot: %i, cap: %i\n", polycap_photon_within_pc_boundary(current_polycap_ext, photon->start_coords, NULL), polycap_photon_within_pc_boundary(current_polycap_ext, photon->exit_coords, NULL));
 	}
 
 	//Set exit coordinates and direction equal to start coordinates and direction in order to get a clean launch
@@ -412,20 +399,20 @@ printf("	check: phot: %i, cap: %i\n", polycap_photon_within_pc_boundary(current_
 		current_cap_y = capy_0;
 	}
 	d_ph_capcen = sqrt( (photon->start_coords.x-current_cap_x)*(photon->start_coords.x-current_cap_x) + (photon->start_coords.y-current_cap_y)*(photon->start_coords.y-current_cap_y) );
-	if(d_ph_capcen > current_cap_rad){ //photon hits capillary wall on entrance
+	if(d_ph_capcen > current_cap_rad && photon->start_coords.z == 0){ //photon hits capillary wall on entrance
 		//Check whether photon is transmitted through wall (i.e. generates leak or recap events)
 		if(leak_calc)
 			polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
 		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies()
-	}
+	} //TODO: there is also the case where photon is launched within capillary wall at z>0...
 
-	//calculate initial photon weight based on capillary channel effective solid angle.
+/*	//calculate initial photon weight based on capillary channel effective solid angle.
 	//Mathematically, this is the cos of the angle between photon propagation and polycapillary-to-photonsource axis
 	weight = polycap_scalar(photon->start_direction,central_axis);
 	for(i=0; i<photon->n_energies; i++){
 		photon->weight[i] = photon->weight[i] * weight;
 	}
-
+*/ //TODO: this section is perhaps outdated. It surely could mess up simulations where the source is very close to optic entrance
 	
 	//polycap_capil_trace should be ran description->profile->nmax at most,
 	//	which means it essentially reflected once every known capillary coordinate

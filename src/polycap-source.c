@@ -207,6 +207,13 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 	source->n_energies = n_energies;
 	memcpy(source->energies, energies, sizeof(double)*n_energies);
 	source->description = polycap_description_new(description->profile, description->sig_rough, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
+	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
+	if(source->description == NULL){
+		polycap_clear_error(error);
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
+		polycap_source_free(source);
+		return NULL;
+	}
 
 	return source;
 }
@@ -411,6 +418,14 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	}
 	if (description->density < 0.0){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->density must be greater than 0.0");
+		polycap_source_free(source);
+		return NULL;
+	}
+
+	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
+	if(polycap_profile_validate(description->profile, description->n_cap, error) != 1){
+		polycap_clear_error(error);
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
 		polycap_source_free(source);
 		return NULL;
 	}

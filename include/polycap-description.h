@@ -62,14 +62,6 @@ polycap_description* polycap_description_new(
 	double density,
 	polycap_error **error);
 
-/** Checks a profile of a polycap_description for inconsistencies between inner capillary coordinates and the external radius.
- *
- * \param description polycap_description containing a polycap_profile containing outer polycapillary and single capillary shape coordinates
- * \param error a pointer to a \c NULL polycap_error, or \c NULL
- * \returns an integer: 1 on success (valid profile), 0 on fail, -1 on error
- */
-int polycap_description_validate_profile(polycap_description *description, polycap_error **error);
-
 /** Extract the polycap_profile from a polycap_description
  * \param description polycap_description to extract a polycap_profile from
  * \returns a new polycap_profile

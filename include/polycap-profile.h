@@ -22,6 +22,8 @@
 #define POLYCAP_PROFILE_H
 
 #include "polycap-error.h"
+#include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,6 +97,15 @@ polycap_profile* polycap_profile_new_from_file(
 	const char *central_axis_file,
 	const char *external_shape_file,
 	polycap_error **error);
+
+/** Checks a profile of a polycap_description for inconsistencies between inner capillary coordinates and the external radius.
+ *
+ * \param description polycap_description containing a polycap_profile containing outer polycapillary and single capillary shape coordinates
+ * \param n_cap amount of capillaries in the X-ray optic
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns an integer: 1 on success (valid profile), 0 on fail, -1 on error
+ */
+int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_error **error);
 
 /** Free the polycap_profile structure and its associated data
  *

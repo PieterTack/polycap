@@ -876,6 +876,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 		cap_coord1.z = description->profile->z[i];
 		cap_rad1 = description->profile->cap[i];
 		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, &photon_coord, photon_dir, &surface_norm, &alfa, error);
+printf("	segment returns: %i\n", iesc);
 
 //TODO: this check only works for polycap. Make monocap case.
 current_polycap_ext = ((photon->description->profile->ext[i-1] - photon->description->profile->ext[i])/
@@ -929,8 +930,6 @@ return -2;
 			if(polycap_photon_within_pc_boundary(current_polycap_ext, photon->exit_coords, error) == 0){
 				//photon somehow outside of PC after polycap_capil_segment
 				//	register as leaked event
-//if(leak_calc==true) printf("**	leak: coords outside of PC!\n");
-//if(leak_calc==false) printf("**	noleak: coords outside of PC!\n");
 				iesc = 1;
 			} else {
 				alfa = M_PI_2 - alfa;
