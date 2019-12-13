@@ -75,7 +75,7 @@ polycap_photon* polycap_photon_new(
  * \param weights an array that will contain the transmission efficiency values
  * \param leak_calc True: perform leak calculation; False: do not perform leak calculation
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
- * \returns an int: 0 if photon was absorbed by the polycapillary, 1 if photon reached the end of the polycapillary, -1 on error
+ * \returns an int: 0 if photon was absorbed by the polycapillary, 1 if photon reached the end of the polycapillary, 2 if photon hits capillary wall on entrace, 3 if photon is not propagating towards optic entrance at start, -1 on error
  */
 POLYCAP_EXTERN
 int polycap_photon_launch(

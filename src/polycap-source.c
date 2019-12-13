@@ -738,8 +738,11 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			iesc = polycap_photon_launch(photon, source->n_energies, source->energies, &weights_temp, leak_calc, NULL);
 			//if iesc == 0 here a new photon should be simulated/started as the photon was absorbed within it.
 			//if iesc == 1 check whether photon is in PC exit window as photon reached end of PC
-			//if iesc == 2 a new photon should be simulated/started as the photon did not enter the PC (hit the glass walls)
+			//if iesc == 2 a new photon should be simulated/started as the photon hit the walls -> can still leak
+			//if iesc == 3 a new photon should be simulated/started as the photon missed the optic entrance window
 			//if iesc == -1 some error occured
+			if(iesc == -1)
+				printf("polycap_source_get_transmission_efficiencies: ERROR: polycap_photon_launch returned -1\n");
 			if(iesc == 0)
 				not_transmitted_temp[thread_id]++; //photon did not reach end of PC
 			if(iesc == 2)
@@ -877,7 +880,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				polycap_photon_free(photon); //Free photon here as a new one will be simulated 
 				free(weights_temp);
 			}
-		} while(iesc == 0 || iesc == 2 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
+		} while(iesc == 0 || iesc == 2 || iesc == 3 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
 
 		if(thread_id == 0 && (double)i/((double)n_photons/(double)max_threads/10.) >= 1.){
 			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(n_photons/max_threads)),photon->i_refl,photon->exit_coords.z, photon->d_travel);

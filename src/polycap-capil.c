@@ -74,6 +74,9 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 	}
 
 	*alfa = 0.0; //angle between surface normal and photon direction, set to 0 for now in case of premature return
+	surface_norm->x = 0.0; //set in case of premature return
+	surface_norm->y = 0.0;
+	surface_norm->z = 0.0;
 	sol_final = -1000;
 	polycap_norm(&photon_dir);
 
@@ -837,9 +840,21 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 	//normalise the direction vectors
 	polycap_norm(&photon->exit_direction);
 	polycap_norm(&photon->start_direction);
-	
-	//calculate next intersection point
 	if(photon->i_refl == 0) *ix = 0;
+
+/*
+	//make sure photon is in optic at position *ix
+	temp_phot.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[*ix+1]-photon->exit_coords.z)/photon->exit_direction.z;
+	temp_phot.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[*ix+1]-photon->exit_coords.z)/photon->exit_direction.z;
+	temp_phot.z = description->profile->z[*ix+1];
+	if(polycap_photon_within_pc_boundary(description->profile->ext[*ix+1], temp_phot, error) == 0){
+		printf("!!Error3!!\n");
+printf("	phot start.x: %lf, y: %lf, z: %lf, exit.x: %lf, y:%lf, z: %lf, ix: %i, exit dir.x: %lf, y: %lf, z: %lf, temp.x: %lf, y: %lf, z: %lf\n",photon->start_coords.x, photon->start_coords.y, photon->start_coords.z, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, *ix+1, photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z, temp_phot.x, temp_phot.y, temp_phot.z);
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_trace: photon is not within optic at start of function");
+		return -1;
+	}
+*/ //This is no longer necessary. When monitoring position *ix it actually projects back photon, along trajectory AFTER reflection (i.e. wrong interpretation). When monitoring *ix+1 only results in out of optic when at very end of optic (i.e. succesfully transmitted, but outside of exit window)
+	
 	photon_coord.x = photon->exit_coords.x;
 	photon_coord.y = photon->exit_coords.y;
 	photon_coord.z = photon->exit_coords.z;
@@ -848,59 +863,50 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 	photon_dir.z = photon->exit_direction.z;
 
 	//look for guess of proper interaction index along z axis
-	for(i=*ix+1; i<=description->profile->nmax; i++){
-		temp_phot.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i-1]-photon->exit_coords.z)/photon->exit_direction.z;
-		temp_phot.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i-1]-photon->exit_coords.z)/photon->exit_direction.z;
-		temp_phot.z = description->profile->z[i-1];
-		d_phot = sqrt( (temp_phot.x-cap_x[i-1])*(temp_phot.x-cap_x[i-1]) + (temp_phot.y-cap_y[i-1])*(temp_phot.y-cap_y[i-1])  );
-		if( d_phot < description->profile->cap[i-1])
-			*ix=i-1;
+	for(i=*ix+1; i<description->profile->nmax; i++){ //i<nmax as otherwise i+1 in next for loop could reach out of array bounds
+		temp_phot.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
+		temp_phot.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
+		temp_phot.z = description->profile->z[i];
+		d_phot = sqrt( (temp_phot.x-cap_x[i])*(temp_phot.x-cap_x[i]) + (temp_phot.y-cap_y[i])*(temp_phot.y-cap_y[i])  );
+		if( d_phot < description->profile->cap[i])
+			*ix=i;
 	}
 
-	for(i=*ix+1; i<=description->profile->nmax; i++){
+	for(i=*ix; i<description->profile->nmax; i++){ //i<nmax as otherwise i+1 could reach out of array bounds
 		//check if photon would still be inside optic at these positions (it should be!)
-		temp_phot.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i-1]-photon->exit_coords.z)/photon->exit_direction.z;
-		temp_phot.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i-1]-photon->exit_coords.z)/photon->exit_direction.z;
-		temp_phot.z = description->profile->z[i-1];
-		if(polycap_photon_within_pc_boundary(description->profile->ext[i-1], temp_phot, error) == 0){ //often occurs
-			printf("	Error2: photon escaping from optic!: x: %lf, y: %lf, z: %lf, i-1: %i, ext: %lf, d: %lf\n", temp_phot.x, temp_phot.y, temp_phot.z, i-1, description->profile->ext[i-1], sqrt(temp_phot.x*temp_phot.x+temp_phot.y*temp_phot.y));
+		temp_phot.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
+		temp_phot.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
+		temp_phot.z = description->profile->z[i];
+		if(polycap_photon_within_pc_boundary(description->profile->ext[i], temp_phot, error) == 0){ //often occurs
+			printf("Error2: photon escaping from optic!: i: %i, ext: %lf, d: %lf\n", i, description->profile->ext[i], sqrt(temp_phot.x*temp_phot.x+temp_phot.y*temp_phot.y));
+			d_phot = sqrt( (temp_phot.x-cap_x[i])*(temp_phot.x-cap_x[i]) + (temp_phot.y-cap_y[i])*(temp_phot.y-cap_y[i])  );
+			if(d_phot < description->profile->cap[i]) printf("	!!Error2b!\n");
+printf("	phot start.x: %lf, y: %lf, z: %lf, exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, temp.x: %lf, y: %lf, z: %lf\n",photon->start_coords.x, photon->start_coords.y, photon->start_coords.z, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, i, photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z, temp_phot.x, temp_phot.y, temp_phot.z);
 //	so here photon is not within polycap, but is within radial distance of capillary with central axis [cap_x,cap_y]
 //			return -2;
 		}
-		cap_coord0.x = cap_x[i-1];
-		cap_coord0.y = cap_y[i-1];
-		cap_coord0.z = description->profile->z[i-1];
-		cap_rad0 = description->profile->cap[i-1];
-		cap_coord1.x = cap_x[i];
-		cap_coord1.y = cap_y[i];
-		cap_coord1.z = description->profile->z[i];
-		cap_rad1 = description->profile->cap[i];
+		//calculate next intersection point
+		cap_coord0.x = cap_x[i];
+		cap_coord0.y = cap_y[i];
+		cap_coord0.z = description->profile->z[i];
+		cap_rad0 = description->profile->cap[i];
+		cap_coord1.x = cap_x[i+1];
+		cap_coord1.y = cap_y[i+1];
+		cap_coord1.z = description->profile->z[i+1];
+		cap_rad1 = description->profile->cap[i+1];
 		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, &photon_coord, photon_dir, &surface_norm, &alfa, error);
-printf("	segment returns: %i\n", iesc);
 
-//TODO: this check only works for polycap. Make monocap case.
-current_polycap_ext = ((photon->description->profile->ext[i-1] - photon->description->profile->ext[i])/
-	(photon->description->profile->z[i-1] - photon->description->profile->z[i])) * 
-	(photon_coord.z - photon->description->profile->z[i]) + photon->description->profile->ext[i-1];
-/*
-//TODO: check if photon_coord and location of next intersection point are in same capillary...
-int i_capx, i_capy;
-double n_shells;
-n_shells = round(sqrt(12. * photon->description->n_cap - 3.)/6.-0.5);
-i_capx = round( (photon_coord.x-(photon_coord.y*cos(M_PI/3.)/sin(M_PI/3.))) / (current_polycap_ext / (n_shells)) );
-i_capy = round( (photon_coord.y)/(current_polycap_ext/(n_shells)*sin(M_PI/3.)) );
-
-//printf("Segment end: iesc: %i, phot.z: %lf, z[i-1]: %lf, z[i]: %lf // phot start.x: %lf, y: %lf, z: %lf, dir.x: %lf, y: %lf, z: %lf\n", iesc, photon_coord.z, photon->description->profile->z[i-1], photon->description->profile->z[i], photon->start_coords.x, photon->start_coords.y, photon->start_coords.z, photon->start_direction.x, photon->start_direction.y, photon->start_direction.z);
-//printf("	*phot_coord.x: %lf, y: %lf, z: %lf, i_refl: %li, i-1: %i, ext_cur: %lf\n", photon_coord.x, photon_coord.y, photon_coord.z, photon->i_refl, i-1, current_polycap_ext);
-//printf("	*phot_coord capx: %i, capy: %i, n_shells: %lf\n", i_capx, i_capy, n_shells);
-*/
 		if(iesc == 0){
+			//TODO: this check only works for polycap. Make monocap case.
+			current_polycap_ext = ((photon->description->profile->ext[i] - photon->description->profile->ext[i+1])/
+				(photon->description->profile->z[i] - photon->description->profile->z[i+1])) * 
+				(photon_coord.z - photon->description->profile->z[i+1]) + photon->description->profile->ext[i];
 			//check if photon is inside optic
 			if(polycap_photon_within_pc_boundary(current_polycap_ext, photon_coord, error) == 0){
-printf("	Segment end: photon not in polycap!!\n");
+printf("	Segment end: photon not in polycap!!; i: %i, i+1: %i, nmax: %i\n",i, i+1, description->profile->nmax);
 return -2;
 			}
-			*ix = i-1;
+			*ix = i;
 			break;
 		}
 	}

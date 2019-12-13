@@ -244,7 +244,7 @@ void test_polycap_photon_launch() {
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
-	//This works but returns 0 (as photon was not in PC to begin with)
+	//This works but returns 3 (as photon was not in PC to begin with)
 	//Additionally, amu and scatf will not have been initialised yet
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.21;
@@ -252,7 +252,7 @@ void test_polycap_photon_launch() {
 	assert(photon->n_energies == 1);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
-	assert(test == -1);
+	assert(test == 3);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 	polycap_free(weights);
 	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...

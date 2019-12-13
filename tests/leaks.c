@@ -852,7 +852,7 @@ void test_polycap_photon_leak() {
 	assert(photon->n_energies == 1);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
-	assert(test == -1);
+	assert(test == 3);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 	polycap_free(weights);
 	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...

@@ -210,7 +210,7 @@ double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2)
 int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *energies, double **weights, bool leak_calc, polycap_error **error)
 {
 	polycap_vector3 central_axis;
-	double weight;
+//	double weight;
 	int i, photon_pos_check, iesc=0;
 	double n_shells; //amount of capillary shells in polycapillary
 	double q_i, r_i; //indices of selected capillary
@@ -301,8 +301,8 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
 	// determine current optic exterior dimension
 	if(photon->start_coords.z > 0){
-		for(i=0; i<=photon->description->profile->nmax; i++)
-			if(photon->description->profile->z[i] < photon->start_coords.z) z_id = i; //set z_id to current photon id value
+		for(i=0; i<photon->description->profile->nmax; i++) //i<nmax as otherwise i+1 goes out of bounds
+			if(photon->description->profile->z[i] <= photon->start_coords.z) z_id = i; //set z_id to current photon id value
 		current_polycap_ext = ((photon->description->profile->ext[z_id+1] - photon->description->profile->ext[z_id])/
 			(photon->description->profile->z[z_id+1] - photon->description->profile->z[z_id])) * 
 			(photon->start_coords.z - photon->description->profile->z[z_id]) + photon->description->profile->ext[z_id];
@@ -311,13 +311,13 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	if(n_shells == 0.){ //monocapillary case
 		if(sqrt((photon->start_coords.x)*(photon->start_coords.x) + (photon->start_coords.y)*(photon->start_coords.y)) > current_polycap_ext){
 			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within monocapillary boundaries");
-			return -1;
+			return 3;
 		}
 	} else { //polycapillary case
 		photon_pos_check = polycap_photon_within_pc_boundary(current_polycap_ext, photon->start_coords, error);
 		if(photon_pos_check == 0){
 			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within polycapillary boundaries");
-			return -1;
+			return 3;
 		}
 	}
 
@@ -351,8 +351,8 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 			r_i = round(r_i);
 		}
 		//convert indexed capillary centre to coordinates
-		capy_0 = r_i * (3./2) * sqrt(5./16)*(photon->description->profile->ext[i]/(n_shells+1));
-		capx_0 = (2* q_i-r_i) * sin(M_PI/3.) * sqrt(5./16)*(photon->description->profile->ext[i]/(n_shells+1));
+		capy_0 = r_i * (3./2) * sqrt(5./16)*(photon->description->profile->ext[0]/(n_shells+1));
+		capx_0 = (2* q_i-r_i) * sin(M_PI/3.) * sqrt(5./16)*(photon->description->profile->ext[0]/(n_shells+1));
 	}
 
 	//Set exit coordinates and direction equal to start coordinates and direction in order to get a clean launch
@@ -452,9 +452,9 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		photon->scatf = NULL;
 	}
 
-	if(iesc == -1)
+	if(iesc == -1){
 		return -1; //Return -1 if polycap_capil_trace() returned -1
-
+	}
 	if(iesc == -2){
 		return 0; //return 0 if photon did not reach end of capillary
 	} else {
