@@ -281,6 +281,23 @@ void test_polycap_photon_launch() {
 	assert(test == 1);
 	polycap_free(weights);
 	
+	//Test for funny effect
+	polycap_clear_error(&error);
+printf("-----Initiate funny tests---------\n");
+	photon->start_coords.x = -0.134137;
+	photon->start_coords.y = 0.125042;
+	photon->start_coords.z = 0.0;
+	photon->start_direction.x = 0.;
+	photon->start_direction.y = 0.;
+	photon->start_direction.z = 1.0;
+	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
+printf("test: %i\n",test);
+	assert(photon->n_energies == 1);
+	assert(photon->amu == NULL);
+	assert(photon->scatf == NULL);
+	polycap_free(weights);
+printf("-----End funny tests---------\n");
+	
 	polycap_photon_free(photon);
 	polycap_description_free(description);
 	polycap_profile_free(profile);
