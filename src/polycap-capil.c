@@ -25,15 +25,17 @@
 
 //===========================================
 // calculates the intersection point coordinates of the photon trajectory and a given linear segment of the capillary wall
-STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 phot_coord0, polycap_vector3 phot_coord1, polycap_vector3 photon_dir, polycap_vector3 *interact_coord, polycap_vector3 *surface_norm, double *alfa, polycap_error **error)
+STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 phot_coord0, polycap_vector3 phot_coord1, polycap_vector3 photon_dir, polycap_vector3 *photon_coord, polycap_vector3 *surface_norm, double *alfa, polycap_error **error)
 {
 	double d_phot_ax0, d_phot_ax1; //distance between photon and capillary axis
 	double d_proj; //distance vector projection factor
 	polycap_vector3 cap_coord; //capillary axis coordinate at interact_coord.z
+	polycap_vector3 interact_coord; //interaction coordinates 
 	polycap_vector3 interact_norm; //normalised interaction coordinates compared to central axis at interact_coord.z
 	polycap_vector3 cap_dir; //vector defining the central axis direction
 	double d_cap_inter, d_cap_coord; //distance between capillary axis and interaction point (au), distance between cap_coords
 	double tga, sga, cga, gam; //tan(gamma), sin(ga) and cos(ga) and gamma where gamma is angle between capillary wall and axis
+	polycap_vector3 photon_coord_rel;
 
 	//argument sanity check
 	if (cap_coord0.z < 0.){
@@ -52,7 +54,7 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: cap_rad1 must be greater than 0");
 		return -1;
 	}
-	if (interact_coord == NULL){
+	if (photon_coord == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: photon_coord must not be NULL");
 		return -1;
 	}
@@ -81,6 +83,7 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 	surface_norm->x = 0.0; //set in case of premature return
 	surface_norm->y = 0.0;
 	surface_norm->z = 0.0;
+	polycap_norm(&photon_dir);
 
 	//determine distances between photon positions and capillary central axis at position 0 and 1
 	d_phot_ax0 = sqrt( (phot_coord0.x-cap_coord0.x)*(phot_coord0.x-cap_coord0.x) + (phot_coord0.y-cap_coord0.y)*(phot_coord0.y-cap_coord0.y) );
@@ -91,36 +94,85 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 	// d_phot_ax = ((d_phot_ax1 - d_phot_ax0)/(phot_coord1.z - phot_coord0.z)) * (z_interact - phot_coord0.z) + d_phot_ax0;
 	// cap_rad = ((cap_rad1 - cap_rad0)/(cap_coord1.z - cap_coord0.z)) * (z_interact - cap_coord0.z) + cap_rad0;
 	// 	--> ((d_phot_ax1 - d_phot_ax0)/(phot_coord1.z - phot_coord0.z)) * (z_interact - phot_coord0.z) + d_phot_ax0 = ((cap_rad1 - cap_rad0)/(cap_coord1.z - cap_coord0.z)) * (z_interact - cap_coord0.z) + cap_rad0;
-	interact_coord->z = ( (cap_rad0-d_phot_ax0) / ((d_phot_ax1-d_phot_ax0-cap_rad1+cap_rad0)/(cap_coord1.z-cap_coord0.z)) ) + cap_coord0.z;
+	interact_coord.z = ( (cap_rad0-d_phot_ax0) / ((d_phot_ax1-d_phot_ax0-cap_rad1+cap_rad0)/(cap_coord1.z-cap_coord0.z)) ) + cap_coord0.z;
+
+//	printf("	d_phot_ax0: %lf, cap_rad0: %lf, cap_coord0.z: %lf d_phot_ax1: %lf, cap_rad1: %lf, cap_coord1.z: %lf\n", d_phot_ax0, cap_rad0, cap_coord0.z, d_phot_ax1, cap_rad1, cap_coord1.z);
+//	printf("	interact_coord.z: %lf\n", interact_coord.z);
+
 	// check if this z is within the selected segment. If not, next segment should be simulated
-	if(interact_coord->z > cap_coord1.z)
-		return -2; //select next segment  of capillary to check for interaction
-	if(interact_coord->z < cap_coord0.z)
-		return -3; //select next segment  of capillary to check for interaction (although this would suggest interaction occurred at previous segment...)
+	if(interact_coord.z > cap_coord1.z)
+		return -2; //select next segment  of capillary to check for interaction //also don't accept interaction at last point of segment. This should be picked up as interaction in next segment
+//	if(interact_coord.z < cap_coord0.z)
+//		return -3; //select next segment  of capillary to check for interaction (although this would suggest interaction occurred at previous segment...)
 
 	//Now the Z coordinate of the point of interaction is known, we can easily determine X and Y using photon_dir and phot_coord
-	d_proj = (interact_coord->z - phot_coord0.z) / photon_dir.z;
+	d_proj = (interact_coord.z - phot_coord0.z) / photon_dir.z;
 	if(d_proj < 1.e-10)
-		return -4; //interaction too close to original coordinate, select new segment of capillary
-	interact_coord->x = phot_coord0.x + d_proj * photon_dir.x;
-	interact_coord->y = phot_coord0.y + d_proj * photon_dir.x;
+		return -4; //interaction too close to original coordinate or going backwards, select new segment of capillary
+	interact_coord.x = phot_coord0.x + d_proj * photon_dir.x;
+	interact_coord.y = phot_coord0.y + d_proj * photon_dir.y;
 
-	// determine surface norm in interaction_coord
-	//	first determine capillary axis coordinate at interaction coordinate Z position
-	cap_coord.z = interact_coord->z;
-	d_proj = (interact_coord->z - cap_coord0.z) / (cap_coord1.z-cap_coord0.z);
-	cap_coord.x = cap_coord0.x + d_proj * (cap_coord1.x-cap_coord0.x);
-	cap_coord.y = cap_coord0.y + d_proj * (cap_coord1.y-cap_coord0.y);
-	//	define normalised interaction coordinates compared to capillary central axis coordinate
-	interact_norm.x = interact_coord->x - cap_coord.x;
-	interact_norm.y = interact_coord->y - cap_coord.y;
-	interact_norm.z = interact_coord->z - cap_coord.z;
+
+//	printf("	interact_coord.x: %lf, y: %lf, z: %lf\n", interact_coord.x, interact_coord.y, interact_coord.z);
+
+
+/*
+polycap_vector3 interact_proj, interact_coord_rel;
+	//Determine surface_norm
 	//	calculate distance between capillary axis coordinates (0 and 1), and distance between interaction point and cap_coord
 	cap_dir.x = cap_coord1.x - cap_coord0.x;
 	cap_dir.y = cap_coord1.y - cap_coord0.y;
 	cap_dir.z = cap_coord1.z - cap_coord0.z;
-	d_cap_inter = sqrt(polycap_scalar(interact_norm, interact_norm));
 	d_cap_coord = sqrt(polycap_scalar(cap_dir, cap_dir));
+	//	define interaction coord relative to cap_coord0
+	interact_coord_rel.x = interact_coord.x - cap_coord0.x;
+	interact_coord_rel.y = interact_coord.y - cap_coord0.y;
+	interact_coord_rel.z = interact_coord.z - cap_coord0.z;
+	//	determine projection of interaction_coord onto capillary axis
+	polycap_norm(&cap_dir);
+	interact_proj.x = cap_coord0.x + polycap_scalar(cap_dir, interact_coord_rel)*cap_dir.x;
+	interact_proj.y = cap_coord0.y + polycap_scalar(cap_dir, interact_coord_rel)*cap_dir.y;
+	interact_proj.z = cap_coord0.z + polycap_scalar(cap_dir, interact_coord_rel)*cap_dir.z;
+	//	determine angle between capillary wall and capillary axis 
+	//		(as this is same angle between surface norm and line connecting interact_coord and interact_proj
+	tga = (cap_rad0 - cap_rad1)/d_cap_coord; //note: this will be negative if rad0 < rad1 (confocal geometry)
+	//	determine distance between interact_proj and intersection between capillary axis and surface norm
+	d_proj = tga * sqrt( (interact_coord.x-interact_proj.x)*(interact_coord.x-interact_proj.x) + (interact_coord.y-interact_proj.y)*(interact_coord.y-interact_proj.y) + (interact_coord.z-interact_proj.z)*(interact_coord.z-interact_proj.z) );
+	//	with known sign of tga, go from interact_proj along capillary axis over a distance d_proj
+	//		and determine surface norm as line connecting this point and interact_coord
+	if(tga < 0.){
+		surface_norm->x = interact_coord.x - (interact_proj.x - d_proj*cap_dir.x);
+		surface_norm->y = interact_coord.y - (interact_proj.y - d_proj*cap_dir.y);
+		surface_norm->z = interact_coord.z - (interact_proj.z - d_proj*cap_dir.z);
+	} else {
+		surface_norm->x = interact_coord.x - (interact_proj.x + d_proj*cap_dir.x);
+		surface_norm->y = interact_coord.y - (interact_proj.y + d_proj*cap_dir.y);
+		surface_norm->z = interact_coord.z - (interact_proj.z + d_proj*cap_dir.z);
+	}
+	polycap_norm(surface_norm);
+printf("surf_norm.x: %lf, y: %lf, z: %lf\n", surface_norm->x, surface_norm->y, surface_norm->z);
+*/ //This needs some work, seems to be issue with surface_norm...
+
+
+	//Determine surface_norm
+	//	calculate distance between capillary axis coordinates (0 and 1), and distance between interaction point and cap_coord
+	cap_dir.x = cap_coord1.x - cap_coord0.x;
+	cap_dir.y = cap_coord1.y - cap_coord0.y;
+	cap_dir.z = cap_coord1.z - cap_coord0.z;
+	d_cap_coord = sqrt(polycap_scalar(cap_dir, cap_dir));
+	//	define point on capillary axis at same z as interact_coord
+	photon_coord_rel.x = phot_coord0.x - cap_coord0.x;
+	photon_coord_rel.y = phot_coord0.y - cap_coord0.y;
+	photon_coord_rel.z = phot_coord0.z - cap_coord0.z;
+	cap_coord.x = cap_coord0.x + ((d_proj+(polycap_scalar(photon_coord_rel,cap_dir)/polycap_scalar(photon_dir,cap_dir)))/(polycap_scalar(cap_dir,cap_dir)/polycap_scalar(photon_dir,cap_dir)))*cap_dir.x;
+	cap_coord.y = cap_coord0.y + ((d_proj+(polycap_scalar(photon_coord_rel,cap_dir)/polycap_scalar(photon_dir,cap_dir)))/(polycap_scalar(cap_dir,cap_dir)/polycap_scalar(photon_dir,cap_dir)))*cap_dir.y;
+	cap_coord.z = cap_coord0.z + ((d_proj+(polycap_scalar(photon_coord_rel,cap_dir)/polycap_scalar(photon_dir,cap_dir)))/(polycap_scalar(cap_dir,cap_dir)/polycap_scalar(photon_dir,cap_dir)))*cap_dir.z;
+
+	//	define normalised interaction coordinates compared to capillary central axis coordinate
+	interact_norm.x = interact_coord.x - cap_coord.x;
+	interact_norm.y = interact_coord.y - cap_coord.y;
+	interact_norm.z = interact_coord.z - cap_coord.z;
+	d_cap_inter = sqrt(polycap_scalar(interact_norm, interact_norm));
 	//	define angle gamma between central capillary axis and capillary wall
 	tga = (cap_rad0 - cap_rad1)/d_cap_coord; //note: this will be negative if rad0 < rad1 (confocal geometry)
 	gam = atan(tga);
@@ -131,17 +183,24 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 	surface_norm->y = cga * interact_norm.y / d_cap_inter + sga * cap_dir.y / d_cap_coord;
 	surface_norm->z = cga * interact_norm.z / d_cap_inter + sga * cap_dir.z / d_cap_coord;
 	polycap_norm(surface_norm);
+//printf("surf_norm.x: %lf, y: %lf, z: %lf\n", surface_norm->x, surface_norm->y, surface_norm->z);
+
+
+	// And store interaction coordinates in photon_coord
+	photon_coord->x = interact_coord.x;
+	photon_coord->y = interact_coord.y;
+	photon_coord->z = interact_coord.z;
 
 	// Finally, alfa is the angle between photon_dir and surface_norm
-	polycap_norm(&photon_dir);
 	*alfa = acos(polycap_scalar(*surface_norm,photon_dir)); //angle between surface normal and photon direction
+//printf("	alfa = %lf\n",*alfa*180./M_PI);
 	if(cos(*alfa) < 0.0){
 		return -5;
 	}
 
 	return 0;	
 }
-
+//===========================================
 /*
 STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa, polycap_error **error)
 {
@@ -267,10 +326,10 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 	u.z = photon_coord->z - s.z;
 
 	//surface normal at the new intersection point
-	au = sqrt(polycap_scalar(u, u));
-	ads = sqrt(polycap_scalar(cap_coord1_rel, cap_coord1_rel));
+	au = sqrt(polycap_scalar(u, u));	//R
+	ads = sqrt(polycap_scalar(cap_coord1_rel, cap_coord1_rel)); //length segment axis
 
-	tga = (cap_rad0 - cap_rad1)/ads; //note: this will be negative if rad0 < rad1 (confocal geometry)
+	tga = (cap_rad0 - cap_rad1)/ads; //note: this will be negative if rad0 < rad1 (confocal geometry) //alfa
 	gam = atan(tga);
 	sga = sin(gam);
 	cga = cos(gam);
@@ -289,43 +348,45 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 }
 */
 //===========================================
-//STATIC double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error) {
-//	// theta is the glancing angle (angle between capillary surface and photon direction)
-//	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
-//	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
-//	double complex rtot; //reflectivity
-//
-//	//argument sanity check
-//	if (e < 1. || e > 100.){
-//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: e must be greater than 1 and smaller than 100.");
-//		return -1;
-//	}
-//	if (theta < 0.){
-//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: theta must be greater than 0");
-//		return -1;
-//	}
-//	if (density <= 0.){
-//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: density must be greater than 0");
-//		return -1;
-//	}
-//	if (scatf < 0.){
-//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: scatf must be greater than 0");
-//		return -1;
-//	}
-//	if (lin_abs_coeff < 0.){
-//		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: lin_abs_coeff must be greater than 0");
-//		return -1;
-//	}
-//	
-//
-//	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
-//	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
-//
-//	rtot = ((double complex)theta - csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I))) / ((double complex)theta + csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I)));
-//	rtot = creal(cpow(cabs(rtot),2.));
-//
-//	return rtot;
-//}
+/*
+STATIC double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error) {
+	// theta is the glancing angle (angle between capillary surface and photon direction)
+	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
+	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
+	double complex rtot; //reflectivity
+
+	//argument sanity check
+	if (e < 1. || e > 100.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: e must be greater than 1 and smaller than 100.");
+		return -1;
+	}
+	if (theta < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: theta must be greater than 0");
+		return -1;
+	}
+	if (density <= 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: density must be greater than 0");
+		return -1;
+	}
+	if (scatf < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: scatf must be greater than 0");
+		return -1;
+	}
+	if (lin_abs_coeff < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl: lin_abs_coeff must be greater than 0");
+		return -1;
+	}
+	
+
+	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
+	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
+
+	rtot = ((double complex)theta - csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I))) / ((double complex)theta + csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I)));
+	rtot = creal(cpow(cabs(rtot),2.));
+
+	return rtot;
+}
+*/
 //===========================================
 STATIC double polycap_refl_polar(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_vector3 surface_norm, polycap_photon *photon, polycap_error **error) {
 //TODO: now photon structure has to be supplied, theta has become redundant (can be derived from surface norm and photon->exit_direction)
@@ -444,7 +505,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 	double cons1, r_rough;
 	double complex rtot; //reflectivity
 	double *w_leak; //leak weight
-	int r_cntr, q_cntr; //indices of neighbouring capillary photon traveled towards
+	int r_cntr, q_cntr, z; //indices of neighbouring capillary photon traveled towards and hexagon radial distance z
 	double d_travel;  //distance photon traveled through the capillary wall
 	int leak_flag=0, weight_flag=0;
 	polycap_vector3 leak_coords;
@@ -635,8 +696,11 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 					capx_temp[i] = 0.;
 					capy_temp[i] = 0.;
 				} else {
-					capy_temp[i] = r_cntr * (3./2) * sqrt(5./16)*(description->profile->ext[i]/(n_shells+1));
-					capx_temp[i] = (r_cntr + 2* q_cntr) * sin(M_PI/3.) * sqrt(5./16)*(description->profile->ext[i]/(n_shells+1));
+//					capy_temp[i] = r_cntr * (3./2) * sqrt(5./16)*(description->profile->ext[i]/(n_shells+1));
+//					capx_temp[i] = (r_cntr + 2* q_cntr) * sin(M_PI/3.) * sqrt(5./16)*(description->profile->ext[i]/(n_shells+1));
+					z = description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+					capy_temp[i] = r_cntr * (3./2) * z;
+					capx_temp[i] = (r_cntr + 2* q_cntr) * cos(M_PI/6.) * z;
 				}
 			}
 			//polycap_capil_trace should be ran description->profile->nmax at most,
@@ -781,7 +845,7 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cn
 	double d_proj = 0; //projection distance between photon coordinate and new point (relative to photon propagation in Z)
 	polycap_vector3 new_photon_coords, photon_coord_rel; //coordinates of the photon after projection along Z
 	double n_shells; //amount of capillary shells in polycapillary
-	double r_i, q_i; //indices of selected capillary
+	double r_i, q_i, z; //indices of selected capillary and radial distance z
 	double capx_0, capy_0; //coordinates of selected capillary at polycap entrance
 	double d_ph_capcen; //distance between photon start coordinates and selected capillary center
 
@@ -828,6 +892,7 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cn
 
 	// Propagate a step along capillary length and determine whether the photon is inside a capillary
 	// (at this point it shouldn't be: the starting point of this function should be just at the wall edge of a capillary)
+	// TODO: it would be better to change this by analytically calculating intersection point, i.e. using polycap_capil_segment or similar
 	do{
 		z_id++;
 		d_proj = (photon->description->profile->z[z_id] - photon->exit_coords.z) / photon->exit_direction.z;
@@ -846,8 +911,11 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cn
 
 		} else {    // proper polycapillary case
 			// obtain the capillary indices of the capillary region the photon is currently in
-			r_i = new_photon_coords.y * (2./3) / (sqrt(5./16)*photon->description->profile->ext[z_id]/(n_shells+1));
-			q_i = (new_photon_coords.y/3 + new_photon_coords.x/(2.*sin(M_PI/3.))) / (sqrt(5./16)*photon->description->profile->ext[z_id]/(n_shells+1));
+//			r_i = new_photon_coords.y * (2./3) / (sqrt(5./16)*photon->description->profile->ext[z_id]/(n_shells+1));
+//			q_i = (new_photon_coords.y/3 + new_photon_coords.x/(2.*sin(M_PI/3.))) / (sqrt(5./16)*photon->description->profile->ext[z_id]/(n_shells+1));
+			z = photon->description->profile->ext[z_id]/(2.*cos(M_PI/6.)*(n_shells+1));
+			r_i = new_photon_coords.y * (2./3) / z;
+			q_i = (new_photon_coords.x/(2.*cos(M_PI/6.)) - new_photon_coords.y/3) / z;
 			if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
 				q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
 				r_i = round(r_i);
@@ -859,8 +927,8 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cn
 				r_i = round(r_i);
 			}
 			// convert the obtained indices to centre capillary coordinates
-			capy_0 = r_i * (3./2) * sqrt(5./16)*(photon->description->profile->ext[i]/(n_shells+1));
-			capx_0 = (2* q_i - r_i) * sin(M_PI/3.) * sqrt(5./16)*(photon->description->profile->ext[i]/(n_shells+1));
+			capy_0 = r_i * (3./2) * z;
+			capx_0 = (2* q_i+r_i) * cos(M_PI/6.) * z;
 
 			//Check whether photon coordinate is within capillary (within capillary center at distance < capillary radius)
 			d_ph_capcen = sqrt( (new_photon_coords.x-capx_0)*(new_photon_coords.x-capx_0) + (new_photon_coords.y-capy_0)*(new_photon_coords.y-capy_0) );
@@ -879,7 +947,8 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cn
 
 	// An additional check must be made to make sure the photon actually is outside of capillary (above checks only test for reaching final shell, yet in some cases there are not more capillaries beyond this position)
 	if(n_shells != 0 && z_id < photon->description->profile->nmax){ //Only do this for polycapillary case
-		if(fabs(q_i) > n_shells || fabs(r_i) > n_shells || fabs(-1.*q_i-r_i) > n_shells){ //photon entered region where no other capillaries are anymore (either it's outside, or about to go outside)
+		if(fabs(q_i) > n_shells || fabs(r_i) > n_shells || fabs(-1.*q_i-r_i) > n_shells){ //photon entered region where no other capillaries are anymore (either it's outside, or about to go outside) //TODO: this check is incorrect. (e.g. -78,181 is not in PC with 258 shells but passes this check...)
+		// should determine the current 'shell radius' and see if <n_shells
 			iesc = 2; // should eventually return 3
 			// adjust d_travel to go to actual outside of optic
 			do{
@@ -960,20 +1029,6 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 	polycap_norm(&photon->exit_direction);
 	polycap_norm(&photon->start_direction);
 	if(photon->i_refl == 0) *ix = 0;
-
-/*
-	//make sure photon is in optic at position *ix
-	temp_phot.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[*ix+1]-photon->exit_coords.z)/photon->exit_direction.z;
-	temp_phot.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[*ix+1]-photon->exit_coords.z)/photon->exit_direction.z;
-	temp_phot.z = description->profile->z[*ix+1];
-	if(polycap_photon_within_pc_boundary(description->profile->ext[*ix+1], temp_phot, error) == 0){
-		printf("!!Error3!!\n");
-printf("	phot start.x: %lf, y: %lf, z: %lf, exit.x: %lf, y:%lf, z: %lf, ix: %i, exit dir.x: %lf, y: %lf, z: %lf, temp.x: %lf, y: %lf, z: %lf\n",photon->start_coords.x, photon->start_coords.y, photon->start_coords.z, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, *ix+1, photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z, temp_phot.x, temp_phot.y, temp_phot.z);
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_trace: photon is not within optic at start of function");
-		return -1;
-	}
-*/ //This is no longer necessary. When monitoring position *ix it actually projects back photon, along trajectory AFTER reflection (i.e. wrong interpretation). When monitoring *ix+1 only results in out of optic when at very end of optic (i.e. succesfully transmitted, but outside of exit window)
-	
 	photon_coord.x = photon->exit_coords.x;
 	photon_coord.y = photon->exit_coords.y;
 	photon_coord.z = photon->exit_coords.z;
@@ -981,26 +1036,30 @@ printf("	phot start.x: %lf, y: %lf, z: %lf, exit.x: %lf, y:%lf, z: %lf, ix: %i, 
 	photon_dir.y = photon->exit_direction.y;
 	photon_dir.z = photon->exit_direction.z;
 
-/*
 	//look for guess of proper interaction index along z axis
 	for(i=*ix; i<description->profile->nmax; i++){ //i<nmax as otherwise i+1 in next for loop could reach out of array bounds
 		temp_phot.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
 		temp_phot.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
 		temp_phot.z = description->profile->z[i];
 		d_phot = sqrt( (temp_phot.x-cap_x[i])*(temp_phot.x-cap_x[i]) + (temp_phot.y-cap_y[i])*(temp_phot.y-cap_y[i])  );
-		if( d_phot < description->profile->cap[i])
-			*ix=i;
+		if(d_phot > description->profile->cap[i]){
+			if(i == 0) *ix = 0;
+			else *ix=i-1;
+			break;
+		}
 	}
-*/
 
 	for(i=*ix; i<description->profile->nmax; i++){ //i<nmax as otherwise i+1 could reach out of array bounds
 		//check if photon would still be inside optic at these positions (it should be!)
 		temp_phot.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
 		temp_phot.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
 		temp_phot.z = description->profile->z[i];
+
+/*
 //let's print all relevant coordinates each step of the way...
 d_phot = sqrt( (temp_phot.x-cap_x[i])*(temp_phot.x-cap_x[i]) + (temp_phot.y-cap_y[i])*(temp_phot.y-cap_y[i])  );
-printf("i_refl: %li, i: %i, cap_x[i]: %lf, cap_y[i]:%lf, cap[i]: %lf, temp.x: %lf, y: %lf, z: %lf, dir.x: %lf, y: %lf, z: %lf, dphot: %lf \n", photon->i_refl, i, cap_x[i], cap_y[i], description->profile->cap[i], temp_phot.x, temp_phot.y, temp_phot.z, photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z, d_phot);
+printf("i_refl: %li, i: %i, cap_x[i]: %lf, cap_y[i]:%lf, cap[i]: %lf, temp.x: %lf, y: %lf, z: %lf, dir.x: %lf, y: %lf, z: %lf, dphot: %lf\n", photon->i_refl, i, cap_x[i], cap_y[i], description->profile->cap[i], temp_phot.x, temp_phot.y, temp_phot.z, photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z, d_phot);
+*/
 
 		if(polycap_photon_within_pc_boundary(description->profile->ext[i], temp_phot, error) == 0){ //often occurs
 			printf("Error2: photon escaping from optic!: i: %i, ext: %lf, d: %lf\n", i, description->profile->ext[i], sqrt(temp_phot.x*temp_phot.x+temp_phot.y*temp_phot.y));
@@ -1009,8 +1068,9 @@ printf("i_refl: %li, i: %i, cap_x[i]: %lf, cap_y[i]:%lf, cap[i]: %lf, temp.x: %l
 printf("	phot start.x: %lf, y: %lf, z: %lf, start dir.x: %lf, y: %lf, z: %lf\n",photon->start_coords.x, photon->start_coords.y, photon->start_coords.z, photon->start_direction.x, photon->start_direction.y, photon->start_direction.z);
 printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, temp.x: %lf, y: %lf, z: %lf\n", photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, i, photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z, temp_phot.x, temp_phot.y, temp_phot.z);
 //	so here photon is not within polycap, but is within radial distance of capillary with central axis [cap_x,cap_y]
-//			return -2;
+			return -2;
 		}
+
 		//calculate next intersection point
 		cap_coord0.x = cap_x[i];
 		cap_coord0.y = cap_y[i];
@@ -1028,18 +1088,20 @@ printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, te
 		phot_coord1.z = description->profile->z[i+1];
 		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, phot_coord0, phot_coord1, photon_dir, &photon_coord, &surface_norm, &alfa, error);
 //		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, &photon_coord, photon_dir, &surface_norm, &alfa, error);
+		//TODO: if polycap_capil_segment() returned -3 one go back a step/segment -> i-- or even i = i-2? Be careful not to trigger Error2 as we went too far back and thus go outside of polycap by backwards projecting...
+		//	issues actually only arise after -5 was returned.... This suggest last interaction point came from within glass wall
 
 		if(iesc == 0){
 			//TODO: this check only works for polycap. Make monocap case.
 			current_polycap_ext = ((photon->description->profile->ext[i] - photon->description->profile->ext[i+1])/
 				(photon->description->profile->z[i] - photon->description->profile->z[i+1])) * 
-				(photon_coord.z - photon->description->profile->z[i+1]) + photon->description->profile->ext[i];
+				(photon_coord.z - photon->description->profile->z[i+1]) + photon->description->profile->ext[i+1];
 			//check if photon is inside optic
 			if(polycap_photon_within_pc_boundary(current_polycap_ext, photon_coord, error) == 0){
-printf("	Segment end: photon not in polycap!!; i: %i, i+1: %i, nmax: %i\n",i, i+1, description->profile->nmax);
-return -2;
+				printf("Segment end: photon not in polycap!!; i: %i, i+1: %i, nmax: %i\n",i, i+1, description->profile->nmax);
+				return -2;
 			}
-			*ix = i;
+			*ix = i+1; //set ix to i+1 as otherwise next interaction search could find photon outside of optic due to modified propagation after interaction
 			break;
 		}
 	}
@@ -1058,14 +1120,14 @@ return -2;
 		photon->exit_coords.y = photon_coord.y;
 		photon->exit_coords.z = photon_coord.z;
 		if(fabs(cos(alfa)) >1.0){
-			printf("COS(alfa) > 1\n");
+			printf("polycap_capil_trace: COS(alfa) > 1\n");
 			iesc = -1;
 		} else {
 			//Check whether intersection point is still within optic (it should be!
-			//	TODO: this only makes sense for polycap... monocap is different case)
 			current_polycap_ext = ((photon->description->profile->ext[(*ix)+1] - photon->description->profile->ext[(*ix)])/
 			(photon->description->profile->z[(*ix)+1] - photon->description->profile->z[(*ix)])) * 
 			(photon_coord.z - photon->description->profile->z[(*ix)]) + photon->description->profile->ext[(*ix)];
+			//	TODO: this only makes sense for polycap... monocap is different case)
 			if(polycap_photon_within_pc_boundary(current_polycap_ext, photon->exit_coords, error) == 0){
 				//photon somehow outside of PC after polycap_capil_segment
 				//	register as leaked event

@@ -190,7 +190,7 @@ void test_polycap_source_get_transmission_efficiencies() {
 	//Now we test actual values
 	//This will take a while...
 	polycap_clear_error(&error);
-	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, 30000, false, NULL, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, 30000, false, NULL, &error); //orignally 30000 photons simulated
 	assert(efficiencies != NULL);
 	assert(fabs(efficiencies->efficiencies[0] - 0.353) <= 0.005); //1 keV
 	assert(fabs(efficiencies->efficiencies[1] - 0.291) <= 0.005); //5 keV

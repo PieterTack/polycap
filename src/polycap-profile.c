@@ -323,10 +323,10 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 {
 	double n_shells; //amount of shells in optic
 	double angle; //angle between X-axis and selected capillary centre
-	int i, j, check;
-	int64_t n_cap_quad; // amount of capillaries in quadrant of outer shell
-	double q_i, r_i; // max indices of selected capillary in outer shell
+	int i, j, check,k;
+	double q_i, r_i, z; // max indices of selected capillary in outer shell and hexagon radial distance z
 	polycap_vector3 coord; // outer coordinates of selected capillary
+	int full_check = 1; //if == 1 will check full outer shell, if == 0 only checks one quadrant (should be symmetrical)
 
 	// check input
 	if (profile == NULL) {
@@ -342,42 +342,81 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 				return 0;
 		}
 	} else { // polycap case
-		// calculate amount of capillaries on outer shell, divided by 4 
-		// 	(we'll check 1 quadrant, the others are symmetric and should be fine)
-		n_cap_quad = ceil((n_shells) * 6./4.);
 		// check if outer capillary axial coordinate + capillary radius is within polycap boundaries at each Z; repeat for all outer capillaries
-		for(j = 0; j <= n_cap_quad; j++){
-			// determine maximal capillary indices
-			// first hexagon on outermost shell, on X axis, has indices (n_shells,0)
-			// 	neighbouring hexagons will have index change depending on angle
-			// 	until 60 degree angle (index (n_shells,n_shells) ) with X axis, index change will be (0,+1)
-			// 	after 60 degree angle, index change is (-1,0)
-			if(j <= n_shells) {
-				r_i = j;
-				q_i = n_shells;
-			} else {
-				r_i = n_shells;
-				q_i = n_shells - (j-n_shells);
-			}
-			// determine selected capillary central axis coordinates and add capillary radius along current angle
-			for(i = 0; i <= profile->nmax; i++){
-				coord.y = r_i * (3./2) * sqrt(5./16)*(profile->ext[i]/(n_shells+1));
-				coord.x = (2* q_i - r_i) * sin(M_PI/3.) * sqrt(5./16)*(profile->ext[i]/(n_shells+1));
-				angle = atan(coord.y/coord.x);
-				coord.x += cos(angle)*profile->cap[i];
-				coord.y += sin(angle)*profile->cap[i];
-				coord.z = profile->z[i];
-				// check if [capx,capy] is within polycap boundaries
-				check = polycap_photon_within_pc_boundary(profile->ext[i], coord, error);
-				//printf("i;j: %i; %i; ext: %lf; coord.x %lf; y: %lf; z:%lf; q_i: %lf; r_i:%lf; n_shells: %lf\n",i,j,profile->ext[i], coord.x, coord.y, coord.z, q_i, r_i, n_shells);
-				if(check == 0){ //coordinate is outside of optic
-					return 0;
-				}
-				if(check == -1){ //polycap_photon_within_pc_boundary gave error
-					return -1;
+		if(full_check == 1){
+			int q_dir[6] = {1, 1, 0,-1,-1,0};
+			int r_dir[6] = {0,-1,-1, 0, 1,1};
+			q_i = -1.*n_shells;
+			r_i = n_shells;
+			for(j = 0; j < 6; j++){
+				for(k = 0; k < n_shells; k++){
+					q_i += q_dir[j];
+					r_i += r_dir[j];
+//					printf("q: %lf, r: %lf \n",q_i, r_i);
+					// determine selected capillary central axis coordinates and add capillary radius along current angle
+					for(i = 0; i <= profile->nmax; i++){
+						z = profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+						coord.y = r_i * (3./2) * z;
+						coord.x = (2* q_i + r_i) * cos(M_PI/6.) * z;
+						angle = atan(coord.y/coord.x);
+						coord.x += cos(angle)*profile->cap[i];
+						coord.y += sin(angle)*profile->cap[i];
+						coord.z = profile->z[i];
+						// check if [capx,capy] is within polycap boundaries
+						check = polycap_photon_within_pc_boundary(profile->ext[i], coord, error);
+//						printf("i;j: %i; %i ext: %lf; coord.x %lf; y: %lf; z:%lf; q_i: %lf; r_i:%lf; z: %lf; n_shells: %lf\n",i,j,profile->ext[i], coord.x, coord.y, coord.z, q_i, r_i, z, n_shells);
+						if(check == 0){ //coordinate is outside of optic
+							printf("Error1\n");
+							return 0;
+						}
+						if(check == -1){ //polycap_photon_within_pc_boundary gave error
+							printf("Error2\n");
+							return -1;
+						}
+					}
 				}
 			}
 
+		} else {
+			// calculate amount of capillaries on outer shell, divided by 4 
+			// 	(we'll check 1 quadrant, the others are symmetric and should be fine)
+			int64_t n_cap_quad; // amount of capillaries in quadrant of outer shell
+			n_cap_quad = ceil((n_shells) * 6./4.);
+			for(j = 0; j <= n_cap_quad; j++){
+				// determine maximal capillary indices
+				// first hexagon on outermost shell, on X axis, has indices (n_shells,0)
+				// 	neighbouring hexagons will have index change depending on angle
+				// 	until 60 degree angle (index (n_shells,n_shells) ) with X axis, index change will be (0,+1)
+				// 	after 60 degree angle, index change is (-1,0)
+				if(j <= n_shells) {
+					r_i = j;
+					q_i = n_shells;
+				} else {
+					r_i = n_shells;
+					q_i = n_shells - (j-n_shells);
+				}
+				// determine selected capillary central axis coordinates and add capillary radius along current angle
+				for(i = 0; i <= profile->nmax; i++){
+					z = profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+					coord.y = r_i * (3./2) * z;
+					coord.x = (2* q_i + r_i) * cos(M_PI/6.) * z;
+					angle = atan(coord.y/coord.x);
+					coord.x += cos(angle)*profile->cap[i];
+					coord.y += sin(angle)*profile->cap[i];
+					coord.z = profile->z[i];
+					// check if [capx,capy] is within polycap boundaries
+					check = polycap_photon_within_pc_boundary(profile->ext[i], coord, error);
+//					printf("i;j: %i; %i ext: %lf; coord.x %lf; y: %lf; z:%lf; q_i: %lf; r_i:%lf; z: %lf; n_shells: %lf\n",i,j,profile->ext[i], coord.x, coord.y, coord.z, q_i, r_i, z, n_shells);
+					if(check == 0){ //coordinate is outside of optic
+						printf("Error1\n");
+						return 0;
+					}
+					if(check == -1){ //polycap_photon_within_pc_boundary gave error
+						printf("Error2\n");
+						return -1;
+					}
+				}
+			}
 		}
 	}
 

@@ -245,13 +245,10 @@ void test_polycap_photon_launch() {
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//This works but returns 3 (as photon was not in PC to begin with)
-	//Additionally, amu and scatf will not have been initialised yet
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.21;
 	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(photon->n_energies == 1);
-	assert(photon->amu == NULL);
-	assert(photon->scatf == NULL);
 	assert(test == 3);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 	polycap_free(weights);
@@ -275,15 +272,17 @@ void test_polycap_photon_launch() {
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.0;
 	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
+	assert(fabs(photon->exit_coords.x) < 1.e-5);
+	assert(fabs(photon->exit_coords.y) < 1.e-5);
+	assert(fabs(photon->exit_coords.z) < 1.e-5); //polycap_photon_launch() does not update exit coords if no interaction was found
 	assert(photon->n_energies == 1);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(test == 1);
 	polycap_free(weights);
 	
-	//Test for funny effect
+	//Another photon, outside of optic shells, but just within optic exterior (so should leak if enabled)
 	polycap_clear_error(&error);
-printf("-----Initiate funny tests---------\n");
 	photon->start_coords.x = -0.134137;
 	photon->start_coords.y = 0.125042;
 	photon->start_coords.z = 0.0;
@@ -291,12 +290,23 @@ printf("-----Initiate funny tests---------\n");
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.0;
 	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
-printf("test: %i\n",test);
+	assert(test == 2);
 	assert(photon->n_energies == 1);
-	assert(photon->amu == NULL);
-	assert(photon->scatf == NULL);
 	polycap_free(weights);
-printf("-----End funny tests---------\n");
+
+	//Another photon
+	polycap_clear_error(&error);
+	photon->start_coords.x = -0.192065;
+	photon->start_coords.y = -0.022121;
+	photon->start_coords.z = 0.0;
+	photon->start_direction.x = 0.;
+	photon->start_direction.y = 0.;
+	photon->start_direction.z = 1.0;
+	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
+	assert(test == 0);
+	assert(photon->n_energies == 1);
+	polycap_free(weights);
+
 	
 	polycap_photon_free(photon);
 	polycap_description_free(description);

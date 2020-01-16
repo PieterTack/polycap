@@ -899,12 +899,6 @@ double energies[9]={1,5,10,15,20,25,30};
 	start_direction.x = 0.000121;
 	start_direction.y = -0.000057;
 	start_direction.z = 1.0;
-//	start_coords.x = 0.110729;
-//	start_coords.y = 0.;
-//	start_coords.z = 0.;
-//	start_direction.x = 0.;
-//	start_direction.y = 0.;
-//	start_direction.z = 1.0;
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 
 	assert(photon != NULL);
@@ -995,13 +989,13 @@ void test_polycap_source_leak() {
 	assert(efficiencies->images->i_exit == n_photons);
 	assert(efficiencies->images->i_leak > 0);
 	assert(efficiencies->images->i_recap > 0);
-//	assert(fabs(efficiencies->efficiencies[0] - 0.401) <= 0.05); //1 keV
-//	assert(fabs(efficiencies->efficiencies[1] - 0.370) <= 0.05); //5 keV
-//	assert(fabs(efficiencies->efficiencies[2] - 0.210) <= 0.05); //10 keV
-//	assert(fabs(efficiencies->efficiencies[3] - 0.087) <= 0.05); //15 keV
-//	assert(fabs(efficiencies->efficiencies[4] - 0.042) <= 0.05); //20 keV
-//	assert(fabs(efficiencies->efficiencies[5] - 0.021) <= 0.05); //25 keV
-//	assert(fabs(efficiencies->efficiencies[6] - 0.012) <= 0.05); //30 keV
+	assert(fabs(efficiencies->efficiencies[0] - 0.401) <= 0.05); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - 0.370) <= 0.05); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - 0.210) <= 0.05); //10 keV
+	assert(fabs(efficiencies->efficiencies[3] - 0.087) <= 0.05); //15 keV
+	assert(fabs(efficiencies->efficiencies[4] - 0.042) <= 0.05); //20 keV
+	assert(fabs(efficiencies->efficiencies[5] - 0.021) <= 0.05); //25 keV
+	assert(fabs(efficiencies->efficiencies[6] - 0.012) <= 0.05); //30 keV
 
 	//Now redo test without leaks, to check for differences in non-leak event transmission efficiency
 	polycap_clear_error(&error);
