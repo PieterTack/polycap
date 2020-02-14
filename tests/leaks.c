@@ -27,7 +27,7 @@ void test_polycap_capil_trace_wall_leak() {
 	double d_travel;  //distance photon traveled through the capillary wall
 	int test;
 	polycap_rng *rng;
-	polycap_photon *photon;
+	polycap_photon *photon = NULL;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
 	int iz[2]={8,14};
 	double wi[2]={53.0,47.0};
@@ -72,20 +72,20 @@ void test_polycap_capil_trace_wall_leak() {
 	assert(q_i == 1);
 
 	// photon potentially going through wall straight to exit
-	photon->exit_coords.x = -3.5169789039e-02;
-	photon->exit_coords.y = 4.2753437010e-02;
-	photon->exit_coords.z = 8.9671081307;
-	photon->exit_direction.x = 0.066793;
-	photon->exit_direction.y = -0.080431;
-	photon->exit_direction.z = 0.9945198;
+	photon->exit_coords.x = 10e-5;
+	photon->exit_coords.y = 0.;
+	photon->exit_coords.z = 8.9995;
+	photon->exit_direction.x = 0.;
+	photon->exit_direction.y = 0.;
+	photon->exit_direction.z = 1.;
 	test = polycap_capil_trace_wall(photon, &d_travel, &r_i, &q_i, &error);
 	assert(photon != NULL);
 	assert(test == 2);
-	assert(r_i == 212);
-	assert(q_i == 45);
+	assert(r_i == 0);
+	assert(q_i == 0);
 
 	// photon potentially going through wall to outside optic
-	photon->exit_coords.x = 0.206499;
+	photon->exit_coords.x = 0.2061; //TODO: it appears this photon does not start within 258 shells...
 	photon->exit_coords.y = 0.;
 	photon->exit_coords.z = 0.;
 	photon->exit_direction.x = 1.;
@@ -95,7 +95,7 @@ void test_polycap_capil_trace_wall_leak() {
 	assert(photon != NULL);
 	assert(test == 3);
 	assert(r_i == 0);
-	assert(q_i == 279);
+	assert(q_i == 259);
 
 	polycap_description_free(description);
 	polycap_photon_free(photon);
@@ -106,13 +106,14 @@ void test_polycap_capil_leak() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
 	int test, i;
 	polycap_rng *rng;
-	polycap_photon *photon;
+	polycap_photon *photon = NULL;
 	polycap_vector3 start_coords, start_direction, start_electric_vector, central_axis;
 	polycap_vector3 cap_coord0, cap_coord1, surface_norm;
-	double *cap_x, *cap_y;
-	int i_capx, i_capy;
+	polycap_vector3 phot_coord0, phot_coord1;
+	double *cap_x, *cap_y, z;
+	double r_i, q_i;
 	double alfa, rad0, rad1;
-	double capx_0, capy_0, n_shells;
+	double n_shells;
 	int iz[2]={8,14};
 	double wi[2]={53.0,47.0};
 	polycap_profile *profile;
@@ -167,7 +168,7 @@ void test_polycap_capil_leak() {
 
 	// photon potentially going through wall to outside optic
 	// 	photon should have 1 leak event (polycap_capil_trace_wall() returned 3)
-	photon->exit_coords.x = 0.206499;
+	photon->exit_coords.x = 0.2061;
 	photon->exit_coords.y = 0.;
 	photon->exit_coords.z = 0.;
 	photon->exit_direction.x = 1.;
@@ -187,39 +188,65 @@ void test_polycap_capil_leak() {
 	photon->i_refl = 0; //set reflections to 0
 	photon->n_leaks = 0; //set leaks to 0
 	photon->n_recap = 0; //set recap photons to 0
-	photon->start_coords.x = -1.1741607800e-01;
-	photon->start_coords.y = 1.4179302600e-01;
-	photon->start_coords.z = 7.7424953292;
-	photon->start_direction.x = 0.066793;
-	photon->start_direction.y = -0.080431;
-	photon->start_direction.z = 0.9945198;
+	photon->start_coords.x = 0.;
+	photon->start_coords.y = 0.;
+	photon->start_coords.z = 8.5;
+	photon->start_direction.x = 1.5e-4;
+	photon->start_direction.y = 0.;
+	photon->start_direction.z = 0.5;
+	photon->exit_coords.x = photon->start_coords.x;
+	photon->exit_coords.y = photon->start_coords.y;
+	photon->exit_coords.z = photon->start_coords.z;
+	photon->exit_direction.x = photon->start_direction.x;
+	photon->exit_direction.y = photon->start_direction.y;
+	photon->exit_direction.z = photon->start_direction.z;
 	// photon potentially going through wall straight to exit
  	//	photon should have 1 recap event (polycap_capil_trace_wall() returned 2)
 	polycap_clear_error(&error);
 	//	determine axis coordinates of this capillary
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5); //258
-	i_capx = round( (photon->start_coords.x-(photon->start_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (description->profile->ext[0] / (n_shells)) );
-	i_capy = round( (photon->start_coords.y)/(description->profile->ext[0]/(n_shells)*sin(M_PI/3.)) );
-	capx_0 = i_capx * description->profile->ext[0]/(n_shells) + i_capy * description->profile->ext[0]/(n_shells)*cos(M_PI/3.);
-	capy_0 = i_capy * (description->profile->ext[0]/(n_shells))*sin(M_PI/3.);
+	z = description->profile->ext[0]/(2.*cos(M_PI/6.)*(n_shells+1));
+	r_i = photon->start_coords.y * (2./3) / z;
+	q_i = (photon->start_coords.x/(2.*cos(M_PI/6.)) - photon->start_coords.y/3) / z;
+	if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
+		q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
+		r_i = round(r_i);
+	} else if (fabs(r_i - round(r_i)) >  fabs(-1.*q_i-r_i - round(-1.*q_i-r_i))){
+		r_i = -1.*round(q_i) - round(-1.*q_i-r_i);
+		q_i = round(q_i);
+	} else {
+		q_i = round(q_i);
+		r_i = round(r_i);
+	}
+
 	cap_x = malloc(sizeof(double)*(description->profile->nmax+1));
 	cap_y = malloc(sizeof(double)*(description->profile->nmax+1));
 	for(i=0; i<=description->profile->nmax; i++){
-		cap_x[i] = description->profile->ext[i] * capx_0 / description->profile->ext[0];
-		cap_y[i] = description->profile->ext[i] * capy_0 / description->profile->ext[0];
+		z = description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+		cap_x[i] = (2.* q_i+r_i) * cos(M_PI/6.) * z;
+		cap_y[i] = r_i * (3./2) * z;
 	}
 	//now find interaction of current photon with wall
 	//	obtain an angle and surface norm from polycap_capil_segment()
-	for(i=1; i<=description->profile->nmax; i++){
-		cap_coord0.x = cap_x[i-1];
-		cap_coord0.y = cap_y[i-1];
-		cap_coord0.z = description->profile->z[i-1];
-		rad0 = description->profile->cap[i-1];
-		cap_coord1.x = cap_x[i];
-		cap_coord1.y = cap_y[i];
-		cap_coord1.z = description->profile->z[i];
-		rad1 = description->profile->cap[i];
-		test = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, &photon->start_coords, photon->start_direction, &surface_norm, &alfa, &error);
+	for(i=0; i<description->profile->nmax; i++){
+		cap_coord0.x = cap_x[i];
+		cap_coord0.y = cap_y[i];
+		cap_coord0.z = description->profile->z[i];
+		rad0 = description->profile->cap[i];
+		cap_coord1.x = cap_x[i+1];
+		cap_coord1.y = cap_y[i+1];
+		cap_coord1.z = description->profile->z[i+1];
+		rad1 = description->profile->cap[i+1];
+		phot_coord0.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord0.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord0.z = description->profile->z[i];
+		phot_coord1.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i+1]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord1.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i+1]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord1.z = description->profile->z[i+1];
+		test = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, phot_coord0, phot_coord1, photon->start_direction, &photon->start_coords, &surface_norm, &alfa, &error);
+		if(alfa > M_PI/2. || alfa < 0.){
+			test = -5;
+		}
 		if(test == 0) {
 			break;
 		}
@@ -247,7 +274,7 @@ void test_polycap_capil_leak() {
 	photon = NULL;
 
 	//photon transmitting through 1 capillary wall to next capillary, not yet at exit window
-	//	generates succesful transmitted event, as well as 2 leak events
+	//	generates succesful transmitted event, as well as leak events
 	//re-prepare photon struct
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
@@ -270,29 +297,56 @@ void test_polycap_capil_leak() {
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.;
 	polycap_norm(&photon->start_direction);
+	photon->exit_direction.x = photon->start_direction.x;
+	photon->exit_direction.y = photon->start_direction.y;
+	photon->exit_direction.z = photon->start_direction.z;
+	photon->exit_coords.x = photon->start_coords.x;
+	photon->exit_coords.y = photon->start_coords.y;
+	photon->exit_coords.z = photon->start_coords.z;
 	//	photon should have multiple leak and/or recap events (polycap_capil_trace_wall() returned 1)
-	i_capx = round( (photon->start_coords.x-(photon->start_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (description->profile->ext[0] / (n_shells)) );
-	i_capy = round( (photon->start_coords.y)/(description->profile->ext[0]/(n_shells)*sin(M_PI/3.)) );
-	capx_0 = i_capx * description->profile->ext[0]/(n_shells) + i_capy * description->profile->ext[0]/(n_shells)*cos(M_PI/3.);
-	capy_0 = i_capy * (description->profile->ext[0]/(n_shells))*sin(M_PI/3.);
+	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5); //258
+	z = description->profile->ext[0]/(2.*cos(M_PI/6.)*(n_shells+1));
+	r_i = photon->start_coords.y * (2./3) / z;
+	q_i = (photon->start_coords.x/(2.*cos(M_PI/6.)) - photon->start_coords.y/3) / z;
+	if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
+		q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
+		r_i = round(r_i);
+	} else if (fabs(r_i - round(r_i)) >  fabs(-1.*q_i-r_i - round(-1.*q_i-r_i))){
+		r_i = -1.*round(q_i) - round(-1.*q_i-r_i);
+		q_i = round(q_i);
+	} else {
+		q_i = round(q_i);
+		r_i = round(r_i);
+	}
+
 	cap_x = malloc(sizeof(double)*(description->profile->nmax+1));
 	cap_y = malloc(sizeof(double)*(description->profile->nmax+1));
 	for(i=0; i<=description->profile->nmax; i++){
-		cap_x[i] = description->profile->ext[i] * capx_0 / description->profile->ext[0];
-		cap_y[i] = description->profile->ext[i] * capy_0 / description->profile->ext[0];
+		z = description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+		cap_x[i] = (2.* q_i+r_i) * cos(M_PI/6.) * z;
+		cap_y[i] = r_i * (3./2) * z;
 	}
 	//now find interaction of current photon with wall
 	//	obtain an angle and surface norm from polycap_capil_segment()
-	for(i=1; i<=description->profile->nmax; i++){
-		cap_coord0.x = cap_x[i-1];
-		cap_coord0.y = cap_y[i-1];
-		cap_coord0.z = description->profile->z[i-1];
-		rad0 = description->profile->cap[i-1];
-		cap_coord1.x = cap_x[i];
-		cap_coord1.y = cap_y[i];
-		cap_coord1.z = description->profile->z[i];
-		rad1 = description->profile->cap[i];
-		test = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, &photon->start_coords, photon->start_direction, &surface_norm, &alfa, &error);
+	for(i=0; i<description->profile->nmax; i++){
+		cap_coord0.x = cap_x[i];
+		cap_coord0.y = cap_y[i];
+		cap_coord0.z = description->profile->z[i];
+		rad0 = description->profile->cap[i];
+		cap_coord1.x = cap_x[i+1];
+		cap_coord1.y = cap_y[i+1];
+		cap_coord1.z = description->profile->z[i+1];
+		rad1 = description->profile->cap[i+1];
+		phot_coord0.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord0.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord0.z = description->profile->z[i];
+		phot_coord1.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i+1]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord1.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i+1]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord1.z = description->profile->z[i+1];
+		test = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, phot_coord0, phot_coord1, photon->start_direction, &photon->start_coords, &surface_norm, &alfa, &error);
+		if(alfa > M_PI/2. || alfa < 0.){
+			test = -5;
+		}
 			//photon->start_coords now contains coordinates of next intersection point
 		if(test == 0) {
 			break;
@@ -309,9 +363,10 @@ void test_polycap_capil_leak() {
 	alfa = M_PI_2 - alfa;
 	test = polycap_capil_reflect(photon, alfa, surface_norm, true, &error);
 	assert(test == 0);
-	assert(photon->n_leaks == 1);
+	assert(photon->n_leaks == 2);
 	assert(photon->n_recap == 0);
-	assert(fabs(photon->leaks[0].weight[0]-0.500254) < 0.0000005);
+	assert(fabs(photon->leaks[0].weight[0]-0.884621) < 0.0000005);
+	assert(fabs(photon->leaks[1].weight[0]-0.000603) < 0.0000005);
 	assert(fabs(photon->weight[0]-0.010727) < 0.0000005);
 
 	polycap_free(cap_x);
@@ -345,29 +400,56 @@ void test_polycap_capil_leak() {
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.;
 	polycap_norm(&photon->start_direction);
+	photon->exit_direction.x = photon->start_direction.x;
+	photon->exit_direction.y = photon->start_direction.y;
+	photon->exit_direction.z = photon->start_direction.z;
+	photon->exit_coords.x = photon->start_coords.x;
+	photon->exit_coords.y = photon->start_coords.y;
+	photon->exit_coords.z = photon->start_coords.z;
 	//	photon should have multiple leak and/or recap events (polycap_capil_trace_wall() returned 1)
-	i_capx = round( (photon->start_coords.x-(photon->start_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (description->profile->ext[0] / (n_shells)) );
-	i_capy = round( (photon->start_coords.y)/(description->profile->ext[0]/(n_shells)*sin(M_PI/3.)) );
-	capx_0 = i_capx * description->profile->ext[0]/(n_shells) + i_capy * description->profile->ext[0]/(n_shells)*cos(M_PI/3.);
-	capy_0 = i_capy * (description->profile->ext[0]/(n_shells))*sin(M_PI/3.);
+	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5); //258
+	z = description->profile->ext[0]/(2.*cos(M_PI/6.)*(n_shells+1));
+	r_i = photon->start_coords.y * (2./3) / z;
+	q_i = (photon->start_coords.x/(2.*cos(M_PI/6.)) - photon->start_coords.y/3) / z;
+	if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
+		q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
+		r_i = round(r_i);
+	} else if (fabs(r_i - round(r_i)) >  fabs(-1.*q_i-r_i - round(-1.*q_i-r_i))){
+		r_i = -1.*round(q_i) - round(-1.*q_i-r_i);
+		q_i = round(q_i);
+	} else {
+		q_i = round(q_i);
+		r_i = round(r_i);
+	}
+
 	cap_x = malloc(sizeof(double)*(description->profile->nmax+1));
 	cap_y = malloc(sizeof(double)*(description->profile->nmax+1));
 	for(i=0; i<=description->profile->nmax; i++){
-		cap_x[i] = description->profile->ext[i] * capx_0 / description->profile->ext[0];
-		cap_y[i] = description->profile->ext[i] * capy_0 / description->profile->ext[0];
+		z = description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+		cap_x[i] = (2.* q_i+r_i) * cos(M_PI/6.) * z;
+		cap_y[i] = r_i * (3./2) * z;
 	}
 	//now find interaction of current photon with wall
 	//	obtain an angle and surface norm from polycap_capil_segment()
-	for(i=1; i<=description->profile->nmax; i++){
-		cap_coord0.x = cap_x[i-1];
-		cap_coord0.y = cap_y[i-1];
-		cap_coord0.z = description->profile->z[i-1];
-		rad0 = description->profile->cap[i-1];
-		cap_coord1.x = cap_x[i];
-		cap_coord1.y = cap_y[i];
-		cap_coord1.z = description->profile->z[i];
-		rad1 = description->profile->cap[i];
-		test = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, &photon->start_coords, photon->start_direction, &surface_norm, &alfa, &error);
+	for(i=0; i<description->profile->nmax; i++){
+		cap_coord0.x = cap_x[i];
+		cap_coord0.y = cap_y[i];
+		cap_coord0.z = description->profile->z[i];
+		rad0 = description->profile->cap[i];
+		cap_coord1.x = cap_x[i+1];
+		cap_coord1.y = cap_y[i+1];
+		cap_coord1.z = description->profile->z[i+1];
+		rad1 = description->profile->cap[i+1];
+		phot_coord0.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord0.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord0.z = description->profile->z[i];
+		phot_coord1.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[i+1]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord1.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i+1]-photon->exit_coords.z)/photon->exit_direction.z;
+		phot_coord1.z = description->profile->z[i+1];
+		test = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, phot_coord0, phot_coord1, photon->start_direction, &photon->start_coords, &surface_norm, &alfa, &error);
+		if(alfa > M_PI/2. || alfa < 0.){
+			test = -5;
+		}
 			//photon->start_coords now contains coordinates of next intersection point
 		if(test == 0) {
 			break;
@@ -385,9 +467,11 @@ void test_polycap_capil_leak() {
 	test = polycap_capil_reflect(photon, alfa, surface_norm, true, &error);
 	assert(test == 0);
 	assert(photon->n_leaks == 1);
-	assert(photon->n_recap == 0);
-	assert(fabs(photon->leaks[0].weight[0]-0.000118) < 0.0000005);
-	assert(fabs(photon->weight[0]-0.018004) < 0.0000005);
+	assert(photon->n_recap == 2);
+	assert(fabs(photon->leaks[0].weight[0]-0.043311) < 0.0000005);
+	assert(fabs(photon->weight[0]-0.032340) < 0.0000005);
+	assert(fabs(photon->recap[0].weight[0]-0.000143) < 0.0000005);
+	assert(fabs(photon->recap[1].weight[0]-0.000352) < 0.0000005);
 
 	polycap_free(cap_x);
 	cap_x = NULL;
@@ -422,15 +506,27 @@ void test_polycap_capil_leak() {
 	polycap_clear_error(&error);
 	polycap_norm(&photon->start_direction);
 	//	photon should have multiple leak and/or recap events (polycap_capil_trace_wall() returned 1)
-	i_capx = round( (photon->start_coords.x-(photon->start_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (description->profile->ext[0] / (n_shells)) );
-	i_capy = round( (photon->start_coords.y)/(description->profile->ext[0]/(n_shells)*sin(M_PI/3.)) );
-	capx_0 = i_capx * description->profile->ext[0]/(n_shells) + i_capy * description->profile->ext[0]/(n_shells)*cos(M_PI/3.);
-	capy_0 = i_capy * (description->profile->ext[0]/(n_shells))*sin(M_PI/3.);
+	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5); //258
+	z = description->profile->ext[0]/(2.*cos(M_PI/6.)*(n_shells+1));
+	r_i = photon->start_coords.y * (2./3) / z;
+	q_i = (photon->start_coords.x/(2.*cos(M_PI/6.)) - photon->start_coords.y/3) / z;
+	if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
+		q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
+		r_i = round(r_i);
+	} else if (fabs(r_i - round(r_i)) >  fabs(-1.*q_i-r_i - round(-1.*q_i-r_i))){
+		r_i = -1.*round(q_i) - round(-1.*q_i-r_i);
+		q_i = round(q_i);
+	} else {
+		q_i = round(q_i);
+		r_i = round(r_i);
+	}
+
 	cap_x = malloc(sizeof(double)*(description->profile->nmax+1));
 	cap_y = malloc(sizeof(double)*(description->profile->nmax+1));
 	for(i=0; i<=description->profile->nmax; i++){
-		cap_x[i] = description->profile->ext[i] * capx_0 / description->profile->ext[0];
-		cap_y[i] = description->profile->ext[i] * capy_0 / description->profile->ext[0];
+		z = description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+		cap_x[i] = (2.* q_i+r_i) * cos(M_PI/6.) * z;
+		cap_y[i] = r_i * (3./2) * z;
 	}
         //calculate initial photon weight based on capillary channel effective solid angle.
 		//Mathematically, this is the cos of the angle between photon propagation and polycapillary-to-photonsource axis
@@ -450,6 +546,8 @@ void test_polycap_capil_leak() {
 	//assert iesc and weights
 	assert(iesc == -2); //iesc should be -2 as photon should be absorbed in capillary (not counting leakage events)
 	assert(photon->weight[0] < 1e-5);
+	assert(photon->n_leaks == 0);
+	assert(photon->n_recap == 0);
 
 /*	//some tests to figure out what goes wrong with leaks in polycap_capil_segment()
 printf("-----Initiating Special Tests - 1------\n");
@@ -677,10 +775,10 @@ void test_polycap_capil_trace_leak() {
 
 	//Should work, finds new reflection point
 	polycap_clear_error(&error);
-	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
+	test = polycap_capil_trace(ix, photon, description, cap, cap, true, &error);
 	assert(test == -2); //new reflection found, but weight is too low
 	assert(photon->weight[0] < 1.e-4);
-	assert(*ix == 0);
+	assert(*ix == 1);
 	assert(photon->i_refl == 0);
 	assert(fabs(photon->exit_direction.x - 0.049875) < 1.e-5);
 	assert(fabs(photon->exit_direction.y - (-0.049875)) < 1.e-5);
@@ -710,10 +808,10 @@ void test_polycap_capil_trace_leak() {
 	photon->exit_direction.x = 3.e-5;
 	photon->exit_direction.y = 3.e-5;
 	photon->exit_direction.z = 0.999;
-	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
+	test = polycap_capil_trace(ix, photon, description, cap, cap, true, &error);
 	assert(test == 0);
 	assert(fabs(photon->weight[0] - 0.999585 ) < 1.e-4);
-	assert(*ix == 552);
+	assert(*ix == 553);
 	assert(photon->i_refl == 1);
 	assert(fabs(photon->exit_direction.x - (-0.000069)) < 1.e-5);
 	assert(fabs(photon->exit_direction.y - (-0.000069)) < 1.e-5);
@@ -819,12 +917,16 @@ void test_polycap_photon_leak() {
 	polycap_clear_error(&error);
 
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
+//printf("================\n");
+//printf("test: %i, n_recap: %li, n_leaks: %li, w: %lf\n",test, photon->n_recap, photon->n_leaks, weights[0]);
+//printf("	lw0: %lf rw0: %lf\n", photon->leaks[0].weight[0], photon->recap[0].weight[0]);
+//printf("--------------\n");
 	assert(photon != NULL);
 	assert(test == 0);
 	assert(photon->n_leaks == 1);
 	assert(photon->n_recap == 1);
-	assert(fabs(photon->leaks[0].weight[0]-0.022201) < 0.0000005);
-	assert(fabs(photon->recap[0].weight[0]-0.000106) < 0.0000005);
+	assert(fabs(photon->leaks[0].weight[0]-0.280201) < 0.0000005);
+	assert(fabs(photon->recap[0].weight[0]-0.000236) < 0.0000005);
 	assert(fabs(weights[0]-0.000001) < 0.0000005);
 
 	polycap_clear_error(&error);
@@ -850,8 +952,6 @@ void test_polycap_photon_leak() {
 	polycap_clear_error(&error);
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
 	assert(photon->n_energies == 1);
-	assert(photon->amu == NULL);
-	assert(photon->scatf == NULL);
 	assert(test == 3);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 	polycap_free(weights);
@@ -878,6 +978,9 @@ void test_polycap_photon_leak() {
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.0;
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
+	assert(fabs(photon->exit_coords.x) < 1.e-5);
+	assert(fabs(photon->exit_coords.y) < 1.e-5);
+	assert(fabs(photon->exit_coords.z) < 1.e-5); //polycap_photon_launch() does not update exit coords if no interaction was found
 	assert(photon->n_energies == 1);
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
@@ -888,25 +991,24 @@ void test_polycap_photon_leak() {
 
 	//let's launch some photons with specific starting coordinates and direction
 	//	polycap_capil_segment() finds interaction that is outside polycap for these ones...
-printf("-----Initiating Special Tests - 2------\n");
-double energies[9]={1,5,10,15,20,25,30};
+	double energies[9]={1,5,10,15,20,25,30};
 	polycap_photon_free(photon);
 	photon = NULL;
 	polycap_clear_error(&error);
-	start_coords.x = 0.185507;
-	start_coords.y = 0.017764;
-	start_coords.z = 3.099099;
-	start_direction.x = 0.000121;
-	start_direction.y = -0.000057;
-	start_direction.z = 1.0;
+	start_coords.x = -0.035221;
+	start_coords.y = 0.048462;
+	start_coords.z = 8.953769;
+	start_direction.x = 0.043877;
+	start_direction.y = -0.066066;
+	start_direction.z = 0.996850;
 	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
 
 	assert(photon != NULL);
 	polycap_clear_error(&error);
+printf("-------------\n");
 	test = polycap_photon_launch(photon, 7., energies, &weights, true, &error);
-printf( "test: %i\n",test);
+printf("===========\n");
 	polycap_free(weights);
-printf("-----Stopping Special Tests------\n");
 	
 
 	polycap_description_free(description);
@@ -932,7 +1034,7 @@ void test_polycap_source_leak() {
 /*	polycap_rng *rng;
 	polycap_rng *rng2;
 */
-	int n_photons = 10000;
+	int n_photons = 100;
 
 /*	int i,j;
 	int iesc1=0, iesc2=0;
@@ -989,20 +1091,20 @@ void test_polycap_source_leak() {
 	assert(efficiencies->images->i_exit == n_photons);
 	assert(efficiencies->images->i_leak > 0);
 	assert(efficiencies->images->i_recap > 0);
-	assert(fabs(efficiencies->efficiencies[0] - 0.401) <= 0.05); //1 keV
-	assert(fabs(efficiencies->efficiencies[1] - 0.370) <= 0.05); //5 keV
-	assert(fabs(efficiencies->efficiencies[2] - 0.210) <= 0.05); //10 keV
-	assert(fabs(efficiencies->efficiencies[3] - 0.087) <= 0.05); //15 keV
-	assert(fabs(efficiencies->efficiencies[4] - 0.042) <= 0.05); //20 keV
-	assert(fabs(efficiencies->efficiencies[5] - 0.021) <= 0.05); //25 keV
-	assert(fabs(efficiencies->efficiencies[6] - 0.012) <= 0.05); //30 keV
+	assert(fabs(efficiencies->efficiencies[0] - 0.353) <= 0.05); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - 0.294) <= 0.05); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - 0.115) <= 0.05); //10 keV
+	assert(fabs(efficiencies->efficiencies[3] - 0.043) <= 0.05); //15 keV
+	assert(fabs(efficiencies->efficiencies[4] - 0.021) <= 0.05); //20 keV
+	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.05); //25 keV
+	assert(fabs(efficiencies->efficiencies[6] - 0.007) <= 0.05); //30 keV
 
 	//Now redo test without leaks, to check for differences in non-leak event transmission efficiency
 	polycap_clear_error(&error);
 	efficiencies2 = polycap_source_get_transmission_efficiencies(source, -1, n_photons, false, NULL, &error);
 	assert(efficiencies2 != NULL);
-	/*
 	printf("with leaks: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies->efficiencies[0], efficiencies->efficiencies[1], efficiencies->efficiencies[2], efficiencies->efficiencies[3], efficiencies->efficiencies[4], efficiencies->efficiencies[5], efficiencies->efficiencies[6]);
+	/*
 	printf("no leaks: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies2->efficiencies[0], efficiencies2->efficiencies[1], efficiencies2->efficiencies[2], efficiencies2->efficiencies[3], efficiencies2->efficiencies[4], efficiencies2->efficiencies[5], efficiencies2->efficiencies[6]);
 	printf("**i_exit: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_exit, efficiencies2->images->i_exit);
 	printf("**i_start: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_start, efficiencies2->images->i_start);

@@ -381,6 +381,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		z = photon->description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
 		cap_y[i] = r_i * (3./2) * z;
 		cap_x[i] = (2.* q_i+r_i) * cos(M_PI/6.) * z;
+		if(description->profile->z[i] <= photon->start_coords.z) *ix = i; //set ix to current photon segment id
 	}
 	//Check whether photon start coordinate is within capillary (within capillary center at distance < capillary radius)
 	if(photon->start_coords.z > 0){
@@ -406,14 +407,6 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies()
 	} //TODO: there is also the case where photon is launched within capillary wall at z>0...
 
-/*	//calculate initial photon weight based on capillary channel effective solid angle.
-	//Mathematically, this is the cos of the angle between photon propagation and polycapillary-to-photonsource axis
-	weight = polycap_scalar(photon->start_direction,central_axis);
-	for(i=0; i<photon->n_energies; i++){
-		photon->weight[i] = photon->weight[i] * weight;
-	}
-*/ //TODO: this section is perhaps outdated. It surely could mess up simulations where the source is very close to optic entrance
-	
 	//polycap_capil_trace should be ran description->profile->nmax at most,
 	//	which means it essentially reflected once every known capillary coordinate
 	//Photon will also contain all info on potential leak and recap events ( if(leak_calc) )

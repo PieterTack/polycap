@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include -DEXAMPLE_DIR=\"$(top_srcdir)/example/\" -DTEST_BUILD
 
-check_PROGRAMS = error profile description capil photon source #leaks
+check_PROGRAMS = error profile description capil photon source leaks
 check_SCRIPTS =
 if ENABLE_PYTHON
 check_SCRIPTS += python.sh
@@ -38,10 +38,10 @@ source_LDADD = ../src/libpolycap-check.la
 source_CFLAGS = @OPENMP_CFLAGS@ @easyRNG_CFLAGS@
 source_LDFLAGS = @OPENMP_CFLAGS@
 
-#leaks_SOURCES = leaks.c
-#leaks_LDADD = ../src/libpolycap-check.la
-#leaks_CFLAGS = @OPENMP_CFLAGS@ @easyRNG_CFLAGS@
-#leaks_LDFLAGS = @OPENMP_CFLAGS@
+leaks_SOURCES = leaks.c
+leaks_LDADD = ../src/libpolycap-check.la
+leaks_CFLAGS = @OPENMP_CFLAGS@ @easyRNG_CFLAGS@
+leaks_LDFLAGS = @OPENMP_CFLAGS@
 
 python.sh: ../python/polycap.la python.py
 	@echo "PATH=\"../src/.libs:$$PATH\" LD_LIBRARY_PATH=\"../src/.libs\" DYLD_LIBRARY_PATH=\"../src/.libs\" PYTHONPATH=\"../python/.libs\" $(PYTHON) ${top_srcdir}/tests/python.py" > python.sh
