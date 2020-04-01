@@ -244,12 +244,12 @@ void test_polycap_photon_launch() {
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
-	//This works but returns 3 (as photon was not in PC to begin with)
+	//This works but returns -2 (as photon was not in PC to begin with)
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.21;
 	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(photon->n_energies == 1);
-	assert(test == 3);
+	assert(test == -2);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 	polycap_free(weights);
 	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...
@@ -283,8 +283,8 @@ void test_polycap_photon_launch() {
 	
 	//Another photon, outside of optic shells, but just within optic exterior (so should leak if enabled)
 	polycap_clear_error(&error);
-	photon->start_coords.x = -0.134137;
-	photon->start_coords.y = 0.125042;
+	photon->start_coords.x = 0.15104418; //hexagon (126,126), 0.000355 along x away from hexagon centre
+	photon->start_coords.y = 0.087000430;
 	photon->start_coords.z = 0.0;
 	photon->start_direction.x = 0.;
 	photon->start_direction.y = 0.;

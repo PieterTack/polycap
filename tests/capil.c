@@ -48,7 +48,7 @@ void test_polycap_capil_segment() {
 	//Should work
 	polycap_clear_error(&error);
 	test = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, phot_coord0, phot_coord1, photon_dir, &photon_coord, &surface_norm, &alfa, &error);
-	assert(test == 0);
+	assert(test == 1);
 //	assert(fabs(alfa - 1.563725) < 1.e-5); //value before phot_dir was normalized in segment function
 	assert(fabs(alfa - 1.500203) < 1.e-5);
 	assert(fabs(photon_coord.x - 0.003536) < 1.e-5);
@@ -101,6 +101,7 @@ void test_polycap_refl_polar() {
 	double e=10., theta, density=2.23, scatf=0.503696, lin_abs_coeff=42.544677;
 	polycap_photon *photon;
 	polycap_vector3 surface_norm;
+	polycap_vector3 electric_vector;
 
 	//define relevant photon values
 	photon = malloc(sizeof(polycap_photon));
@@ -110,7 +111,7 @@ void test_polycap_refl_polar() {
 	surface_norm.z = 0.;
 
 	//won't work
-	test = polycap_refl_polar(-1, -1*M_PI, 0.,-1., -1., surface_norm, photon, &error);
+	test = polycap_refl_polar(-1, -1*M_PI, 0.,-1., -1., surface_norm, photon, &electric_vector, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
@@ -121,12 +122,12 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 1.; //s-polarised
 	photon->exit_electric_vector.y = 0.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
+	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.) < 1.e-5);
-	assert(photon->exit_electric_vector.x == 1);
-	assert(photon->exit_electric_vector.y == 0);
-	assert(photon->exit_electric_vector.z == 0);
+	assert(electric_vector.x == 1);
+	assert(electric_vector.y == 0);
+	assert(electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = M_PI_2-2.e-3;
@@ -135,12 +136,12 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 1.; //s-polarised
 	photon->exit_electric_vector.y = 0.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
+	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.984522) < 1.e-5);
-	assert(photon->exit_electric_vector.x == 1);
-	assert(photon->exit_electric_vector.y == 0);
-	assert(photon->exit_electric_vector.z == 0);
+	assert(electric_vector.x == 1);
+	assert(electric_vector.y == 0);
+	assert(electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = M_PI_2-3.1e-3;
@@ -149,12 +150,12 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 1.; //s-polarised
 	photon->exit_electric_vector.y = 0.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
+	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.496310) < 1.e-5);
-	assert(photon->exit_electric_vector.x == 1);
-	assert(photon->exit_electric_vector.y == 0);
-	assert(photon->exit_electric_vector.z == 0);
+	assert(electric_vector.x == 1);
+	assert(electric_vector.y == 0);
+	assert(electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = 0.;
@@ -163,7 +164,7 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 0.; //p-polarised
 	photon->exit_electric_vector.y = 1.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
+	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.) < 1.e-5);
 
@@ -174,12 +175,12 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 0.; //p-polarised
 	photon->exit_electric_vector.y = 1.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
+	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.984522) < 1.e-5);
-	assert(photon->exit_electric_vector.x == 0);
-	assert(photon->exit_electric_vector.y == 1);
-	assert(photon->exit_electric_vector.z == 0);
+	assert(electric_vector.x == 0);
+	assert(electric_vector.y == 1);
+	assert(electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = M_PI_2-3.1e-3;
@@ -188,12 +189,12 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 0.; //p-polarised
 	photon->exit_electric_vector.y = 1.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
+	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.496310) < 1.e-5);
-	assert(photon->exit_electric_vector.x == 0);
-	assert(photon->exit_electric_vector.y == 1);
-	assert(photon->exit_electric_vector.z == 0);
+	assert(electric_vector.x == 0);
+	assert(electric_vector.y == 1);
+	assert(electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = M_PI_2-2.e-3;
@@ -202,12 +203,12 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 0.707107; //non-polarised
 	photon->exit_electric_vector.y = 0.707107;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
+	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.984522) < 1.e-5);
-	assert((photon->exit_electric_vector.x - 0.707107) < 1.e-5);
-	assert((photon->exit_electric_vector.y - 0.707107) < 1.e-5);
-	assert(photon->exit_electric_vector.z == 0);
+	assert((electric_vector.x - 0.707107) < 1.e-5);
+	assert((electric_vector.y - 0.707107) < 1.e-5);
+	assert(electric_vector.z == 0);
 
 	polycap_clear_error(&error);
 	theta = M_PI_2-3.1e-3;
@@ -216,12 +217,12 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 0.707107; //non-polarised
 	photon->exit_electric_vector.y = 0.707107;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
+	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.496310) < 1.e-5);
-	assert((photon->exit_electric_vector.x - 0.707107) < 1.e-5);
-	assert((photon->exit_electric_vector.y - 0.707107) < 1.e-5);
-	assert(photon->exit_electric_vector.z == 0);
+	assert((electric_vector.x - 0.707107) < 1.e-5);
+	assert((electric_vector.y - 0.707107) < 1.e-5);
+	assert(electric_vector.z == 0);
 
 	//NOTE: for these angles it doesn't matter if we use polarised radiation or not (at least in the checks)
 	//	attempt at larger angles, there should be more difference between Rs and Rp then...
@@ -235,7 +236,7 @@ void test_polycap_refl_polar() {
 //	theta = M_PI_2/1000*i;
 //	photon->exit_direction.y = sin(-1.*theta);
 //	photon->exit_direction.z = cos(theta);
-//	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &error);
+//	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 //}
 
 
@@ -303,22 +304,29 @@ void test_polycap_capil_reflect() {
 	polycap_clear_error(&error);
 	double alfa = 2.e-3;
 	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
-	assert(test == 0);
+	assert(test == 1);
 	assert(fabs(photon->weight[0] - 0.984522) < 1.e-5);
 
 	polycap_clear_error(&error);
 	alfa = 3.1e-3;
 	photon->weight[0] = 1.;
 	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
-	assert(test == 0);
+	assert(test == 1);
 	assert(fabs(photon->weight[0] - 0.496310) < 1.e-5);
 
 	polycap_clear_error(&error);
 	alfa = M_PI_2;
 	photon->weight[0] = 1.;
 	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
-	assert(test == -2);
+	assert(test == 0);
 	assert(fabs(photon->weight[0] - 0.) < 1.e-5);
+
+	polycap_clear_error(&error);
+	alfa = 2.0e-2;
+	photon->weight[0] = 1.;
+	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
+	assert(test == 0);
+	assert(fabs(photon->weight[0] - 0.000035) < 1.e-5);
 
 	polycap_description_free(description);
 	polycap_profile_free(profile);
@@ -396,9 +404,9 @@ void test_polycap_capil_trace() {
 	//Should work, finds new reflection point
 	polycap_clear_error(&error);
 	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
-	assert(test == -2); //new reflection found, but weight is too low
+	assert(test == 0); //new reflection found, but weight is too low
 	assert(photon->weight[0] < 1.e-4);
-	assert(*ix == 1);
+	assert(*ix == 0);
 	assert(photon->i_refl == 0);
 	assert(fabs(photon->exit_direction.x - 0.049875) < 1.e-5);
 	assert(fabs(photon->exit_direction.y - (-0.049875)) < 1.e-5);
@@ -428,12 +436,10 @@ void test_polycap_capil_trace() {
 	photon->exit_direction.x = 3.e-5;
 	photon->exit_direction.y = 3.e-5;
 	photon->exit_direction.z = 0.999;
-printf("--------\n");
 	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
-	assert(test == 0);
-printf("w[0]: %lf, ix: %i, i_refl: %li, dir.x: %lf, y: %lf, z: %lf, exit.x: %lf, y: %lf, z: %lf\n", photon->weight[0], *ix, photon->i_refl, photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z);
+	assert(test == 1);
 	assert(fabs(photon->weight[0] - 0.999585 ) < 1.e-4);
-	assert(*ix == 553);
+	assert(*ix == 552);
 	assert(photon->i_refl == 1);
 	assert(fabs(photon->exit_direction.x - (-0.000069)) < 1.e-5);
 	assert(fabs(photon->exit_direction.y - (-0.000069)) < 1.e-5);
@@ -461,7 +467,7 @@ printf("w[0]: %lf, ix: %i, i_refl: %li, dir.x: %lf, y: %lf, z: %lf, exit.x: %lf,
 	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
 	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
-	assert(test == -2);
+	assert(test == 0);
 	polycap_photon_free(photon);
 	
 	//Should work, but does not find reflection point
@@ -482,7 +488,7 @@ printf("w[0]: %lf, ix: %i, i_refl: %li, dir.x: %lf, y: %lf, z: %lf, exit.x: %lf,
 	photon->weight[0] = 1.0;
 	photon->i_refl = 0;
 	test = polycap_capil_trace(ix, photon, description, cap, cap, false, &error);
-	assert(test == 1);
+	assert(test == -2);
 	assert(photon->i_refl == 0);
 
 	polycap_description_free(description);

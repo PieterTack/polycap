@@ -326,6 +326,8 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		for (i=0; i<photon->description->profile->nmax; i++)
 			if(photon->description->profile->z[i] <= photon->start_coords.z) z_id = i;
 	} else z_id = 0;
+	//determine current photon position exterior
+	current_polycap_ext = ((photon->description->profile->ext[z_id] - photon->description->profile->ext[z_id+1]) / (photon->description->profile->z[z_id] - photon->description->profile->z[z_id+1])) * (photon->start_coords.z - photon->description->profile->z[z_id]) + photon->description->profile->ext[z_id];
 
 	if(n_shells == 0.){ //monocapillary case
 		q_i = 0;
@@ -333,11 +335,11 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		//check if photon->start_coord are within optic boundaries
 		if(sqrt((photon->start_coords.x)*(photon->start_coords.x) + (photon->start_coords.y)*(photon->start_coords.y)) > current_polycap_ext){
 			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within monocapillary boundaries");
-			return 3;
+			return -2;
 		}
 	} else {    // proper polycapillary case
-		//obtain selected capillary indices
-		z = photon->description->profile->ext[z_id]/(2.*cos(M_PI/6.)*(n_shells+1));
+		//obtain selected capillary indices	
+		z = current_polycap_ext/(2.*cos(M_PI/6.)*(n_shells+1));
 		r_i = photon->start_coords.y * (2./3) / z;
 		q_i = (photon->start_coords.x/(2.*cos(M_PI/6.)) - photon->start_coords.y/3) / z;
 		if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
@@ -351,15 +353,9 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 			r_i = round(r_i);
 		}
 		//check if photon->start_coord are within optic boundaries
-		if( (fabs(q_i)+fabs(q_i+r_i)+fabs(r_i))/2 > n_shells ){ //if photon still within polycap boundaries should do wall leak
-			if(polycap_photon_within_pc_boundary(photon->description->profile->ext[z_id], photon->start_coords, error) == 1){
-				if(leak_calc)
-					polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
-				return 2;
-			} else {
-				polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within optic boundaries");
-				return 3;
-			}
+		if(polycap_photon_within_pc_boundary(current_polycap_ext, photon->start_coords, error) == 0){
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within optic boundaries");
+			return -2;
 		}
 	}
 
@@ -412,9 +408,9 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//Photon will also contain all info on potential leak and recap events ( if(leak_calc) )
 	for(i=0; i<=description->profile->nmax; i++){
 		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, leak_calc, error);
-		if(iesc != 0){ //as long as iesc = 0 photon is still reflecting in capillary
-		//iesc == -2, which means this photon has reached its final point (weight[*] <1e-4)
-		//alternatively, iesc can be 1 due to not finding intersection point, as the photon reached the end of the capillary
+		if(iesc != 1){ //as long as iesc = 1 photon is still reflecting in capillary
+		//iesc == 0, which means this photon has reached its final point (weight[*] <1e-4)
+		//alternatively, iesc can be -2 or -3due to not finding intersection point, as the photon reached the end of the capillary
 			break;
 		}
 	}
@@ -448,10 +444,10 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	if(iesc == -1){
 		return -1; //Return -1 if polycap_capil_trace() returned -1
 	}
-	if(iesc == -2){
-		return 0; //return 0 if photon did not reach end of capillary
+	if(iesc == 0){
+		return 0; //return 0 if photon did not reach end of capillary; is absorbed
 	} else {
-		return 1; //if photon reached end of capillary, return 1
+		return 1; //if photon reached end of capillary, return 1 //TODO: 1 will be returned if capil_trace returns -2 or -3, or 1.
 	}
 }
 

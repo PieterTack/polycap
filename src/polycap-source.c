@@ -739,10 +739,10 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			//if iesc == 0 here a new photon should be simulated/started as the photon was absorbed within it.
 			//if iesc == 1 check whether photon is in PC exit window as photon reached end of PC
 			//if iesc == 2 a new photon should be simulated/started as the photon hit the walls -> can still leak
-			//if iesc == 3 a new photon should be simulated/started as the photon missed the optic entrance window
+			//if iesc == -2 a new photon should be simulated/started as the photon missed the optic entrance window
 			//if iesc == -1 some error occured
-			if(iesc == -1)
-				printf("polycap_source_get_transmission_efficiencies: ERROR: polycap_photon_launch returned -1\n");
+//			if(iesc == -1)
+//				printf("polycap_source_get_transmission_efficiencies: ERROR: polycap_photon_launch returned -1\n");
 			if(iesc == 0)
 				not_transmitted_temp[thread_id]++; //photon did not reach end of PC
 			if(iesc == 2)
@@ -880,7 +880,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				polycap_photon_free(photon); //Free photon here as a new one will be simulated 
 				free(weights_temp);
 			}
-		} while(iesc == 0 || iesc == 2 || iesc == 3 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
+		} while(iesc == 0 || iesc == 2 || iesc == -2 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
 
 		if(thread_id == 0 && (double)i/((double)n_photons/(double)max_threads/10.) >= 1.){
 			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(n_photons/max_threads)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
@@ -1067,13 +1067,13 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	efficiencies->n_energies = source->n_energies;
 	efficiencies->images->i_start = sum_iexit+sum_not_entered+sum_not_transmitted;
 	efficiencies->images->i_exit = sum_iexit;
-printf("//////\n");
+//printf("//////\n");
 	for(i=0; i<source->n_energies; i++){
 		efficiencies->energies[i] = source->energies[i];
-		efficiencies->efficiencies[i] = (sum_weights[i] / (double)sum_iexit) * description->open_area;
-printf("	Energy: %lf keV, Weight: %lf \n", efficiencies->energies[i], sum_weights[i]);
+		efficiencies->efficiencies[i] = (sum_weights[i] / ((double)sum_iexit+(double)sum_not_transmitted)) * description->open_area;
+//printf("	Energy: %lf keV, Weight: %lf \n", efficiencies->energies[i], sum_weights[i]);
 	}
-printf("//////\n");
+//printf("//////\n");
 
 	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_iexit+sum_not_entered);
 	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_iexit/(sum_iexit+sum_not_entered));
