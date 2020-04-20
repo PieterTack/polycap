@@ -97,7 +97,7 @@ AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
 PKG_PROG_PKG_CONFIG
 
 #search for xraylib and other modules
-PKG_CHECK_MODULES([xraylib],libxrl >= 3.3.0)
+PKG_CHECK_MODULES([xraylib],libxrl >= 4.0.0)
 #search for gsl
 PKG_CHECK_MODULES([gsl],[gsl])
 #try easyRNG first, gsl as fallback
