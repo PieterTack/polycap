@@ -180,7 +180,7 @@ VALID_PYTHON=
 AC_ARG_VAR(CYTHON, [the Cython command])
 if test "x$enable_python" != xno  ; then
 	##check for python
-	AM_PATH_PYTHON(,[PYTHON_FOUND=true],[PYTHON_FOUND=false])
+	AM_PATH_PYTHON([3.5], [PYTHON_FOUND=true], [PYTHON_FOUND=false])
 	if test "x$PYTHON_FOUND" = xtrue ; then
 		PYTHON_CPPFLAGS=
 		PYTHON_LDFLAGS=
