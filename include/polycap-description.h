@@ -39,7 +39,6 @@ struct _polycap_description;
  */
 typedef struct _polycap_description                 polycap_description;
 
-//TODO: figure out what sig_wave and corr_length actually represent and implement in code, or just get rid of them as parameters...
 /** Creates a new polycap_description by providing all its properties.
  *
  * \param profile polycap_profile containing outer polycapillary and single capillary shape coordinates

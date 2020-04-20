@@ -217,6 +217,18 @@ polycap_description* polycap_description_new(polycap_profile *profile, double si
 
 	// Calculate open area
 	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
+	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
+	if(polycap_profile_validate(description->profile, description->n_cap, error) != 1){
+		polycap_clear_error(error);
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_description_new: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
+		free(description->iz);
+		free(description->wi);
+		free(description->profile->cap);
+		free(description->profile->z);
+		free(description->profile);
+		free(description);
+		return NULL;
+	}
 
 	return description;
 }

@@ -190,12 +190,23 @@ void test_polycap_source_get_transmission_efficiencies() {
 	//Now we test actual values
 	//This will take a while...
 	polycap_clear_error(&error);
-	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, 30000, false, NULL, &error);
+	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, 30000, false, NULL, &error); //orignally 30000 photons simulated
 	assert(efficiencies != NULL);
-	assert(fabs(efficiencies->efficiencies[0] - 0.354) <= 0.005); //1 keV
-	assert(fabs(efficiencies->efficiencies[1] - 0.295) <= 0.005); //5 keV
-	assert(fabs(efficiencies->efficiencies[2] - 0.117) <= 0.005); //10 keV
-	assert(fabs(efficiencies->efficiencies[3] - 0.045) <= 0.005); //15 keV
+printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: %lf\n", efficiencies->efficiencies[0], efficiencies->efficiencies[1], efficiencies->efficiencies[2], efficiencies->efficiencies[3], efficiencies->efficiencies[4], efficiencies->efficiencies[5], efficiencies->efficiencies[6]);
+/*
+	assert(fabs(efficiencies->efficiencies[0] - 0.227) <= 0.005); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - 0.190) <= 0.005); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - 0.073) <= 0.005); //10 keV
+	assert(fabs(efficiencies->efficiencies[3] - 0.028) <= 0.005); //15 keV
+	assert(fabs(efficiencies->efficiencies[4] - 0.013) <= 0.005); //20 keV
+	assert(fabs(efficiencies->efficiencies[5] - 0.007) <= 0.005); //25 keV
+	assert(fabs(efficiencies->efficiencies[6] - 0.004) <= 0.005); //30 keV
+*/
+	//These are values with old normalisation (weight/iexit*open_area instead of (weight/(iexit+not_transm))*open_area)
+	assert(fabs(efficiencies->efficiencies[0] - 0.353) <= 0.005); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - 0.291) <= 0.005); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - 0.114) <= 0.005); //10 keV
+	assert(fabs(efficiencies->efficiencies[3] - 0.043) <= 0.005); //15 keV
 	assert(fabs(efficiencies->efficiencies[4] - 0.021) <= 0.005); //20 keV
 	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.005); //25 keV
 	assert(fabs(efficiencies->efficiencies[6] - 0.007) <= 0.005); //30 keV
@@ -211,7 +222,6 @@ void test_polycap_source_get_transmission_efficiencies() {
 
 	assert(polycap_transmission_efficiencies_write_hdf5(efficiencies, "temp.h5", &error));
 	unlink("temp.h5"); // cleanup
-	
 
 	polycap_transmission_efficiencies_free(efficiencies);
 	polycap_source_free(source);

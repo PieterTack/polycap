@@ -168,7 +168,7 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 	hex_edge_norm3[0] = cos(-1.*M_PI/6); //upper left and lower right hexagon edge x vector
 	hex_edge_norm3[1] = sin(-1.*M_PI/6); //upper left and lower right hexagon edge y vector
 
-	d_cen2hexedge = sqrt(polycap_radius * polycap_radius - polycap_radius/2. * polycap_radius/2.);
+	d_cen2hexedge = sqrt( (polycap_radius * polycap_radius) - ((polycap_radius/2.) * (polycap_radius/2.)) );
 
 	dp1 = fabs(hex_edge_norm1[0]*photon_coord.x + hex_edge_norm1[1]*photon_coord.y);
 	dp2 = fabs(hex_edge_norm2[0]*photon_coord.x + hex_edge_norm2[1]*photon_coord.y);
@@ -210,15 +210,19 @@ double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2)
 int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *energies, double **weights, bool leak_calc, polycap_error **error)
 {
 	polycap_vector3 central_axis;
-	double weight;
-	int i, photon_pos_check, iesc=0;
+//	double weight;
+	int i, iesc = 0;
 	double n_shells; //amount of capillary shells in polycapillary
-	int i_capx, i_capy; //indices of selected capillary
-	double capx_0, capy_0; //coordinates of selected capillary at polycap entrance
+	double q_i, r_i, z; //indices of selected capillary and hexagon radial z
+//	double capx_0, capy_0; //coordinates of selected capillary at polycap entrance
 	double *cap_x, *cap_y; //arrays containing selected capillary central axis coordinates
 	int ix_val = 0;
 	int *ix = &ix_val; //index to remember from which part of capillary last interaction was calculated
 	double d_ph_capcen; //distance between photon start coordinates and selected capillary center
+	int z_id = 0; //index of capillary index should photon be launched somewhere inside optic already (i.e. start_coord.z > 0)
+	double current_polycap_ext = 0; //optic exterior radius at current photon z position
+	double current_cap_rad = 0; //capillary internal radius at current photon z position
+	double current_cap_x, current_cap_y; // capillary central axis coordinate at current photon z position
 
 	//argument sanity check
 	if (photon == NULL) {
@@ -295,22 +299,6 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//NOTE: with description->n_cap <7 only a mono-capillary will be simulated.
 	//    10 describes 1 shell (of 7 capillaries), ... due to hexagon stacking
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
-	//check if photon->start_coord are within hexagonal polycap boundaries
-	if(n_shells == 0.){ //monocapillary case
-		if(sqrt((photon->start_coords.x)*(photon->start_coords.x) + (photon->start_coords.y)*(photon->start_coords.y)) > description->profile->ext[0]){
-			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within monocapillary boundaries");
-			return -1;
-		}
-	} else { //polycapillary case
-		photon_pos_check = polycap_photon_within_pc_boundary(description->profile->ext[0], photon->start_coords, error);
-		if(photon_pos_check == 0){
-			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within polycapillary boundaries");
-			return -1;
-		}
-	}
-
-	//calculate attenuation coefficients and scattering factors
-	polycap_photon_scatf(photon, error);
 
 	//define polycapillary-to-photonsource axis 
 	//!!TODO:this has to be changed. Now we assume all sources are in a straight line with PC central axis!!
@@ -321,34 +309,54 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	//normalize start_direction
 	polycap_norm(&photon->start_direction);
 
+	//calculate attenuation coefficients and scattering factors
+	polycap_photon_scatf(photon, error);
+
+	//Set exit coordinates and direction equal to start coordinates and direction in order to get a clean launch
+	photon->exit_coords.x = photon->start_coords.x;
+	photon->exit_coords.y = photon->start_coords.y;
+	photon->exit_coords.z = photon->start_coords.z;
+	photon->exit_direction.x = photon->start_direction.x;
+	photon->exit_direction.y = photon->start_direction.y;
+	photon->exit_direction.z = photon->start_direction.z;
+	polycap_norm(&photon->exit_direction);
+
+	//determine current optic segment position
+	if(photon->start_coords.z > 0){
+		for (i=0; i<photon->description->profile->nmax; i++)
+			if(photon->description->profile->z[i] <= photon->start_coords.z) z_id = i;
+	} else z_id = 0;
+	//determine current photon position exterior
+	current_polycap_ext = ((photon->description->profile->ext[z_id] - photon->description->profile->ext[z_id+1]) / (photon->description->profile->z[z_id] - photon->description->profile->z[z_id+1])) * (photon->start_coords.z - photon->description->profile->z[z_id]) + photon->description->profile->ext[z_id];
+
 	if(n_shells == 0.){ //monocapillary case
-		capx_0 = 0;
-		capy_0 = 0;
-	} else {    // proper polycapillary case
-		//obtain selected capillary indices
-		i_capx = round( (photon->start_coords.x-(photon->start_coords.y*cos(M_PI/3.)/sin(M_PI/3.))) / (description->profile->ext[0] / (n_shells)) );
-		i_capy = round( (photon->start_coords.y)/(description->profile->ext[0]/(n_shells)*sin(M_PI/3.)) );
-		//convert indexed capillary centre to coordinates
-		capx_0 = i_capx * description->profile->ext[0]/(n_shells) + i_capy * description->profile->ext[0]/(n_shells)*cos(M_PI/3.);
-		capy_0 = i_capy * (description->profile->ext[0]/(n_shells))*sin(M_PI/3.);
-	}
-
-	//Check whether photon start coordinate is within capillary (within capillary center at distance < capillary radius)
-	d_ph_capcen = sqrt( (photon->start_coords.x-capx_0)*(photon->start_coords.x-capx_0) + (photon->start_coords.y-capy_0)*(photon->start_coords.y-capy_0) );
-	if(d_ph_capcen > description->profile->cap[0]){ //photon hits capillary wall on entrance
-		//Check whether photon is transmitted through wall (i.e. generates leak or recap events)
-		if(leak_calc){
-			photon->exit_coords.x = photon->start_coords.x;
-			photon->exit_coords.y = photon->start_coords.y;
-			photon->exit_coords.z = photon->start_coords.z;
-			photon->exit_direction.x = photon->start_direction.x;
-			photon->exit_direction.y = photon->start_direction.y;
-			photon->exit_direction.z = photon->start_direction.z;
-			polycap_norm(&photon->exit_direction);
-
-			polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
+		q_i = 0;
+		r_i = 0;
+		//check if photon->start_coord are within optic boundaries
+		if(sqrt((photon->start_coords.x)*(photon->start_coords.x) + (photon->start_coords.y)*(photon->start_coords.y)) > current_polycap_ext){
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within monocapillary boundaries");
+			return -2;
 		}
-		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies()
+	} else {    // proper polycapillary case
+		//obtain selected capillary indices	
+		z = current_polycap_ext/(2.*cos(M_PI/6.)*(n_shells+1));
+		r_i = photon->start_coords.y * (2./3) / z;
+		q_i = (photon->start_coords.x/(2.*cos(M_PI/6.)) - photon->start_coords.y/3) / z;
+		if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
+			q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
+			r_i = round(r_i);
+		} else if (fabs(r_i - round(r_i)) >  fabs(-1.*q_i-r_i - round(-1.*q_i-r_i))){
+			r_i = -1.*round(q_i) - round(-1.*q_i-r_i);
+			q_i = round(q_i);
+		} else {
+			q_i = round(q_i);
+			r_i = round(r_i);
+		}
+		//check if photon->start_coord are within optic boundaries
+		if(polycap_photon_within_pc_boundary(current_polycap_ext, photon->start_coords, error) == 0){
+			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_launch: photon_pos_check: photon not within optic boundaries");
+			return -2;
+		}
 	}
 
 	//define selected capillary axis X and Y coordinates
@@ -364,27 +372,45 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		free(cap_x);
 		return -1;
 	}
-	
-	for(i=0; i<=description->profile->nmax; i++){
-		cap_x[i] = description->profile->ext[i] * capx_0 / description->profile->ext[0];
-		cap_y[i] = description->profile->ext[i] * capy_0 / description->profile->ext[0];
-	}
-	//calculate initial photon weight based on capillary channel effective solid angle.
-	//Mathematically, this is the cos of the angle between photon propagation and polycapillary-to-photonsource axis
-	weight = polycap_scalar(photon->start_direction,central_axis);
-	for(i=0; i<photon->n_energies; i++){
-		photon->weight[i] = photon->weight[i] * weight;
-	}
 
-	
+	for(i=0; i<=description->profile->nmax; i++){
+		z = photon->description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+		cap_y[i] = r_i * (3./2) * z;
+		cap_x[i] = (2.* q_i+r_i) * cos(M_PI/6.) * z;
+		if(description->profile->z[i] <= photon->start_coords.z) *ix = i; //set ix to current photon segment id
+	}
+	//Check whether photon start coordinate is within capillary (within capillary center at distance < capillary radius)
+	if(photon->start_coords.z > 0){
+		current_cap_rad = ((photon->description->profile->cap[z_id+1] - photon->description->profile->cap[z_id])/
+			(photon->description->profile->z[z_id+1] - photon->description->profile->z[z_id])) * 
+			(photon->start_coords.z - photon->description->profile->z[z_id]) + photon->description->profile->cap[z_id];
+		current_cap_x = ((cap_x[z_id+1] - cap_x[z_id])/
+			(photon->description->profile->z[z_id+1] - photon->description->profile->z[z_id])) * 
+			(photon->start_coords.z - photon->description->profile->z[z_id]) + cap_x[z_id];
+		current_cap_y = ((cap_y[z_id+1] - cap_y[z_id])/
+			(photon->description->profile->z[z_id+1] - photon->description->profile->z[z_id])) * 
+			(photon->start_coords.z - photon->description->profile->z[z_id]) + cap_y[z_id];
+	} else {
+		current_cap_rad = description->profile->cap[0];
+		current_cap_x = cap_x[0];
+		current_cap_y = cap_y[0];
+	}
+	d_ph_capcen = sqrt( (photon->start_coords.x-current_cap_x)*(photon->start_coords.x-current_cap_x) + (photon->start_coords.y-current_cap_y)*(photon->start_coords.y-current_cap_y) );
+	if(d_ph_capcen > current_cap_rad && photon->start_coords.z == 0){ //photon hits capillary wall on entrance
+		//Check whether photon is transmitted through wall (i.e. generates leak or recap events)
+		if(leak_calc)
+			polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
+		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies()
+	} //TODO: there is also the case where photon is launched within capillary wall at z>0...
+
 	//polycap_capil_trace should be ran description->profile->nmax at most,
 	//	which means it essentially reflected once every known capillary coordinate
 	//Photon will also contain all info on potential leak and recap events ( if(leak_calc) )
 	for(i=0; i<=description->profile->nmax; i++){
 		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, leak_calc, error);
-		if(iesc != 0){ //as long as iesc = 0 photon is still reflecting in capillary
-		//iesc == -2, which means this photon has reached its final point (weight[0] <1e-4) //TODO: make this weight[*] < 1e-4
-		//alternatively, iesc can be 1 due to not finding intersection point, as the photon reached the end of the capillary
+		if(iesc != 1){ //as long as iesc = 1 photon is still reflecting in capillary
+		//iesc == 0, which means this photon has reached its final point (weight[*] <1e-4)
+		//alternatively, iesc can be -2 or -3due to not finding intersection point, as the photon reached the end of the capillary
 			break;
 		}
 	}
@@ -415,11 +441,13 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		photon->scatf = NULL;
 	}
 
-
-	if(iesc == -2){
-		return 0; //return 0 if photon did not reach end of capillary
+	if(iesc == -1){
+		return -1; //Return -1 if polycap_capil_trace() returned -1
+	}
+	if(iesc == 0){
+		return 0; //return 0 if photon did not reach end of capillary; is absorbed
 	} else {
-		return 1; //if photon reached end of capillary, return 1
+		return 1; //if photon reached end of capillary, return 1 //TODO: 1 will be returned if capil_trace returns -2 or -3, or 1.
 	}
 }
 

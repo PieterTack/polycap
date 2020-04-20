@@ -207,6 +207,13 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 	source->n_energies = n_energies;
 	memcpy(source->energies, energies, sizeof(double)*n_energies);
 	source->description = polycap_description_new(description->profile, description->sig_rough, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
+	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
+	if(source->description == NULL){
+		polycap_clear_error(error);
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
+		polycap_source_free(source);
+		return NULL;
+	}
 
 	return source;
 }
@@ -357,7 +364,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	polycap_description_check_weight(description->nelem, description->wi, error);
 
 	// Calculate open area
-	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
+	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap; //TODO: n_cap should here be the actual number of capillaries used, not the theoretically supplied one (i.e. 200000 capillaries does not form perfect hexagonal stacking, so a few less/more are simulated)
 
 	//Perform source and description argument sanity check
 	if (source->d_source < 0.0){
@@ -411,6 +418,14 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	}
 	if (description->density < 0.0){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->density must be greater than 0.0");
+		polycap_source_free(source);
+		return NULL;
+	}
+
+	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
+	if(polycap_profile_validate(description->profile, description->n_cap, error) != 1){
+		polycap_clear_error(error);
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new_from_file: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
 		polycap_source_free(source);
 		return NULL;
 	}
@@ -723,20 +738,32 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 			iesc = polycap_photon_launch(photon, source->n_energies, source->energies, &weights_temp, leak_calc, NULL);
 			//if iesc == 0 here a new photon should be simulated/started as the photon was absorbed within it.
 			//if iesc == 1 check whether photon is in PC exit window as photon reached end of PC
-			//if iesc == 2 a new photon should be simulated/started as the photon did not enter the PC (hit the glass walls)
+			//if iesc == 2 a new photon should be simulated/started as the photon hit the walls -> can still leak
+			//if iesc == -2 a new photon should be simulated/started as the photon missed the optic entrance window
 			//if iesc == -1 some error occured
+//			if(iesc == -1)
+//				printf("polycap_source_get_transmission_efficiencies: ERROR: polycap_photon_launch returned -1\n");
+			if(iesc == 0)
+				not_transmitted_temp[thread_id]++; //photon did not reach end of PC
+			if(iesc == 2)
+				not_entered_temp[thread_id]++; //photon never entered PC (hit capillary wall instead of opening)
 			if(iesc == 1) {
-				//different check for monocapillary case...
+				//check whether photon is within optic exit window
+					//different check for monocapillary case...
+				temp_vect.x = photon->exit_coords.x + photon->exit_direction.x * (description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
+				temp_vect.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
+				temp_vect.z = description->profile->z[description->profile->nmax];
 				if(round(sqrt(12. * photon->description->n_cap - 3.)/6.-0.5) == 0.){ //monocapillary case
-					if(sqrt((photon->exit_coords.x)*(photon->exit_coords.x) + (photon->exit_coords.y)*(photon->exit_coords.y)) > description->profile->ext[description->profile->nmax]){
+					if(sqrt((temp_vect.x)*(temp_vect.x) + (temp_vect.y)*(temp_vect.y)) > description->profile->ext[description->profile->nmax]){ //TODO: this check will fail with monocap offsets from central axis (001)! 
 						iesc = 0;
 					} else {
 						iesc = 1;
 					}
 				} else { //polycapillary case
-					iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],photon->exit_coords, NULL);
+					iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],temp_vect, NULL);
 				}
 			}
+//if(iesc == 0) printf("***Does this occur?\n"); //TODO This almost never occurs with leak_calc, often without leak_calc??
 			//Register succesfully transmitted photon, as well as save start coordinates and direction
 			if(iesc == 1){
 				iexit_temp[thread_id]++;
@@ -758,12 +785,8 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				efficiencies->images->pc_start_elecv[0][j] = round(temp_vect.x);
 				efficiencies->images->pc_start_elecv[1][j] = round(temp_vect.y);
 			}
-			if(iesc == 0)
-				not_transmitted_temp[thread_id]++; //photon did not reach end of PC
-			if(iesc == 2)
-				not_entered_temp[thread_id]++; //photon never entered PC (hit capillary wall instead of opening)
 			if(leak_calc) { //store potential leak and recap events for photons that did not reach optic exit window
-				if(iesc != 1){ 
+				if(iesc == 0 || iesc == 2){ 
 					// this photon did not reach end of PC or this photon hit capilary wall at optic entrance
 					//	but could contain leak info to pass on to future photons,
 					if(photon->n_leaks > 0){
@@ -807,8 +830,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 						}
 					}	
 				}
-				else
-				{ //this photon reached optic exit window,
+				if(iesc == 1){ //this photon reached optic exit window,
 					// so pass on all previously acquired leak info (leak_temp, recap_temp) to this photon
 					if(n_leaks_temp > 0){
 						photon->n_leaks += n_leaks_temp;
@@ -858,7 +880,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				polycap_photon_free(photon); //Free photon here as a new one will be simulated 
 				free(weights_temp);
 			}
-		} while(iesc == 0 || iesc == 2 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
+		} while(iesc == 0 || iesc == 2 || iesc == -2 || iesc == -1); //TODO: make this function exit if polycap_photon_launch returned -1... Currently, if returned -1 due to memory shortage technically one would end up in infinite loop
 
 		if(thread_id == 0 && (double)i/((double)n_photons/(double)max_threads/10.) >= 1.){
 			printf("%d%% Complete\t%" PRId64 " reflections\tLast reflection at z=%f, d_travel=%f\n",((j*100)/(n_photons/max_threads)),photon->i_refl,photon->exit_coords.z, photon->d_travel);
@@ -1045,13 +1067,17 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	efficiencies->n_energies = source->n_energies;
 	efficiencies->images->i_start = sum_iexit+sum_not_entered+sum_not_transmitted;
 	efficiencies->images->i_exit = sum_iexit;
+//printf("//////\n");
 	for(i=0; i<source->n_energies; i++){
 		efficiencies->energies[i] = source->energies[i];
-		efficiencies->efficiencies[i] = (sum_weights[i] / (double)sum_iexit) * description->open_area;
+		efficiencies->efficiencies[i] = (sum_weights[i] / ((double)sum_iexit+(double)sum_not_transmitted)) * description->open_area;
+//printf("	Energy: %lf keV, Weight: %lf \n", efficiencies->energies[i], sum_weights[i]);
 	}
+//printf("//////\n");
 
 	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_iexit+sum_not_entered);
 	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_iexit/(sum_iexit+sum_not_entered));
+	printf("iexit: %" PRId64 ", no enter: %" PRId64 ", no trans: %" PRId64 "\n",sum_iexit,sum_not_entered,sum_not_transmitted);
 
 	//free alloc'ed memory
 	free(sum_weights);
