@@ -203,9 +203,9 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	assert(fabs(efficiencies->efficiencies[6] - 0.004) <= 0.005); //30 keV
 */
 	//These are values with old normalisation (weight/iexit*open_area instead of (weight/(iexit+not_transm))*open_area)
-	assert(fabs(efficiencies->efficiencies[0] - 0.353) <= 0.005); //1 keV
-	assert(fabs(efficiencies->efficiencies[1] - 0.291) <= 0.005); //5 keV
-	assert(fabs(efficiencies->efficiencies[2] - 0.114) <= 0.005); //10 keV
+	assert(fabs(efficiencies->efficiencies[0] - 0.353) <= 0.01); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - 0.291) <= 0.01); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - 0.114) <= 0.0075); //10 keV
 	assert(fabs(efficiencies->efficiencies[3] - 0.043) <= 0.005); //15 keV
 	assert(fabs(efficiencies->efficiencies[4] - 0.021) <= 0.005); //20 keV
 	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.005); //25 keV

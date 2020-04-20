@@ -1100,13 +1100,13 @@ void test_polycap_source_leak() {
 	printf("**i_start: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_start, efficiencies2->images->i_start);
 	*/
 	assert(efficiencies2->images->i_exit == n_photons);
-	assert(fabs(efficiencies2->efficiencies[0] - efficiencies->efficiencies[0]) <= 0.0075); //1 keV
-	assert(fabs(efficiencies2->efficiencies[1] - efficiencies->efficiencies[1]) <= 0.0075); //5 keV
-	assert(fabs(efficiencies2->efficiencies[2] - efficiencies->efficiencies[2]) <= 0.0075); //10 keV
-	assert(fabs(efficiencies2->efficiencies[3] - efficiencies->efficiencies[3]) <= 0.0075); //15 keV
-	assert(fabs(efficiencies2->efficiencies[4] - efficiencies->efficiencies[4]) <= 0.0075); //20 keV
-	assert(fabs(efficiencies2->efficiencies[5] - efficiencies->efficiencies[5]) <= 0.0075); //25 keV
-	assert(fabs(efficiencies2->efficiencies[6] - efficiencies->efficiencies[6]) <= 0.0075); //30 keV
+	assert(fabs(efficiencies2->efficiencies[0] - efficiencies->efficiencies[0]) <= 0.05); //1 keV
+	assert(fabs(efficiencies2->efficiencies[1] - efficiencies->efficiencies[1]) <= 0.05); //5 keV
+	assert(fabs(efficiencies2->efficiencies[2] - efficiencies->efficiencies[2]) <= 0.05); //10 keV
+	assert(fabs(efficiencies2->efficiencies[3] - efficiencies->efficiencies[3]) <= 0.05); //15 keV
+	assert(fabs(efficiencies2->efficiencies[4] - efficiencies->efficiencies[4]) <= 0.05); //20 keV
+	assert(fabs(efficiencies2->efficiencies[5] - efficiencies->efficiencies[5]) <= 0.05); //25 keV
+	assert(fabs(efficiencies2->efficiencies[6] - efficiencies->efficiencies[6]) <= 0.05); //30 keV
 	
 
 	polycap_description_free(description);
