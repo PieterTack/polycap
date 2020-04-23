@@ -118,7 +118,7 @@ class TestPolycapPhoton(unittest.TestCase):
         start_direction = (0, 0, 1.0)
         start_electric_vector = (0.5, 0.5, 0.)
         photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector)
-        weights = photon.launch(10.0)
+        weights = photon.launch(10.0, leak_calc=False)
         self.assertIsInstance(weights, np.ndarray)
         self.assertIsInstance(photon.get_exit_coords(), tuple)
         self.assertIsInstance(photon.get_exit_direction(), tuple)
@@ -146,7 +146,7 @@ class TestPolycapSource(unittest.TestCase):
 
     def test_source_good_get_transmission_efficiencies(self):
         source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, np.linspace(1, 25.0, 250))
-        efficiencies = source.get_transmission_efficiencies(-1, 10000)
+        efficiencies = source.get_transmission_efficiencies(-1, 10000, leak_calc=False)
         efficiencies.write_hdf5("temp-py.h5")
         self.assertTrue(os.path.exists("temp-py.h5"))
         os.remove("temp-py.h5")
