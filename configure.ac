@@ -186,7 +186,7 @@ if test "x$enable_python" != xno  ; then
 		PYTHON_LDFLAGS=
 		AX_PYTHON_DEVEL
 		if test "x$PYTHON" = x ; then
-			if test "x$enable_python_np" = xyes ; then
+			if test "x$enable_python" = xyes ; then
 				AC_MSG_ERROR([Incomplete python development package])
 			else
 				AC_MSG_WARN([Incomplete python development package])
@@ -215,11 +215,11 @@ if test "x$enable_python" != xno  ; then
 	fi
 	if test "x$VALID_PYTHON_EXE" = xyes ; then
 		#now check cython
-		AC_CHECK_PROGS(CYTHON, [cython-[$PYTHON_VERSION] cython],["nocython"])
+		AC_CHECK_PROGS(CYTHON, [cython-[$PYTHON_VERSION] cython3 cython],["nocython"])
 		if test x$CYTHON != "xnocython" ; then
 			VALID_PYTHON=yes
 			AC_MSG_NOTICE([Building with Python bindings])
-		elif test "x$enable_python_np" = "xyes" ; then
+		elif test "x$enable_python" = "xyes" ; then
 			AC_MSG_ERROR([Cannot build Python bindings])
 		else
 			AC_MSG_WARN([Cannot build Python-NumPy bindings])
