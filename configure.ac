@@ -215,7 +215,7 @@ if test "x$enable_python" != xno  ; then
 	fi
 	if test "x$VALID_PYTHON_EXE" = xyes ; then
 		#now check cython
-		AC_CHECK_PROGS(CYTHON, [cython-[$PYTHON_VERSION] cython3 cython],["nocython"])
+		AC_CHECK_PROGS(CYTHON, [cython-[$PYTHON_VERSION] cython[$PYTHON_VERSION] cython3 cython],["nocython"])
 		if test x$CYTHON != "xnocython" ; then
 			VALID_PYTHON=yes
 			AC_MSG_NOTICE([Building with Python bindings])
@@ -261,6 +261,7 @@ AC_CONFIG_FILES([ 	Makefile
 			example/Makefile
 			docs/Makefile
 			libpolycap.pc
+			polycap.spec
 		])
 AC_CONFIG_HEADERS([config.h])
 

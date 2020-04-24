@@ -6,7 +6,7 @@ includedir=@includedir@/polycap
 Name: polycap
 Description: A library to calculate X-ray transmission efficiency profiles for polycapillaries
 Version: @VERSION@
-Requires.private: gsl libxrl >= 3.3.0 @EASYRNG_PC@
+Requires.private: gsl libxrl >= 4.0.0 @EASYRNG_PC@
 Requires:
 Conflicts:
 Libs: -L${libdir} -lpolycap
