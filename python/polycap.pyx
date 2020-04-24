@@ -352,7 +352,7 @@ cdef class Photon:
 
     def launch(self,
         object energies not None,
-        bool leak_calc = True):
+        bool leak_calc = False):
 
         energies = np.asarray(energies, dtype=np.double)
         energies = np.atleast_1d(energies)
@@ -443,7 +443,7 @@ cdef class Source:
     def get_transmission_efficiencies(self,
         int max_threads,
         int n_photons,
-        bool leak_calc = True):
+        bool leak_calc = False):
 
         cdef polycap_error *error = NULL
         cdef polycap_transmission_efficiencies *transmission_efficiencies = polycap_source_get_transmission_efficiencies(
