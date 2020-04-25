@@ -116,6 +116,12 @@
  * \endcode
  *
  * \page examples Examples
- * TODO
+ * 
+ * \tableofcontents
+ *
+ * \section examplec Example in C
+ * \include example.c
+ * \section examplepy Example in Python
+ * \include example.py
  */
 
