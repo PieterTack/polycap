@@ -259,6 +259,7 @@ AC_CONFIG_FILES([ 	Makefile
 			python/Makefile
 			tests/Makefile
 			example/Makefile
+			example/SI/Makefile
 			docs/Makefile
 			libpolycap.pc
 			polycap.spec
