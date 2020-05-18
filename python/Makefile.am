@@ -25,7 +25,7 @@ cython_sources = \
 	$(NULL)
 
 polycap-python.c: $(cython_sources)
-	$(CYTHON) -X boundscheck=False,wraparound=False,cdivision=True -I${top_srcdir}/include -o ${builddir}/polycap-python.c ${srcdir}/polycap.pyx
+	$(CYTHON) -X language_level=3,boundscheck=False,wraparound=False,cdivision=True -I${top_srcdir}/include -o ${builddir}/polycap-python.c ${srcdir}/polycap.pyx
 
 clean-local:
 	rm -rf polycap-python.c

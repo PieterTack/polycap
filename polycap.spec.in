@@ -1,0 +1,139 @@
+Name: polycap
+Version: @VERSION@	
+Release: 1%{?dist}
+Summary: Polycapillary X-ray raytracing
+Group:	 Applications/Engineering and Scientific	
+License: GPL
+Packager: Tom.Schoonjans <Tom.Schoonjans@me.com>
+URL: http://github.com/PieterTack/polycap
+Source: polycap-%{version}.tar.gz	
+BuildRequires: gcc glibc glibc-headers glibc-devel xraylib-devel >= 4.0.0 gsl-devel hdf5-devel doxygen
+Requires: xraylib >= 4.0.0 gsl hdf5
+
+%if 0%{?rhel}
+
+%if 0%{?rhel} == 7
+# python 3
+BuildRequires: python36-Cython python36-numpy python36-devel python36-setuptools
+%else
+# Centos 8
+# python 3
+BuildRequires: python3-Cython python3-numpy python3-devel python3-setuptools
+BuildRequires: easyRNG-devel
+Requires: easyRNG
+%endif
+
+%else
+
+%if 0%{?fedora}
+BuildRequires: python3-Cython python3-numpy python3-devel
+BuildRequires: easyRNG-devel
+Requires: easyRNG
+%endif
+
+%endif
+
+%description
+Polycap is a library that allows users to generate transmission efficiency curves for (poly)capillaries by ray-tracing X-ray photons through them.
+
+This rpm package provides only the core C library.
+
+%package devel
+Summary: Polycapillary X-ray raytracing: development package
+Requires: glibc-devel glibc-headers pkgconfig %{name}%{?_isa} = %{version}-%{release}
+
+%if 0%{?rhel}
+
+%if 0%{?rhel} == 8
+# Centos 8
+Requires: easyRNG-devel
+%endif
+
+%else
+
+%if 0%{?fedora}
+Requires: easyRNG-devel
+%endif
+
+%endif
+%description devel
+Polycap is a library that allows users to generate transmission efficiency curves for (poly)capillaries by ray-tracing X-ray photons through them.
+
+This rpm package provides the necessary libraries, headers etc to start your own polycap based development.
+
+%package python
+Summary: Polycapillary X-ray raytracing: python3 bindings
+Requires:  %{name}%{?_isa} = %{version}-%{release}
+
+%if 0%{?rhel} == 7
+Requires: python36-numpy
+%else
+Requires: python3-numpy
+%endif
+
+%description python
+Polycap is a library that allows users to generate transmission efficiency curves for (poly)capillaries by ray-tracing X-ray photons through them.
+
+This rpm package provides the python3 bindings of polycap.
+
+%package docs
+Summary: Polycapillary X-ray raytracing: documentation
+Requires:  %{name}%{?_isa} = %{version}-%{release}
+
+%description docs
+Polycap is a library that allows users to generate transmission efficiency curves for (poly)capillaries by ray-tracing X-ray photons through them.
+
+This rpm package provides the documentation of polycap.
+
+
+%prep
+
+%setup -q
+
+%build
+%configure PYTHON=%{__python3}
+
+#necessary to fix rpath issues during rpmbuild
+sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
+sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+
+make 
+
+%install
+rm -rf $RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT
+
+libtool --finish $RPM_BUILD_ROOT%{_libdir}
+find $RPM_BUILD_ROOT -name '*.la' | xargs rm -f
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%post -p /sbin/ldconfig
+
+%postun -p /sbin/ldconfig
+
+
+%files
+%defattr(-,root,root)
+%{_bindir}/polycap
+%{_libdir}/libpolycap.so.*
+
+%files devel
+%defattr(-,root,root)
+%{_libdir}/libpolycap.so
+%{_includedir}/polycap/*.h
+%{_libdir}/pkgconfig/libpolycap.pc
+
+%files python
+%defattr(-,root,root)
+%{python3_sitearch}/polycap.*
+
+%files docs
+%defattr(-,root,root)
+%{_datadir}/doc/polycap/html
+
+
+%changelog
+* Fri Apr 24 2020 Tom Schoonjans
+- Initial SPEC file

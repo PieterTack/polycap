@@ -90,8 +90,8 @@ void polycap_photon_scatf(polycap_photon *photon, polycap_error **error)
 		totmu = 0;
 		scatf = 0;
 		for(j=0; j<description->nelem; j++){
-			totmu = totmu + CS_Total(description->iz[j],photon->energies[i]) * description->wi[j];
-			scatf = scatf + (description->iz[j] + Fi(description->iz[j],photon->energies[i]) ) * (description->wi[j] / AtomicWeight(description->iz[j]) );
+			totmu = totmu + CS_Total(description->iz[j],photon->energies[i], NULL) * description->wi[j];
+			scatf = scatf + (description->iz[j] + Fi(description->iz[j],photon->energies[i], NULL) ) * (description->wi[j] / AtomicWeight(description->iz[j], NULL) );
 		}
 		photon->amu[i] = totmu * description->density;
 		photon->scatf[i] = scatf;

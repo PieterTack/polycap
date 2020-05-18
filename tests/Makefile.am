@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include -DEXAMPLE_DIR=\"$(top_srcdir)/example/\" -DTEST_BUILD
+AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include -DEXAMPLE_DIR=\"$(top_srcdir)/example/\" -DTEST_BUILD @easyRNG_CFLAGS@ @gsl_CFLAGS@ @xraylib_CFLAGS@
 
 check_PROGRAMS = error profile description capil photon source leaks
 check_SCRIPTS =

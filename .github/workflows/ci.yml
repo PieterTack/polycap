@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  #schedule:
+  #  - cron: '0 2 * * *' # run at 2 AM UTC
+      #push:
+      #branches: [ '*' ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, macos-latest]
+        rng: [easyRNG, gsl]
+        compiler: [clang, gcc]
+        include:
+          # Linux
+          - os: ubuntu-18.04
+            rng: easyRNG
+            compiler: clang
+            cc: clang
+            extra: libeasyrng-dev
+            python: /usr/bin/python3
+          - os: ubuntu-18.04
+            rng: easyRNG
+            compiler: gcc
+            cc: gcc
+            extra: libeasyrng-dev
+            python: /usr/bin/python3
+          - os: ubuntu-18.04
+            rng: gsl
+            compiler: clang
+            cc: clang
+            python: /usr/bin/python3
+          - os: ubuntu-18.04
+            rng: gsl
+            compiler: gcc
+            cc: gcc
+            python: /usr/bin/python3
+          # macOS
+          - os: macos-latest
+            rng: easyRNG
+            compiler: clang
+            cc: /usr/local/opt/llvm/bin/clang
+            extra: tschoonj/tap/easyrng
+            python: /usr/local/opt/python@3.8/bin/python3
+            libs: -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib
+          - os: macos-latest
+            rng: easyRNG
+            compiler: gcc
+            cc: /usr/local/bin/gcc-9
+            extra: tschoonj/tap/easyrng
+            python: /usr/local/opt/python@3.8/bin/python3
+          - os: macos-latest
+            rng: gsl
+            compiler: clang
+            cc: /usr/local/opt/llvm/bin/clang
+            python: /usr/local/opt/python@3.8/bin/python3
+            libs: -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib
+          - os: macos-latest
+            rng: gsl
+            compiler: gcc
+            cc: /usr/local/bin/gcc-9
+            python: /usr/local/opt/python@3.8/bin/python3
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install ubuntu dependencies
+      if: matrix.os == 'ubuntu-18.04'
+      run: |
+        set -ex
+        curl -sSL "http://xmi-apt.tomschoonjans.eu/xmi.packages.key" | sudo -E apt-key add -
+        echo "deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu bionic stable" | sudo tee -a /etc/apt/sources.list >/dev/null
+        sudo apt-get update
+        # sudo apt-get upgrade -> takes very long!
+        sudo apt-get install libgsl0-dev libxrl11-dev libhdf5-serial-dev hdf5-tools gcc python3-all-dev python3-numpy cython3 ${{ matrix.extra }}
+        set +ex
+    - name: Install macOS dependencies
+      if: matrix.os == 'macos-latest'
+      run: |
+        set -ex
+        brew update
+        brew upgrade
+        brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl python@3.8 numpy
+        brew install ${{ matrix.extra }} tschoonj/tap/xraylib
+        /usr/local/opt/python@3.8/bin/pip3 install Cython
+        set +ex
+    - name: Build and test
+      run: |
+        set -ex
+        autoreconf -fi
+        #export LIBS="$LIBS $EXTRA_LIBS"
+        ./configure --disable-python || (cat config.log && exit 1)
+        make
+        make check || (cat tests/*log && exit 1)
+        make distclean
+        ./configure --enable-python
+        make
+        make check || (cat tests/*log && exit 1)
+        make distcheck || (cat polycap-0.1/_build/sub/tests/*.log && exit 1)
+        set +ex
+      env:
+        CC: ${{matrix.cc}}
+        PYTHON: ${{matrix.python}}
+        LIBS: ${{matrix.libs}}
+

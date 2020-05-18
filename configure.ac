@@ -97,7 +97,7 @@ AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
 PKG_PROG_PKG_CONFIG
 
 #search for xraylib and other modules
-PKG_CHECK_MODULES([xraylib],libxrl >= 3.3.0)
+PKG_CHECK_MODULES([xraylib],libxrl >= 4.0.0)
 #search for gsl
 PKG_CHECK_MODULES([gsl],[gsl])
 #try easyRNG first, gsl as fallback
@@ -180,13 +180,13 @@ VALID_PYTHON=
 AC_ARG_VAR(CYTHON, [the Cython command])
 if test "x$enable_python" != xno  ; then
 	##check for python
-	AM_PATH_PYTHON(,[PYTHON_FOUND=true],[PYTHON_FOUND=false])
+	AM_PATH_PYTHON([3.5], [PYTHON_FOUND=true], [PYTHON_FOUND=false])
 	if test "x$PYTHON_FOUND" = xtrue ; then
 		PYTHON_CPPFLAGS=
 		PYTHON_LDFLAGS=
 		AX_PYTHON_DEVEL
 		if test "x$PYTHON" = x ; then
-			if test "x$enable_python_np" = xyes ; then
+			if test "x$enable_python" = xyes ; then
 				AC_MSG_ERROR([Incomplete python development package])
 			else
 				AC_MSG_WARN([Incomplete python development package])
@@ -215,11 +215,11 @@ if test "x$enable_python" != xno  ; then
 	fi
 	if test "x$VALID_PYTHON_EXE" = xyes ; then
 		#now check cython
-		AC_CHECK_PROGS(CYTHON, [cython-[$PYTHON_VERSION] cython],["nocython"])
+		AC_CHECK_PROGS(CYTHON, [cython-[$PYTHON_VERSION] cython[$PYTHON_VERSION] cython3 cython],["nocython"])
 		if test x$CYTHON != "xnocython" ; then
 			VALID_PYTHON=yes
 			AC_MSG_NOTICE([Building with Python bindings])
-		elif test "x$enable_python_np" = "xyes" ; then
+		elif test "x$enable_python" = "xyes" ; then
 			AC_MSG_ERROR([Cannot build Python bindings])
 		else
 			AC_MSG_WARN([Cannot build Python-NumPy bindings])
@@ -259,8 +259,10 @@ AC_CONFIG_FILES([ 	Makefile
 			python/Makefile
 			tests/Makefile
 			example/Makefile
+			example/SI/Makefile
 			docs/Makefile
 			libpolycap.pc
+			polycap.spec
 		])
 AC_CONFIG_HEADERS([config.h])
 

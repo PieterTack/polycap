@@ -67,25 +67,25 @@ class TestPolycapDescription(unittest.TestCase):
     profile = polycap.Profile(polycap.Profile.ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream)
    
     def test_description_bad_input(self):
-        with self.assertRaisesRegexp(ValueError, "Invalid chemical element "):
+        with self.assertRaisesRegex(ValueError, "Invalid chemical symbol"):
             composition = {"Bad": 53.0, "Ugly": 47.0}
             description = polycap.Description(TestPolycapDescription.profile, 0.0, 1000, composition, 2.23)
-        with self.assertRaisesRegexp(ValueError, "polycap_description_new: n_cap must be greater than 1"):
+        with self.assertRaisesRegex(ValueError, "polycap_description_new: n_cap must be greater than 1"):
             composition = {"O": 53.0, "Si": 47.0}
             description = polycap.Description(TestPolycapDescription.profile, 0.0, 0, composition, 2.23)
-        with self.assertRaisesRegexp(ValueError, "polycap_description_new: density must be greater than 0.0"):
+        with self.assertRaisesRegex(ValueError, "polycap_description_new: density must be greater than 0.0"):
             composition = {"O": 53.0, "Si": 47.0}
             description = polycap.Description(TestPolycapDescription.profile, 0.0, 1000, composition, 0.0)
-        with self.assertRaisesRegexp(ValueError, "polycap_description_new: sig_rough must be greater than or equal to zero"):
+        with self.assertRaisesRegex(ValueError, "polycap_description_new: sig_rough must be greater than or equal to zero"):
             composition = {"O": 53.0, "Si": 47.0}
             description = polycap.Description(TestPolycapDescription.profile, -1.0, 1000, composition, 2.23)
-        with self.assertRaisesRegexp(ValueError, "composition cannot be empty"):
+        with self.assertRaisesRegex(ValueError, "composition cannot be empty"):
             composition = {}
             description = polycap.Description(TestPolycapDescription.profile, 0.0, 1000, composition, 2.23)
-        with self.assertRaisesRegexp(ValueError, "composition is not a valid chemical formula"):
+        with self.assertRaisesRegex(ValueError, "Invalid chemical formula: Found a lowercase character or digit where not allowed"):
             composition = "sjalalala"
             description = polycap.Description(TestPolycapDescription.profile, 0.0, 1000, composition, 2.23)
-        with self.assertRaisesRegexp(TypeError, "composition must be a dictionary or a string"):
+        with self.assertRaisesRegex(TypeError, "composition must be a dictionary or a string"):
             composition = 25
             description = polycap.Description(TestPolycapDescription.profile, 0.0, 1000, composition, 2.23)
             
@@ -118,7 +118,7 @@ class TestPolycapPhoton(unittest.TestCase):
         start_direction = (0, 0, 1.0)
         start_electric_vector = (0.5, 0.5, 0.)
         photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector)
-        weights = photon.launch(10.0)
+        weights = photon.launch(10.0, leak_calc=False)
         self.assertIsInstance(weights, np.ndarray)
         self.assertIsInstance(photon.get_exit_coords(), tuple)
         self.assertIsInstance(photon.get_exit_direction(), tuple)
@@ -146,7 +146,7 @@ class TestPolycapSource(unittest.TestCase):
 
     def test_source_good_get_transmission_efficiencies(self):
         source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, np.linspace(1, 25.0, 250))
-        efficiencies = source.get_transmission_efficiencies(-1, 10000)
+        efficiencies = source.get_transmission_efficiencies(-1, 10000, leak_calc=False)
         efficiencies.write_hdf5("temp-py.h5")
         self.assertTrue(os.path.exists("temp-py.h5"))
         os.remove("temp-py.h5")

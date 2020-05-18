@@ -41,10 +41,25 @@ cdef extern from "Python.h":
     PyObject* PyErr_Occurred()
     void PyErr_SetString(object type, const char *message)
 
-cdef extern from "xraylib.h":
-    int SymbolToAtomicNumber(const char *symbol)
+cdef extern from "xraylib.h" nogil:
+    ctypedef enum xrl_error_code:
+        XRL_ERROR_MEMORY
+        XRL_ERROR_INVALID_ARGUMENT
+        XRL_ERROR_IO
+        XRL_ERROR_TYPE
+        XRL_ERROR_UNSUPPORTED
+        XRL_ERROR_RUNTIME
+
+    ctypedef struct xrl_error:
+        xrl_error_code code
+        char *message
+
+    int SymbolToAtomicNumber(const char *symbol, xrl_error **error)
+
     void xrlFree(void *)
-    void SetErrorMessages(int status)
+
+    void xrl_error_free(xrl_error *)
+
     cdef struct compoundData:
         int nElements
         double nAtomsAll
@@ -54,11 +69,27 @@ cdef extern from "xraylib.h":
         double molarMass
 
     void FreeCompoundData(compoundData *cd)
-    compoundData* CompoundParser(const char compoundString[])
 
-SetErrorMessages(0)
+    compoundData* CompoundParser(const char compoundString[], xrl_error **error)
 
-error_map = {
+xrl_error_map = {
+    XRL_ERROR_MEMORY: MemoryError,
+    XRL_ERROR_INVALID_ARGUMENT: ValueError,
+    XRL_ERROR_IO: IOError,
+    XRL_ERROR_TYPE: TypeError,
+    XRL_ERROR_UNSUPPORTED: NotImplementedError,
+    XRL_ERROR_RUNTIME: RuntimeError,
+}
+
+# this is inspired by h5py...
+cdef void xrl_set_exception(xrl_error *error) except *:
+    if error == NULL:
+        return
+    eclass = xrl_error_map.get(error.code, RuntimeError) 
+    PyErr_SetString(eclass, error.message)
+    xrl_error_free(error)
+
+polycap_error_map = {
     POLYCAP_ERROR_MEMORY: MemoryError,
     POLYCAP_ERROR_INVALID_ARGUMENT: ValueError,
     POLYCAP_ERROR_IO: IOError,
@@ -69,10 +100,10 @@ error_map = {
 }
 
 # this is inspired by h5py...
-cdef void set_exception(polycap_error *error) except *:
+cdef void polycap_set_exception(polycap_error *error) except *:
     if error == NULL:
         return
-    eclass = error_map.get(error.code, RuntimeError) 
+    eclass = polycap_error_map.get(error.code, RuntimeError) 
     PyErr_SetString(eclass, error.message)
     polycap_error_free(error)
 
@@ -104,7 +135,7 @@ cdef class Profile:
 	    focal_dist_upstream,
 	    focal_dist_downstream,
             &error)
-        set_exception(error)
+        polycap_set_exception(error)
 
 
     def __dealloc__(self):
@@ -125,10 +156,10 @@ cdef class Rng:
             polycap_rng_free(self.rng)
 
 def ensure_int(x):
+    cdef xrl_error *error = NULL
     if isinstance(x, str):
-        Z = SymbolToAtomicNumber(x.encode())
-        if Z == 0:
-            raise ValueError("Invalid chemical element {} detected".format(x))
+        Z = SymbolToAtomicNumber(x.encode(), &error)
+        xrl_set_exception(error)
     else:
         Z = int(x)
     return Z
@@ -145,6 +176,7 @@ cdef class Description:
         double density):
 
         cdef np.npy_intp dims[1]
+        cdef xrl_error *error_xrl = NULL
 
         if isinstance(composition, dict):
             if len(composition) == 0:
@@ -157,7 +189,8 @@ cdef class Description:
             comp_len = len(composition)
         elif isinstance(composition, str):
             # try xraylib's compoundparser
-            cd = CompoundParser(composition.encode())
+            cd = CompoundParser(composition.encode(), &error_xrl)
+            xrl_set_exception(error_xrl)
             if cd == NULL:
                 raise ValueError("composition is not a valid chemical formula")
             dims[0] = cd.nElements
@@ -180,7 +213,7 @@ cdef class Description:
             <double*> np.PyArray_DATA(wi),
             density,
             &error)
-        set_exception(error)
+        polycap_set_exception(error)
 
 #        self.profile_py = Profile()
 #        self.profile_py.profile = polycap_description_get_profile(self.description)
@@ -211,7 +244,7 @@ cdef class TransmissionEfficiencies:
     def write_hdf5(self, str filename not None):
         cdef polycap_error *error = NULL
         polycap_transmission_efficiencies_write_hdf5(self.trans_eff, filename.encode(), &error)
-        set_exception(error)
+        polycap_set_exception(error)
 
     @property
     def data(self):
@@ -232,7 +265,7 @@ cdef class TransmissionEfficiencies:
         cdef polycap_error *error = NULL
 
         polycap_transmission_efficiencies_get_data(rv.trans_eff, &n_energies, &energies_arr, &efficiencies_arr, &error)
-        set_exception(error)
+        polycap_set_exception(error)
 
         cdef np.npy_intp dims[1]
         dims[0] = n_energies
@@ -311,14 +344,15 @@ cdef class Photon:
                 start_direction_pc,
                 start_electric_vector_pc,
                 &error)
-            set_exception(error)
+            polycap_set_exception(error)
 
     def __dealloc__(self):
         if self.photon is not NULL:
             polycap_photon_free(self.photon)
 
     def launch(self,
-        object energies not None):
+        object energies not None,
+        bool leak_calc = False):
 
         energies = np.asarray(energies, dtype=np.double)
         energies = np.atleast_1d(energies)
@@ -328,8 +362,8 @@ cdef class Photon:
         cdef polycap_error *error = NULL
         cdef double *weights = NULL
            
-        rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, False, &error)
-        set_exception(error)
+        rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, leak_calc, &error)
+        polycap_set_exception(error)
         if rv == 0:
             return None
 
@@ -385,7 +419,7 @@ cdef class Source:
             energies.size,
             <double*> np.PyArray_DATA(energies),
             &error)
-        set_exception(error)
+        polycap_set_exception(error)
 
     def __dealloc__(self):
         if self.source is not NULL:
@@ -399,7 +433,7 @@ cdef class Source:
             self.source,
             rng.rng,
             &error)
-        set_exception(error)
+        polycap_set_exception(error)
 
         rv = Photon(None, None, None, None, None, ignore=True)
         rv.photon = photon
@@ -419,7 +453,7 @@ cdef class Source:
             leak_calc, #leak_calc option
             NULL, # polycap_progress_monitor
             &error)
-        set_exception(error)
+        polycap_set_exception(error)
 
         return TransmissionEfficiencies.create(transmission_efficiencies)
 
