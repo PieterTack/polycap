@@ -1,4 +1,4 @@
-AC_INIT([polycap],[0.1],[Pieter.Tack@UGent.be])
+AC_INIT([polycap],[1.0],[Pieter.Tack@UGent.be])
 AC_PREREQ([2.60])
 AC_CONFIG_SRCDIR([src/polycap-description.c])
 AC_CONFIG_AUX_DIR([build-aux])
