@@ -1,12 +1,17 @@
 AM_CPPFLAGS = -I${top_srcdir}/src -I$(top_srcdir)/include -DEXAMPLE_DIR=\"$(top_srcdir)/example/\" -DTEST_BUILD @easyRNG_CFLAGS@ @gsl_CFLAGS@ @xraylib_CFLAGS@
 
-check_PROGRAMS = error profile description capil photon source leaks
+check_PROGRAMS = version error profile description capil photon source leaks
 check_SCRIPTS =
 if ENABLE_PYTHON
 check_SCRIPTS += python.sh
 endif
 
 TESTS = $(check_PROGRAMS) $(check_SCRIPTS)
+
+version_SOURCES = version.c
+version_LDADD = ../src/libpolycap-check.la
+version_CFLAGS = @OPENMP_CFLAGS@
+version_LDFLAGS = @OPENMP_CFLAGS@
 
 error_SOURCES = error.c
 error_LDADD = ../src/libpolycap-check.la
