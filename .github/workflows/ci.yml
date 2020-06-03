@@ -107,4 +107,5 @@ jobs:
         CC: ${{matrix.cc}}
         PYTHON: ${{matrix.python}}
         LIBS: ${{matrix.libs}}
+        CFLAGS: -Wall -Werror
 
