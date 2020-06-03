@@ -15,6 +15,9 @@
 #ifndef POLYCAP_PRIVATE_H
 #define POLYCAP_PRIVATE_H
 
+#define POLYCAP_VERSION_MAJOR 1
+#define POLYCAP_VERSION_MINOR 0
+
 #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
 #include "config.h"
 #include "polycap.h"
