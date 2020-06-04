@@ -1,6 +1,12 @@
 if ENABLE_PYTHON
 pyexec_LTLIBRARIES = polycap.la 
-polycap_la_CFLAGS = $(PYTHON_CFLAGS) -Wno-error=cpp -Wno-error=attributes -Wno-error=deprecated-declarations -Wno-error=unreachable-code
+polycap_la_CFLAGS = \
+	$(PYTHON_CFLAGS) \
+	-Wno-error=cpp \
+	-Wno-error=attributes \
+	-Wno-error=deprecated-declarations \
+	-Wno-error=unreachable-code \
+	-Wno-error=ignored-optimization-argument
 polycap_la_CPPFLAGS = @xraylib_CFLAGS@ -I$(top_srcdir)/include $(PYTHON_CPPFLAGS) $(NUMPY_HEADERS)
 polycap_la_LIBADD = ../src/libpolycap.la
 nodist_polycap_la_SOURCES = polycap-python.c
