@@ -59,6 +59,16 @@ AC_CHECK_FUNC([strdup], [], [AC_MSG_ERROR([strdup must be present on the system]
 AC_CHECK_FUNC([gettimeofday], [], [AC_MSG_ERROR([strdup must be present on the system])])
 CFLAGS=$CFLAGS_BKP
 
+# Turn off certain errors for python bindings when -Wall -Werror is in effect -> Cython generates a lot of warnings!
+CYTHON_ERROR_CFLAGS=
+AX_CHECK_COMPILE_FLAG([-Wno-error=cpp],[CYTHON_ERROR_CFLAGS="${CYTHON_ERROR_CFLAGS} -Wno-error=cpp"],,)
+AX_CHECK_COMPILE_FLAG([-Wno-error=attributes],[CYTHON_ERROR_CFLAGS="${CYTHON_ERROR_CFLAGS} -Wno-error=attributes"],,)
+AX_CHECK_COMPILE_FLAG([-Wno-error=deprecated-declarations],[CYTHON_ERROR_CFLAGS="${CYTHON_ERROR_CFLAGS} -Wno-error=deprecated-declarations"],,)
+AX_CHECK_COMPILE_FLAG([-Wno-error=unreachable-code],[CYTHON_ERROR_CFLAGS="${CYTHON_ERROR_CFLAGS} -Wno-error=unreachable-code"],,)
+AX_CHECK_COMPILE_FLAG([-Wno-error=ignored-optimization-argument],[CYTHON_ERROR_CFLAGS="${CYTHON_ERROR_CFLAGS} -Wno-error=ignored-optimization-argument"],,)
+AC_SUBST(CYTHON_ERROR_CFLAGS)
+
+
 # Symbol visibility handling.
 #
 # Taken from gtksourceview and modified where necessary
