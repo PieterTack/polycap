@@ -3,10 +3,12 @@ name: CI
 on:
   #schedule:
   #  - cron: '0 2 * * *' # run at 2 AM UTC
-      #push:
-      #branches: [ '*' ]
+  push:
+    branches:
+      - master
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
 
 jobs:
   build:
@@ -107,4 +109,5 @@ jobs:
         CC: ${{matrix.cc}}
         PYTHON: ${{matrix.python}}
         LIBS: ${{matrix.libs}}
+        CFLAGS: -Wall -Werror
 

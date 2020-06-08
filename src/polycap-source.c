@@ -436,7 +436,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 // for a given array of energies, and a full polycap_description, get the transmission efficiencies.
 polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(polycap_source *source, int max_threads, int n_photons, bool leak_calc, polycap_progress_monitor *progress_monitor, polycap_error **error)
 {
-	int i, j;
+	int i;
 	int64_t sum_iexit=0, sum_irefl=0, sum_not_entered=0, sum_not_transmitted=0;
 	int64_t *iexit_temp, *not_entered_temp, *not_transmitted_temp;
 	int64_t leak_counter, recap_counter;
@@ -685,10 +685,11 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 //OpenMP loop
 #pragma omp parallel \
 	default(shared) \
-	private(i, j) \
+	private(i) \
 	num_threads(max_threads)
 {
 	int thread_id = omp_get_thread_num();
+	int j = 0;
 	polycap_rng *rng;
 	polycap_photon *photon;
 	int iesc=0, k, l;

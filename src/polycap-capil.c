@@ -896,7 +896,7 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cn
 	polycap_vector3 cap_coord0, cap_coord1, phot_coord0, phot_coord1, temp_phot;
 	double rad0, rad1, alfa;
 	polycap_vector3 interact_coords, surface_norm;
-	double q_new, r_new;
+	double q_new=0, r_new=0;
 	double d_phot0; //distances between photon and capillary axis
 	double dist=0;
 

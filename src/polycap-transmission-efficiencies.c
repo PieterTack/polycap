@@ -649,7 +649,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Recap/Weight_Total", data_temp,"a.u.", error))
 			return false;
 		//Free data_temp
-			free(data_temp);
+		free(data_temp);
 		//Write	n_reflections for each recap photon
 		n_energies_temp = efficiencies->images->i_recap;
 		data_temp = malloc(sizeof(double)*n_energies_temp);
