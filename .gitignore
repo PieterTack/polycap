@@ -12,3 +12,4 @@ autom4te.cache
 build
 config.h.in
 config.h.in~
+gh-pages
