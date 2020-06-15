@@ -14,6 +14,7 @@
 
 #include "config.h"
 #include "polycap-error.h"
+#include "polycap-aux.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,9 +22,21 @@
 static char* polycap_strdup_vprintf(const char *format, va_list args) {
 	char *rv = NULL;
 
+#ifdef _WIN32
+	int bytes_needed = _vscprintf(format, args);
+	if (bytes_needed < 0)
+		return NULL;
+	rv = malloc((bytes_needed + 1) * sizeof(char));
+	if (_vsnprintf(rv, bytes_needed + 1, format, args) < 0) {
+		free(rv);
+		return NULL;
+	}
+#else
 	if (vasprintf(&rv, format, args) < 0) {
 		return NULL;
 	}
+#endif
+
 	return rv;
 }
 
@@ -69,7 +82,7 @@ polycap_error* polycap_error_new_literal(enum polycap_error_code code, const cha
 
 	error = malloc(sizeof(polycap_error));
 	error->code = code;
-	error->message = strdup(message);
+	error->message = polycap_strdup(message);
 
 	return error;
 }
@@ -96,7 +109,7 @@ polycap_error* polycap_error_copy(const polycap_error *error) {
 
 	copy->message = NULL;
 	if (error->message)
-		copy->message = strdup(error->message);
+		copy->message = polycap_strdup(error->message);
 
 	return copy;
 }

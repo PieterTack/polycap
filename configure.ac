@@ -54,9 +54,18 @@ AC_SUBST(LDFLAGS_PYTHON)
 
 CFLAGS_BKP=$CFLAGS
 CFLAGS=
+AC_CHECK_FUNCS([strdup _strdup _ftime gettimeofday]) # if not found, we use our own implementation
+
+if test $OS_WINDOWS = 1 ; then
+AC_CHECK_FUNC([_vscprintf], [], [AC_MSG_ERROR([_vscprintf must be present on the system])])
+AC_CHECK_FUNC([_scprintf], [], [AC_MSG_ERROR([_scprintf must be present on the system])])
+AC_CHECK_FUNC([_vsnprintf], [], [AC_MSG_ERROR([_vsnprintf must be present on the system])])
+AC_CHECK_FUNC([_snprintf], [], [AC_MSG_ERROR([_snprintf must be present on the system])])
+else
 AC_CHECK_FUNC([vasprintf], [], [AC_MSG_ERROR([vasprintf must be present on the system])])
-AC_CHECK_FUNC([strdup], [], [AC_MSG_ERROR([strdup must be present on the system])])
-AC_CHECK_FUNC([gettimeofday], [], [AC_MSG_ERROR([strdup must be present on the system])])
+AC_CHECK_FUNC([asprintf], [], [AC_MSG_ERROR([asprintf must be present on the system])])
+fi
+
 CFLAGS=$CFLAGS_BKP
 
 # Turn off certain errors for python bindings when -Wall -Werror is in effect -> Cython generates a lot of warnings!

@@ -13,6 +13,7 @@
  * */
 
 #include "polycap-private.h"
+#include "polycap-aux.h"
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -197,7 +198,7 @@ static void set_exception(polycap_error **error) {
 		return;
 	}
 
-	desc = strdup(err.err.desc);
+	desc = polycap_strdup(err.err.desc);
 
 	// Second, retrieve the bottom-most error description for additional info
 

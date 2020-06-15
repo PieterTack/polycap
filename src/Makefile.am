@@ -12,6 +12,8 @@ libpolycap_la_SOURCES = \
 	polycap-private.h \
 	polycap-rng.c \
 	polycap-error.c \
+	polycap-aux.c \
+	polycap-aux.h \
 	$(NULL)
 libpolycap_la_CPPFLAGS = @easyRNG_CFLAGS@ @gsl_CFLAGS@ @xraylib_CFLAGS@ -I$(top_srcdir)/include @HDF5_CFLAGS@
 libpolycap_la_LIBADD = @easyRNG_LIBS@ @gsl_LIBS@ @xraylib_LIBS@ @HDF5_LIBS@ -lm
