@@ -52,6 +52,8 @@ AC_SUBST(OS_WINDOWS)
 AC_SUBST(LDFLAGS_LIBPOLYCAP)
 AC_SUBST(LDFLAGS_PYTHON)
 
+LT_LIB_M
+
 CFLAGS_BKP=$CFLAGS
 CFLAGS=
 AC_CHECK_FUNCS([strdup _strdup _ftime gettimeofday]) # if not found, we use our own implementation
