@@ -33,4 +33,4 @@ clean-local:
 distclean-local:
 	rm -rf __pycache__
 
-EXTRA_DIST = $(cython_sources)
+EXTRA_DIST = $(cython_sources) meson.build

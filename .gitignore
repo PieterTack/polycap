@@ -13,3 +13,4 @@ build
 config.h.in
 config.h.in~
 gh-pages
+build-meson

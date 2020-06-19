@@ -33,7 +33,7 @@ polycap_rng* polycap_rng_new_with_seed(unsigned long int seed) {
 }
 
 #if !defined(HAVE_GETTIMEOFDAY) && defined(HAVE__FTIME)
-static int gettimeofday (struct timeval *restrict tv, void *restrict tz) {
+static int gettimeofday (struct timeval *tv, void *tz) {
 	struct _timeb timebuf;
 	_ftime (&timebuf);
 	tv->tv_sec = timebuf.time;

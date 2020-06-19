@@ -43,5 +43,5 @@ uninstall-local:
 
 endif
 
-EXTRA_DIST = DoxygenLayout.xml extra_pages.dox
+EXTRA_DIST = DoxygenLayout.xml extra_pages.dox meson.build
 

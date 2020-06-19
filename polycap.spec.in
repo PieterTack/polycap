@@ -9,6 +9,9 @@ URL: http://github.com/PieterTack/polycap
 Source: polycap-%{version}.tar.gz	
 BuildRequires: gcc glibc glibc-headers glibc-devel xraylib-devel >= 4.0.0 gsl-devel hdf5-devel doxygen
 Requires: xraylib >= 4.0.0 gsl hdf5
+%if 0%{?fedora} >= 32
+BuildRequires:   meson
+%endif
 
 %if 0%{?rhel}
 
@@ -91,6 +94,10 @@ This rpm package provides the documentation of polycap.
 %setup -q
 
 %build
+%if 0%{?fedora} >= 32
+%meson
+%meson_build
+%else
 %configure PYTHON=%{__python3}
 
 #necessary to fix rpath issues during rpmbuild
@@ -98,21 +105,28 @@ sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
 sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
 make 
+%endif
 
 %install
+%if 0%{?fedora} >= 32
+%meson_install
+%else
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
 libtool --finish $RPM_BUILD_ROOT%{_libdir}
 find $RPM_BUILD_ROOT -name '*.la' | xargs rm -f
+%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+%if %{defined ldconfig_scriptlets}
+%ldconfig_scriptlets
+%else
 %post -p /sbin/ldconfig
-
 %postun -p /sbin/ldconfig
-
+%endif
 
 %files
 %defattr(-,root,root)
@@ -135,5 +149,7 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sat Jun 20 2020 Tom Schoonjans
+- Add support for meson builds
 * Fri Apr 24 2020 Tom Schoonjans
 - Initial SPEC file

@@ -52,7 +52,7 @@ python.sh: ../python/polycap.la python.py
 	@echo "PATH=\"../src/.libs:$$PATH\" LD_LIBRARY_PATH=\"../src/.libs\" DYLD_LIBRARY_PATH=\"../src/.libs\" PYTHONPATH=\"../python/.libs\" $(PYTHON) ${top_srcdir}/tests/python.py" > python.sh
 	@chmod +x python.sh
 
-EXTRA_DIST = python.py
+EXTRA_DIST = python.py meson.build
 
 clean-local:
 	rm -rf python.sh

@@ -16,3 +16,9 @@ export PYTHON=python3
 ./configure --prefix=$HOME/install --enable-python
 make
 make check
+
+mkdir build
+cd build
+meson -Dbuild-documentation=false -Dpython=python3 ..
+ninja
+ninja test

@@ -34,4 +34,4 @@ polycap_CPPFLAGS = @easyRNG_CFLAGS@ @gsl_CFLAGS@ -I$(srcdir) -I$(top_srcdir)/inc
 polycap_LDADD = libpolycap.la
 polycap_LDFLAGS = @OPENMP_CFLAGS@
 
-
+EXTRA_DIST = meson.build
