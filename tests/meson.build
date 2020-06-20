@@ -13,7 +13,7 @@ test_c_args = core_c_args + ['-DEXAMPLE_DIR="@0@/"'.format(join_paths(project_so
 
 foreach _test : tests
   _test_exec = executable(_test, files(_test + '.c'), c_args: test_c_args, dependencies: polycap_check_lib_dep)
-  test(_test, _test_exec, timeout: 1800)
+  test(_test, _test_exec, timeout: 3600)
 endforeach
 
 if build_python_opt

@@ -14,6 +14,9 @@
 
 #include "polycap-private.h"
 #include <polycap-source.h>
+#ifdef NDEBUG
+  #undef NDEBUG
+#endif
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>

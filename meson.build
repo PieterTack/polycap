@@ -91,6 +91,14 @@ foreach f : special_funcs
   endif
 endforeach
 
+if cc.has_header('pthread.h')
+  config_h_data.set('HAVE_PTHREAD_H', true)
+endif
+
+if cc.get_id() != 'msvc'
+  config_h_data.set('HAVE_PROPER_COMPLEX_H', true)
+endif
+
 # Detect and set symbol visibility
 if get_option('default_library') != 'static'
   if host_machine.system() == 'windows' or host_system == 'cygwin'
@@ -115,7 +123,8 @@ gsl_dep = dependency('gsl')
 hdf5_dep = dependency('hdf5', language: 'c')
 openmp_dep = dependency('openmp', language: 'c')
 m_dep = cc.find_library('m', required : false)
-polycap_build_dep = [xraylib_dep, gsl_dep, hdf5_dep, openmp_dep, m_dep]
+thread_dep = dependency('threads')
+polycap_build_dep = [xraylib_dep, gsl_dep, hdf5_dep, openmp_dep, m_dep, thread_dep]
 polycap_pkg_config_requires_private = [xraylib_dep, gsl_dep,] # hdf5_dep, openmp_dep and m_dep should also go in here, but currently meson only supports pkg-config dependencies...
 
 easyRNG_dep = dependency('easyRNG', version: '>= 1.1', required: false)

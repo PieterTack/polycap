@@ -22,6 +22,10 @@
 #include <stdlib.h>
 #include "polycap-private.h"
 
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
 /* public */
 
 // get a new rng with seed provided by caller

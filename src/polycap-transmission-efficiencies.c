@@ -12,15 +12,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+#include "config.h"
 #include "polycap-private.h"
 #include "polycap-aux.h"
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <hdf5.h>
-#include <pthread.h>
+
+/* Ideally, we would need to do something similar on Windows, instead of just disabling the use of a mutex...
+ * Still, seems unlikely to cause problems anytime soon...
+ */
+#ifdef HAVE_PTHREAD_H
+  #include <pthread.h>
 
 static pthread_mutex_t tables_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 /* error handling borrowed from h5py */
 
@@ -72,7 +79,9 @@ static void append_exact_table_entry(H5E_major_t h5_maj_num, H5E_minor_t h5_min_
 }
 
 static void tables_init() {
+#ifdef HAVE_PTHREAD_H
 	pthread_mutex_lock(&tables_mutex);
+#endif
 
 	// silence HDF5
 	H5Eset_auto(H5E_DEFAULT, NULL, NULL);
@@ -140,7 +149,9 @@ static void tables_init() {
 		append_exact_table_entry(H5E_REFERENCE, H5E_CANTINIT,  POLYCAP_ERROR_INVALID_ARGUMENT); // Dereferencing invalid ref
 	}
 
+#ifdef HAVE_PTHREAD_H
 	pthread_mutex_unlock(&tables_mutex);
+#endif
 }
 
 struct err_data_t {
@@ -305,11 +316,11 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//argument sanity check
 	if (filename == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies_write_hdf5: filename cannot be NULL");
-		return NULL;	
+		return false;
 	}
 	if (efficiencies == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_transmission_efficiencies_write_hdf5: efficiencies cannot be NULL");
-		return NULL;
+		return false;
 	}
 	//Create new HDF5 file using H5F_ACC_TRUNC and default creation and access properties
 	file = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT); 

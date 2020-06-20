@@ -12,6 +12,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+#include "config.h"
 #include "polycap-private.h"
 #ifdef _WIN32
   #ifndef _CRT_RAND_S
