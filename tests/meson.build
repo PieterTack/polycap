@@ -17,10 +17,17 @@ foreach _test : tests
 endforeach
 
 if build_python_opt
+  test_env = environment()
+  test_env.prepend('PYTHONPATH', pydir)
+  if host_system == 'windows'
+    test_env.prepend('PATH', srcdir)
+  endif
+
   test('python',
     python,
     args : files('python.py'),
-    env : ['PYTHONPATH=' + pydir],
-    timeout: 1800
+    env : test_env,
+    timeout: 1800,
+    depends: [polycap_ext]
   )
 endif

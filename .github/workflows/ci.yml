@@ -93,6 +93,8 @@ jobs:
         brew install ${{ matrix.extra }} tschoonj/tap/xraylib
         /usr/local/opt/python@3.8/bin/pip3 install Cython
         set +ex
+      env:
+        HOMEBREW_CURL_RETRIES: 5
     - name: Primary build and test with Autotools
       if: matrix.buildsystem == 'autotools'
       run: |
@@ -122,7 +124,6 @@ jobs:
         cd build-meson
         meson -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
         ninja
-        ninja test
         set +ex
       env:
         CC: ${{matrix.cc}}
@@ -159,7 +160,6 @@ jobs:
         autoreconf -fi
         ./configure --enable-python
         make
-        make check
         set +ex
       env:
         CC: ${{matrix.cc}}

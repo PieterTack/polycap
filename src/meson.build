@@ -72,3 +72,5 @@ executable(
   install: true,
   c_args: core_c_args + libpolycap_error_flags,
   )
+
+srcdir = meson.current_build_dir()

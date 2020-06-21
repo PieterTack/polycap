@@ -25,6 +25,9 @@
 #define POLYCAP_EXTERN extern
 #endif
 
+#define POLYCAP_VERSION_MAJOR 1
+#define POLYCAP_VERSION_MINOR 1
+
 #include "polycap-error.h"
 #include "polycap-profile.h"
 #include "polycap-description.h"

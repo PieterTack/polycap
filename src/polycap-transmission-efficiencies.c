@@ -12,7 +12,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
-#include "config.h"
 #include "polycap-private.h"
 #include "polycap-aux.h"
 #include <string.h>
@@ -23,8 +22,8 @@
 /* Ideally, we would need to do something similar on Windows, instead of just disabling the use of a mutex...
  * Still, seems unlikely to cause problems anytime soon...
  */
-#ifdef HAVE_PTHREAD_H
-  #include <pthread.h>
+#ifndef _WIN32
+#include <pthread.h>
 
 static pthread_mutex_t tables_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
@@ -79,7 +78,7 @@ static void append_exact_table_entry(H5E_major_t h5_maj_num, H5E_minor_t h5_min_
 }
 
 static void tables_init() {
-#ifdef HAVE_PTHREAD_H
+#ifndef _WIN32
 	pthread_mutex_lock(&tables_mutex);
 #endif
 
@@ -149,7 +148,7 @@ static void tables_init() {
 		append_exact_table_entry(H5E_REFERENCE, H5E_CANTINIT,  POLYCAP_ERROR_INVALID_ARGUMENT); // Dereferencing invalid ref
 	}
 
-#ifdef HAVE_PTHREAD_H
+#ifndef _WIN32
 	pthread_mutex_unlock(&tables_mutex);
 #endif
 }

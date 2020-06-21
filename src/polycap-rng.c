@@ -12,7 +12,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
-#include "config.h"
+#include "polycap-private.h"
 #ifdef HAVE_GETTIMEOFDAY
 #include <sys/time.h>
 #elif defined(HAVE__FTIME)
@@ -20,7 +20,6 @@
 #include <sys/timeb.h>
 #endif
 #include <stdlib.h>
-#include "polycap-private.h"
 
 #ifdef _WIN32
 #include <winsock2.h>

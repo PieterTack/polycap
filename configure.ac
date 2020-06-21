@@ -56,7 +56,7 @@ LT_LIB_M
 
 CFLAGS_BKP=$CFLAGS
 CFLAGS=
-AC_CHECK_FUNCS([strdup _strdup _ftime gettimeofday]) # if not found, we use our own implementation
+AC_CHECK_FUNCS([strdup _strdup _ftime gettimeofday _unlink unlink]) # if not found, we use our own implementation
 
 if test $OS_WINDOWS = 1 ; then
 AC_CHECK_FUNC([_vscprintf], [], [AC_MSG_ERROR([_vscprintf must be present on the system])])
@@ -69,6 +69,8 @@ AC_CHECK_FUNC([asprintf], [], [AC_MSG_ERROR([asprintf must be present on the sys
 fi
 
 CFLAGS=$CFLAGS_BKP
+
+AC_DEFINE([HAVE_PROPER_COMPLEX_H], [], [building with proper complex.h support])
 
 # Turn off certain errors for python bindings when -Wall -Werror is in effect -> Cython generates a lot of warnings!
 CYTHON_ERROR_CFLAGS=

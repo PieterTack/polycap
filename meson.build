@@ -93,10 +93,6 @@ foreach f : special_funcs
   endif
 endforeach
 
-if cc.has_header('pthread.h')
-  config_h_data.set('HAVE_PTHREAD_H', true)
-endif
-
 if cc.get_id() != 'msvc'
   config_h_data.set('HAVE_PROPER_COMPLEX_H', true)
 endif
