@@ -12,6 +12,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+#include "config.h"
 #include "polycap-private.h"
 #include <polycap-photon.h>
 #include <polycap-source.h>
@@ -21,7 +22,6 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <inttypes.h>
 
 void test_polycap_capil_trace_wall_leak() {

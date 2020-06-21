@@ -50,7 +50,7 @@ polycap_lib_dep = declare_dependency(
   dependencies: polycap_build_dep,
   )
 
-polycap_check_lib = shared_library(
+polycap_check_lib = static_library(
   'polycap-check',
   libpolycap_sources,
   dependencies: polycap_build_dep,

@@ -66,6 +66,8 @@ funcs = [
   '_strdup',
   '_ftime',
   'gettimeofday',
+  '_unlink',
+  'unlink',
 ]
 
 foreach f : funcs
@@ -101,8 +103,11 @@ endif
 
 # Detect and set symbol visibility
 if get_option('default_library') != 'static'
-  if host_machine.system() == 'windows' or host_system == 'cygwin'
-    config_h_data.set('DLL_EXPORT', true)
+  if host_system == 'windows' or host_system == 'cygwin'
+    config_h_data.set('WIN32', true)
+    config_h_data.set('GSL_DLL', true)
+    config_h_data.set('ZLIB_DLL', true)
+    config_h_data.set('POLYCAP_DLL_EXPORT', true)
     if cc.get_id() == 'msvc' or cc.get_id() == 'clang-cl'
       config_h_data.set('POLYCAP_EXTERN', '__declspec(dllexport) extern')
     elif cc.has_argument('-fvisibility=hidden')
@@ -125,6 +130,10 @@ openmp_dep = dependency('openmp', language: 'c')
 m_dep = cc.find_library('m', required : false)
 thread_dep = dependency('threads')
 polycap_build_dep = [xraylib_dep, gsl_dep, hdf5_dep, openmp_dep, m_dep, thread_dep]
+if host_system == 'windows'
+  zlib_dep = dependency('zlib')
+  polycap_build_dep += zlib_dep # this is to avoild linking trouble with Conda, which is currently having trouble with processing paths in pkg-config files
+endif
 polycap_pkg_config_requires_private = [xraylib_dep, gsl_dep,] # hdf5_dep, openmp_dep and m_dep should also go in here, but currently meson only supports pkg-config dependencies...
 
 easyRNG_dep = dependency('easyRNG', version: '>= 1.1', required: false)

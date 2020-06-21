@@ -12,6 +12,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+#include <config.h>
 #include "polycap-private.h"
 #include "polycap-error.h"
 #include "polycap-aux.h"

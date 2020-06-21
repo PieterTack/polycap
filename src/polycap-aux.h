@@ -15,6 +15,7 @@
 #ifndef _POLYCAP_AUX_H
 #define _POLYCAP_AUX_H
 
+#include "config.h"
 #include "polycap.h"
 #include <stddef.h>
 

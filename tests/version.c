@@ -1,3 +1,4 @@
+#include "config.h"
 #include "polycap-private.h"
 #include <string.h>
 #include <stdio.h>
