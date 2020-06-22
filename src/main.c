@@ -12,8 +12,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+#include <config.h>
 #include "polycap-private.h"
 #include "polycap-error.h"
+#include "polycap-aux.h"
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -40,9 +42,9 @@ int main(int argc, char *argv[])
 
 	//Check nthreads if sufficient arguments were supplied
 	if(argc >= 3){
-		filename = strdup(argv[2]);
+		filename = polycap_strdup(argv[2]);
 	} else {
-		filename = strdup("polycap_out.h5");
+		filename = polycap_strdup("polycap_out.h5");
 	}
 	if(argc >= 4){
 		nthreads = atoi(argv[3]);

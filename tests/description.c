@@ -12,12 +12,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+#include "config.h"
 #include "polycap-private.h"
 #include <polycap-description.h>
+#ifdef NDEBUG
+  #undef NDEBUG
+#endif
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
-#include <unistd.h>
 
 void test_polycap_read_input_line() {
 

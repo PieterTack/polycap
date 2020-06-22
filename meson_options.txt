@@ -1,0 +1,5 @@
+option('build-documentation', type: 'boolean', value: true, description: 'Build and install the documentation')
+option('build-python-bindings', type: 'boolean', value: true, description: 'Build polycaps Python bindings')
+option('python', type : 'string', value : 'python3', description: 'Python interpreter to compile bindings for')
+option('cython', type : 'string', value : 'cython', description: 'Cython to use for generating C glue code')
+

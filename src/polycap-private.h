@@ -15,9 +15,6 @@
 #ifndef POLYCAP_PRIVATE_H
 #define POLYCAP_PRIVATE_H
 
-#define POLYCAP_VERSION_MAJOR 1
-#define POLYCAP_VERSION_MINOR 0
-
 #define _CRT_RAND_S // for rand_s -> see https://msdn.microsoft.com/en-us/library/sxtz2fa8.aspx
 #include "config.h"
 #include "polycap.h"
@@ -29,6 +26,12 @@
 #define IMSIZE 500001
 #define DELTA 1.e-10
 #define BINSIZE 20.e-4 /* cm */
+
+#ifndef M_PI
+#define M_PI           3.14159265358979323846  /* pi */
+#define M_PI_2         1.57079632679489661923  /* pi/2 */
+#define M_PI_4         0.78539816339744830962  /* pi/4 */
+#endif
 
 #ifdef TEST_BUILD
   #define STATIC 

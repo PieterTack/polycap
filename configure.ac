@@ -1,4 +1,4 @@
-AC_INIT([polycap],[1.0],[Pieter.Tack@UGent.be])
+AC_INIT([polycap],[1.1],[Pieter.Tack@UGent.be])
 AC_PREREQ([2.60])
 AC_CONFIG_SRCDIR([src/polycap-description.c])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -6,9 +6,9 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CANONICAL_HOST
 
 
-LIB_CURRENT=0
+LIB_CURRENT=1
 LIB_REVISION=0
-LIB_AGE=0
+LIB_AGE=1
 AC_SUBST(LIB_CURRENT)
 AC_SUBST(LIB_REVISION)
 AC_SUBST(LIB_AGE)
@@ -52,12 +52,25 @@ AC_SUBST(OS_WINDOWS)
 AC_SUBST(LDFLAGS_LIBPOLYCAP)
 AC_SUBST(LDFLAGS_PYTHON)
 
+LT_LIB_M
+
 CFLAGS_BKP=$CFLAGS
 CFLAGS=
+AC_CHECK_FUNCS([strdup _strdup _ftime gettimeofday _unlink unlink]) # if not found, we use our own implementation
+
+if test $OS_WINDOWS = 1 ; then
+AC_CHECK_FUNC([_vscprintf], [], [AC_MSG_ERROR([_vscprintf must be present on the system])])
+AC_CHECK_FUNC([_scprintf], [], [AC_MSG_ERROR([_scprintf must be present on the system])])
+AC_CHECK_FUNC([_vsnprintf], [], [AC_MSG_ERROR([_vsnprintf must be present on the system])])
+AC_CHECK_FUNC([_snprintf], [], [AC_MSG_ERROR([_snprintf must be present on the system])])
+else
 AC_CHECK_FUNC([vasprintf], [], [AC_MSG_ERROR([vasprintf must be present on the system])])
-AC_CHECK_FUNC([strdup], [], [AC_MSG_ERROR([strdup must be present on the system])])
-AC_CHECK_FUNC([gettimeofday], [], [AC_MSG_ERROR([strdup must be present on the system])])
+AC_CHECK_FUNC([asprintf], [], [AC_MSG_ERROR([asprintf must be present on the system])])
+fi
+
 CFLAGS=$CFLAGS_BKP
+
+AC_DEFINE([HAVE_PROPER_COMPLEX_H], [], [building with proper complex.h support])
 
 # Turn off certain errors for python bindings when -Wall -Werror is in effect -> Cython generates a lot of warnings!
 CYTHON_ERROR_CFLAGS=

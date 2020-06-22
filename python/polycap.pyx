@@ -25,7 +25,7 @@ from description cimport *
 from transmission_efficiencies cimport *
 from photon cimport *
 from source cimport *
-from libc.string cimport strdup, memcpy
+from libc.string cimport memcpy
 from libc.stdlib cimport free
 from cpython cimport Py_DECREF
 cimport numpy as np

@@ -12,12 +12,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+#include "config.h"
 #include "polycap-private.h"
 #include <polycap-source.h>
+#ifdef NDEBUG
+  #undef NDEBUG
+#endif
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
-#include <unistd.h>
+#ifdef HAVE__UNLINK
+  #include <stdio.h>
+#elif defined(HAVE_UNLINK)
+  #include <unistd.h>
+#endif
 
 void test_polycap_source_get_photon() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
@@ -221,7 +229,11 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	polycap_clear_error(&error);
 
 	assert(polycap_transmission_efficiencies_write_hdf5(efficiencies, "temp.h5", &error));
+#ifdef HAVE__UNLINK
+	_unlink("temp.h5"); // cleanup
+#elif defined(HAVE_UNLINK)
 	unlink("temp.h5"); // cleanup
+#endif
 
 	polycap_transmission_efficiencies_free(efficiencies);
 	polycap_source_free(source);

@@ -13,3 +13,5 @@ polycapinclude_HEADERS = \
 	polycap-photon.h \
 	polycap-progress-monitor.h \
 	$(NULL)
+
+EXTRA_DIST = meson.build

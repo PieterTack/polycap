@@ -23,6 +23,30 @@
 #define BINSIZE 20.e-4 /* cm */
 #define EPSILON 1.0e-30
 
+#ifdef HAVE_PROPER_COMPLEX_H
+/* Because MS thinks it was a good idea not to follow the C99 standard properly,
+ * and implement complex numbers support using their own types,
+ * we now have to do this bullshit hack. Apologies.
+ */
+
+#define _Dcomplex double complex
+
+#define double2_Dcomplex(x) ((double complex) x)
+#define new_Dcomplex(real, imag) (real + I * imag)
+#define Dcomplex_inverse(x) (1.0/(x))
+#define Dcomplex_multiply_Dcomplex(x, y) ((x) * (y))
+#define Dcomplex_multiply_double(x, y) ((x) * (y))
+
+
+#else
+
+#define double2_Dcomplex(x) (_Cbuild(x, 0.0))
+#define new_Dcomplex(real, imag) (_Cbuild(real, imag))
+#define Dcomplex_inverse(z) (_Cmulcr(conj(z), 1.0/norm(z)))
+#define Dcomplex_multiply_Dcomplex(x, y) (_Cmulcc(x, y))
+#define Dcomplex_multiply_double(x, y) (_Cmulcr(x, y))
+#endif
+
 //===========================================
 // calculates the intersection point coordinates of the photon trajectory and a given linear segment of the capillary wall
 STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 phot_coord0, polycap_vector3 phot_coord1, polycap_vector3 photon_dir, polycap_vector3 *photon_coord, polycap_vector3 *surface_norm, double *alfa, polycap_error **error)
@@ -391,8 +415,8 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 STATIC double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error) {
 	// theta is the glancing angle (angle between capillary surface and photon direction)
 	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
-	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
-	double complex rtot; //reflectivity
+	_Dcomplex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
+	_Dcomplex rtot; //reflectivity
 
 	//argument sanity check
 	if (e < 1. || e > 100.){
@@ -420,7 +444,7 @@ STATIC double polycap_refl(double e, double theta, double density, double scatf,
 	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
 	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
 
-	rtot = ((double complex)theta - csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I))) / ((double complex)theta + csqrt(cpow((double complex)theta,2) - 2.*(alfa - beta*I)));
+	rtot = ((_Dcomplex)theta - csqrt(cpow((_Dcomplex)theta,2) - 2.*(alfa - beta*I))) / ((_Dcomplex)theta + csqrt(cpow((_Dcomplex)theta,2) - 2.*(alfa - beta*I)));
 	rtot = creal(cpow(cabs(rtot),2.));
 
 	return rtot;
@@ -432,13 +456,16 @@ STATIC double polycap_refl_polar(double e, double theta, double density, double 
 	// theta is the angle between photon direction and surface normal
 	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
 	// surface_norm is the surface normal vector
-	double complex alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
-	double complex n; //index of refraction of the capillary material (n = 1. - delta)
+	double alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
+	_Dcomplex n; //index of refraction of the capillary material (n = 1. - delta)
 			//Index of refraction of medium inside capillary is assumed == 1 (vacuum, air)
-	double complex rtot, r_s, r_p; //reflectivity total, perpendicular (s) and parallel (p) to the plane of reflection
+	_Dcomplex r_s, r_p; //reflectivity total, perpendicular (s) and parallel (p) to the plane of reflection
 	polycap_vector3 s_dir, p_dir; //vector along s and p direction (p_dir is orthogonal to s_dir and surface_norm)
 	double frac_s, frac_p; //fraction of electric_vector corresponding to s and p directions
 	double angle_a, angle_b, angle_c; //some cos of angles between electric vector and (a=s_dir, b=surface_norm, c=p_dir)
+	double cos_theta, sin_theta;
+	_Dcomplex n_inv, our_csqrt, tmp;
+	double r_s_double, r_p_double, rtot;
 
 	//argument sanity check
 	if (e < 1. || e > 100.){
@@ -474,17 +501,25 @@ STATIC double polycap_refl_polar(double e, double theta, double density, double 
 		polycap_norm(&photon->exit_electric_vector);
 
 	// calculate s and p reflection intensities
-	alfa = (double)(HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
-	beta = (double) (HC)/(4.*M_PI) * (lin_abs_coeff/e);
-	n = (double complex) 1. - (alfa - beta*I);
+	alfa = (HC/e)*(HC/e)*((N_AVOG*R0*density)/(2*M_PI)) * scatf;
+	beta = (HC)/(4.*M_PI) * (lin_abs_coeff/e);
+	n = new_Dcomplex(1.0 - alfa, beta);
 
-	r_s = (double complex)((1.*ccos((double complex)theta)) - n * csqrt(1.-(((1./n)*csin((double complex)theta))*((1./n)*csin((double complex)theta)))) ) /
-		((1.*ccos((double complex)theta)) + n * csqrt(1.-(((1./n)*csin((double complex)theta))*((1./n)*csin((double complex)theta)))) );
-	r_s = cpow(cabs(r_s),2.);
+	cos_theta = cos(theta);
+	sin_theta = sin(theta);
+	n_inv = Dcomplex_inverse(n); // 1.0/n
+	tmp = Dcomplex_multiply_double(Dcomplex_multiply_Dcomplex(n_inv, n_inv), sin_theta * sin_theta);
+	our_csqrt = csqrt(new_Dcomplex(1.0 - creal(tmp), -1.0 * cimag(tmp)));
 
-	r_p = (double complex)(1.*csqrt(1.-(((1./n)*csin((double complex)theta))*((1./n)*csin((double complex)theta)))) - (n*ccos((double complex)theta)) ) /
-		(1.*csqrt(1.-(((1./n)*csin((double complex)theta))*((1./n)*csin((double complex)theta)))) + (n*ccos((double complex)theta)) );
-	r_p = cpow(cabs(r_p),2.);
+	tmp = Dcomplex_multiply_Dcomplex(n, our_csqrt);
+	r_s = Dcomplex_multiply_Dcomplex(new_Dcomplex(cos_theta - creal(tmp), -1.0 * cimag(tmp)), Dcomplex_inverse(new_Dcomplex(cos_theta + creal(tmp), cimag(tmp))));
+	r_s_double = cabs(r_s);
+	r_s_double *= r_s_double; 
+
+	tmp = Dcomplex_multiply_double(n, cos_theta);
+	r_p = Dcomplex_multiply_Dcomplex(new_Dcomplex(creal(our_csqrt) - creal(tmp), cimag(our_csqrt) - cimag(tmp)), Dcomplex_inverse(new_Dcomplex(creal(our_csqrt) + creal(tmp), cimag(our_csqrt) + cimag(tmp))));
+	r_p_double = cabs(r_p);
+	r_p_double *= r_p_double; 
 
 	// calculate fraction of electric vector in s and p directions
 		//s direction is perpendicular to both photon incident direction and surface norm
@@ -511,7 +546,7 @@ STATIC double polycap_refl_polar(double e, double theta, double density, double 
 	//printf("/theta: %lf, frac_s: %lf, r_s: %lf, frac_p: %lf, r_p: %lf\n", theta, frac_s, creal(r_s), frac_p, creal(r_p));
 
 	// Determine rtot based on fraction of electric field in s and p direction
-	rtot = creal(r_s*frac_s + r_p*frac_p);
+	rtot = r_s_double * frac_s + r_p_double * frac_p;
 
 	// Adjust electric_vector based on reflection in s and p direction
 	angle_b = polycap_scalar(photon->exit_electric_vector, surface_norm);
@@ -542,7 +577,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 {
 	int i, iesc=-5, wall_trace=0, iesc_temp=0;
 	double cons1, r_rough;
-	double complex rtot; //reflectivity
+	double rtot; //reflectivity
 	double *w_leak; //leak weight
 	int r_cntr, q_cntr; //indices of neighbouring capillary photon traveled towards 
 	double z; //hexagon radial distance z
@@ -603,7 +638,7 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 		//reflectivity according to Fresnel expression
 		//rtot = polycap_refl(photon->energies[i], alfa, description->density, photon->scatf[i], photon->amu[i], error);
 		rtot = polycap_refl_polar(photon->energies[i], M_PI_2-alfa, description->density, photon->scatf[i], photon->amu[i], surface_norm, photon, &electric_vector, error);
-		if( (double)rtot < 0. || (double)rtot > 1.){
+		if( rtot < 0. || rtot > 1.){
 			polycap_set_error(error, POLYCAP_ERROR_IO, "polycap_capil_reflect: rtot should be greater than or equal to 0 and smaller than or equal to 1 -> %s", strerror(errno));
 			free(w_leak);
 			return -1;

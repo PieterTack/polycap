@@ -12,7 +12,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
+#include "config.h"
 #include <polycap.h>
+#ifdef NDEBUG
+  #undef NDEBUG
+#endif
 #include <assert.h>
 #include <stddef.h>
 

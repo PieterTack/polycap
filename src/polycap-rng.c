@@ -13,8 +13,17 @@
  * */
 
 #include "polycap-private.h"
+#ifdef HAVE_GETTIMEOFDAY
 #include <sys/time.h>
+#elif defined(HAVE__FTIME)
+#include <sys/types.h>
+#include <sys/timeb.h>
+#endif
 #include <stdlib.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
 
 /* public */
 
@@ -25,6 +34,17 @@ polycap_rng* polycap_rng_new_with_seed(unsigned long int seed) {
 	_polycap_rng_set(rng, seed);
 	return rng;
 }
+
+#if !defined(HAVE_GETTIMEOFDAY) && defined(HAVE__FTIME)
+static int gettimeofday (struct timeval *tv, void *tz) {
+	struct _timeb timebuf;
+	_ftime (&timebuf);
+	tv->tv_sec = timebuf.time;
+	tv->tv_usec = timebuf.millitm * 1000;
+
+	return 0;
+}
+#endif
 
 //get a new rng with seed from /dev/urandom or rand_s
 polycap_rng* polycap_rng_new() {

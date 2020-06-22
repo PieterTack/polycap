@@ -14,29 +14,30 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         rng: [easyRNG, gsl]
         compiler: [clang, gcc]
+        buildsystem: [autotools, meson]
         include:
           # Linux
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             rng: easyRNG
             compiler: clang
             cc: clang
             extra: libeasyrng-dev
             python: /usr/bin/python3
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             rng: easyRNG
             compiler: gcc
             cc: gcc
             extra: libeasyrng-dev
             python: /usr/bin/python3
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             rng: gsl
             compiler: clang
             cc: clang
             python: /usr/bin/python3
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             rng: gsl
             compiler: gcc
             cc: gcc
@@ -72,14 +73,15 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install ubuntu dependencies
-      if: matrix.os == 'ubuntu-18.04'
+      if: matrix.os == 'ubuntu-latest'
       run: |
         set -ex
         curl -sSL "http://xmi-apt.tomschoonjans.eu/xmi.packages.key" | sudo -E apt-key add -
         echo "deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu bionic stable" | sudo tee -a /etc/apt/sources.list >/dev/null
         sudo apt-get update
         # sudo apt-get upgrade -> takes very long!
-        sudo apt-get install libgsl0-dev libxrl11-dev libhdf5-serial-dev hdf5-tools gcc python3-all-dev python3-numpy cython3 ${{ matrix.extra }}
+        sudo apt-get install libgsl0-dev libxrl11-dev python3-pip python3-wheel python3-setuptools libhdf5-serial-dev hdf5-tools gcc python3-all-dev python3-numpy cython3 ${{ matrix.extra }}
+        pip3 install meson ninja
         set +ex
     - name: Install macOS dependencies
       if: matrix.os == 'macos-latest'
@@ -87,27 +89,80 @@ jobs:
         set -ex
         brew update
         brew upgrade
-        brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl python@3.8 numpy
+        brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl python@3.8 numpy meson ninja
         brew install ${{ matrix.extra }} tschoonj/tap/xraylib
         /usr/local/opt/python@3.8/bin/pip3 install Cython
         set +ex
-    - name: Build and test
+      env:
+        HOMEBREW_CURL_RETRIES: 5
+    - name: Primary build and test with Autotools
+      if: matrix.buildsystem == 'autotools'
       run: |
         set -ex
         autoreconf -fi
-        #export LIBS="$LIBS $EXTRA_LIBS"
         ./configure --disable-python || (cat config.log && exit 1)
         make
-        make check || (cat tests/*log && exit 1)
+        make check
         make distclean
         ./configure --enable-python
         make
-        make check || (cat tests/*log && exit 1)
         make distcheck || (cat polycap-0.1/_build/sub/tests/*.log && exit 1)
         set +ex
       env:
         CC: ${{matrix.cc}}
         PYTHON: ${{matrix.python}}
         LIBS: ${{matrix.libs}}
-        CFLAGS: -Wall -Werror
+    - name: Secondary build with Meson
+      if: matrix.buildsystem == 'autotools'
+      run: |
+        set -ex
+        export PATH=${HOME}/.local/bin:${PATH}
+        TARBALL=$(ls *.tar.gz)
+        tar xfz $TARBALL
+        cd ${TARBALL%.tar.gz}
+        mkdir build-meson
+        cd build-meson
+        meson --buildtype=debugoptimized -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
+        ninja
+        set +ex
+      env:
+        CC: ${{matrix.cc}}
+        LDFLAGS: ${{matrix.libs}}
+        CPPFLAGS: -I/usr/local/opt/hdf5/include
+    - name: Primary build and test with meson
+      if: matrix.buildsystem == 'meson'
+      run: |
+        set -ex
+        export PATH=${HOME}/.local/bin:${PATH}
+        mkdir build
+        cd build
+        meson --buildtype=debugoptimized -Dbuild-python-bindings=false -Dbuild-documentation=false ..
+        ninja
+        ninja test
+        ninja clean
+        rm -rf *
+        meson --buildtype=debugoptimized -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
+        ninja
+        ninja dist
+        set +ex
+      env:
+        CC: ${{matrix.cc}}
+        LDFLAGS: ${{matrix.libs}}
+        CPPFLAGS: -I/usr/local/opt/hdf5/include
+    - name: Secondary build with Autotools 
+      if: matrix.buildsystem == 'meson'
+      run: |
+        set -ex
+        cd build/meson-dist/
+        TARBALL=$(ls *.tar.xz)
+        tar xfJ $TARBALL
+        cd ${TARBALL%.tar.xz}
+        autoreconf -fi
+        ./configure --enable-python
+        make
+        set +ex
+      env:
+        CC: ${{matrix.cc}}
+        PYTHON: ${{matrix.python}}
+        LIBS: ${{matrix.libs}}
 
