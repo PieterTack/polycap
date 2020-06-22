@@ -18,12 +18,12 @@ from transmission_efficiencies cimport polycap_transmission_efficiencies
 from progress_monitor cimport polycap_progress_monitor
 
 cdef extern from "polycap-source.h" nogil:
-    """Struct containing information on the source from which photons can be (randomly) selected
+    '''Struct containing information on the source from which photons can be (randomly) selected
     When this struct is no longer required, it is the user's responsability to free the memory using polycap_source_free().
-    """
+    '''
     ctypedef struct polycap_source
 
-    """Creates a new polycap_source by providing all its properties
+    '''Creates a new polycap_source by providing all its properties
     @param description : a polycap_description
     @param d_source : the distance between the source and polycapillary optic entrance window along the central axis [cm]
     @param src_x : the source radius along the X (horizontal) direction [cm]
@@ -37,7 +37,7 @@ cdef extern from "polycap-source.h" nogil:
     @param energies : an array containing the discrete energies of which the source will emit photons
     @param error : a pointer to a \c NULL polycap_error, or \c NULL
     @return : a new polycap_source, or \c NULL if an error occurred
-    """
+    '''
     polycap_source* polycap_source_new(
         polycap_description *description,
         double d_source,
@@ -52,31 +52,31 @@ cdef extern from "polycap-source.h" nogil:
 	double *energies,
         polycap_error **error)
 
-    """free a polycap_source struct
+    '''free a polycap_source struct
     @param source : a polycap_source instance
-    """
+    '''
     void polycap_source_free(polycap_source *source)
 
-    """Create a new random polycap_photon based on polycap_source
+    '''Create a new random polycap_photon based on polycap_source
     In the event of an error, \c NULL is returned and \c error is set appropriately.
     @param source : a polycap_source
     @param rng : a polycap_rng
     @param error : a pointer to a \c NULL polycap_error, or \c NULL
     @return : a new polycap_photon, or \c NULL if an error occurred
-    """
+    '''
     polycap_photon* polycap_source_get_photon(
         polycap_source *source,
         polycap_rng *rng,
         polycap_error **error)
 
-    """Load a polycap_description from given ASCII *.inp input file correponding to the old polycap program format.
+    '''Load a polycap_description from given ASCII *.inp input file correponding to the old polycap program format.
     @param filename : directory path to an ASCII input file. Default extension *.inp.
     @param error : a pointer to a \c NULL polycap_error, or \c NULL
     @return : a new polycap_source, or \c NULL if an error occurred
-    """
+    '''
     polycap_source* polycap_source_new_from_file(const char *filename, polycap_error **error)
 
-    """Obtain the transmission efficiencies for a given array of energies, and a full polycap_description.
+    '''Obtain the transmission efficiencies for a given array of energies, and a full polycap_description.
     Efficiencies are allocated by this function, and need to be freed with polycap_transmission_efficiencies_free().
     @param source : a polycap_source
     @param max_threads : the amount of threads to use. Set to -1 to use the maximum available amount of threads.
@@ -85,7 +85,7 @@ cdef extern from "polycap-source.h" nogil:
     @param leak_calc : True: perform leak calculation; False: do not perform leak calculation
     @param error : a pointer to a \c NULL polycap_error, or \c NULL
     @return : a new polycap_transmission_efficiencies, or \c NULL if an error occurred
-    """
+    '''
     polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
         polycap_source *source,
         int max_threads,
@@ -94,9 +94,9 @@ cdef extern from "polycap-source.h" nogil:
         polycap_progress_monitor *progress_monitor,
         polycap_error **error)
 
-    """Create new polycap_description from a polycap_source
+    '''Create new polycap_description from a polycap_source
     @param source : a polycap_source
     @return : a new polycap_description
-    """
+    '''
     const polycap_description* polycap_source_get_description(polycap_source *source)
 
