@@ -11,6 +11,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cdef extern from "polycap-error.h" nogil:
+    """Codes to indicate the type of the error
+    """
     cdef enum polycap_error_code:
         POLYCAP_ERROR_MEMORY             # set in case of a memory allocation problem 
         POLYCAP_ERROR_INVALID_ARGUMENT   # set in case an invalid argument gets passed to a routine
@@ -24,4 +26,7 @@ cdef extern from "polycap-error.h" nogil:
         polycap_error_code code
         char *message
 
+    """Clears a polycap_error, and sets the pointer to \c NULL
+    @param : err a pointer to a polycap_error
+    """
     void polycap_error_free(polycap_error *error)

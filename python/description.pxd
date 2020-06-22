@@ -15,8 +15,22 @@ from profile cimport polycap_profile
 from libc.stdint cimport int64_t
 
 cdef extern from "polycap-description.h" nogil:
+    """Struct containing information about a polycapillary description such as shape and composition
+    When this struct is no longer required, it is the user's responsability to free the memory using polycap_description_free().
+    """
     ctypedef struct polycap_description
 
+    """Creates a new polycap_description by providing all its properties.
+    @param : profile polycap_profile containing outer polycapillary and single capillary shape coordinates
+    @param : sig_rough Surface rougness of the capillaries [Angstrom]
+    @param : n_cap The amount of capillaries in the hexagonally packed polycapillary optic
+    @param : nelem The amount of chemical elements present in the capillary matrix
+    @param : iz Array of atomic numbers of the elements present in the capillary matrix
+    @param : wi Array of weight percentages of the elements present in the capillary matrix
+    @param : density Density of the capillary matrix [g/cm<sup>3</sup>]
+    @param : error a pointer to a \c NULL polycap_error, or \c NULL
+    @return : a new polycap_description, or \c NULL if an error occurred	
+    """
     polycap_description* polycap_description_new(
         polycap_profile *profile,
         double sig_rough,
@@ -27,6 +41,13 @@ cdef extern from "polycap-description.h" nogil:
         double density,
 	polycap_error **error)
 
+    """Extract the polycap_profile from a polycap_description
+    @param : description polycap_description to extract a polycap_profile from
+    @return : a new polycap_profile
+    """
     const polycap_profile* polycap_description_get_profile(polycap_description *description)
 
+    """free a polycap_description struct
+    @param : description polycap_description to free
+    """
     void polycap_description_free(polycap_description *description)

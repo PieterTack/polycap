@@ -11,9 +11,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cdef extern from "polycap-rng.h" nogil:
+    """Struct containing a rng
+    The polycap_rng struct is  mapped to either gsl_rng or easy_rng. When this struct is no longer required, it is the user's responsability to free the memory using polycap_rng_free().
+    """
     ctypedef struct polycap_rng
 
+    """Create a new rng with seed from `/dev/urandom` or `rand_s`
+    @return : a new polycap_rng
+    """
     polycap_rng* polycap_rng_new()
+
+    """get a new rng with seed provided by caller
+    @param seed : a seed provided by the caller
+    @return : a new polycap_rng
+    """
     polycap_rng* polycap_rng_new_with_seed(unsigned long int seed)
 
+    """free a polycap_rng structure
+    @param rng : a polycap_rng
+    """
     void polycap_rng_free(polycap_rng *rng)
