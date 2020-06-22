@@ -122,7 +122,7 @@ jobs:
         cd ${TARBALL%.tar.gz}
         mkdir build-meson
         cd build-meson
-        meson -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
+        meson --buildtype=debugoptimized -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
         ninja
         set +ex
       env:
@@ -136,12 +136,12 @@ jobs:
         export PATH=${HOME}/.local/bin:${PATH}
         mkdir build
         cd build
-        meson -Dbuild-python-bindings=false -Dbuild-documentation=false ..
+        meson --buildtype=debugoptimized -Dbuild-python-bindings=false -Dbuild-documentation=false ..
         ninja
         ninja test
         ninja clean
         rm -rf *
-        meson -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
+        meson --buildtype=debugoptimized -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
         ninja
         ninja dist
         set +ex

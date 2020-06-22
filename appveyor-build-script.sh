@@ -19,6 +19,6 @@ make check
 
 mkdir build
 cd build
-meson -Dbuild-documentation=false -Dpython=python3 ..
+meson --buildtype=debugoptimized -Dbuild-documentation=false -Dpython=python3 ..
 ninja
 ninja test
