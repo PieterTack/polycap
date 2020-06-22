@@ -24,7 +24,7 @@ libpolycap_error_flags = [
   '-Werror=implicit',
   '-Werror=unused-function',
   '-Werror=parentheses',
-  '-Werror=unused-result',
+  #'-Werror=unused-result',
 ]
 
 libpolycap_error_flags = cc.get_supported_arguments(libpolycap_error_flags)
