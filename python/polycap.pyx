@@ -439,7 +439,7 @@ cdef class Photon:
             polycap_set_exception(error)
 
     def __dealloc__(self):
-    	'''Free a :ref:``Photon`` class and all associated data'''
+        '''Free a :ref:``Photon`` class and all associated data'''
         if self.photon is not NULL:
             polycap_photon_free(self.photon)
 
