@@ -107,9 +107,9 @@ cdef void polycap_set_exception(polycap_error *error) except *:
     PyErr_SetString(eclass, error.message)
     polycap_error_free(error)
 
-'''Struct containing information about a polycapillary profile shape
+'''Class containing information about a polycapillary profile shape
 
-When this struct is no longer required, it is the user's responsability to free the memory using ``Profile.__dealloc__``.
+When this class is no longer required, it is the user's responsability to free the memory using ``Profile.__dealloc__``.
 '''
 cdef class Profile:
     '''Codes to indicate the type of polycapillary external shape
@@ -170,7 +170,7 @@ cdef class Profile:
         if self.profile is not NULL:
             polycap_profile_free(self.profile)
 
-'''Struct containing a random number generator
+'''Class containing a random number generator
 
 The :ref:``Rng`` class is  mapped to either gsl_rng or easy_rng. When this struct is no longer required, it is the user's responsability to free the memory using :ref:``Rng.__dealloc__``.
 '''
@@ -202,9 +202,9 @@ def ensure_int(x):
         Z = int(x)
     return Z
 
-'''Struct containing information about a polycapillary description such as shape and composition
+'''Class containing information about a polycapillary description such as shape and composition
 
-When this struct is no longer required, it is the user's responsability to free the memory using :ref:``Description.__dealloc__``.
+When this class is no longer required, it is the user's responsability to free the memory using :ref:``Description.__dealloc__``.
 '''
 cdef class Description:
     cdef polycap_description *description
@@ -279,9 +279,9 @@ cdef class Description:
             polycap_description_free(self.description)
     
 
-'''Struct containing all output information such as simulated photon coordinates, direction, energies, weights, ...
+'''Class containing all output information such as simulated photon coordinates, direction, energies, weights, ...
 
-When this struct is no longer required, it is the user's responsability to free the memory using :ref:``TransmissionEfficiencies.__dealloc__``.
+When this class is no longer required, it is the user's responsability to free the memory using :ref:``TransmissionEfficiencies.__dealloc__``.
 '''
 cdef class TransmissionEfficiencies:
     cdef polycap_transmission_efficiencies *trans_eff
@@ -369,9 +369,9 @@ cdef polycap_vector3 np2vector(np.ndarray[double, ndim=1] arr):
 cdef tuple vector2tuple(polycap_vector3 vec):
     return (vec.x, vec.y, vec.z)
 
-'''Struct containing information about the simulated photon such as position and direction, energy and transmission weights.
+'''Class containing information about the simulated photon such as position and direction, energy and transmission weights.
 
-When this struct is no longer required, it is the user's responsability to free the memory using :ref:``Photon.__dealloc__``.
+When this class is no longer required, it is the user's responsability to free the memory using :ref:``Photon.__dealloc__``.
 '''
 cdef class Photon:
     cdef polycap_photon *photon
@@ -529,7 +529,7 @@ cdef class Source:
         :type hor_pol: double
         :param energies: an array containing the discrete energies of which the source will emit photons
         :type energies: double array
-        :return: a new polycap_source, or \c NULL if an error occurred
+        :return: a new :ref:``Source``, or \c NULL if an error occurred
         '''
 
         energies = np.asarray(energies, dtype=np.double)
