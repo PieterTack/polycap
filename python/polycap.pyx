@@ -108,8 +108,6 @@ cdef void polycap_set_exception(polycap_error *error) except *:
     polycap_error_free(error)
 
 '''Class containing information about a polycapillary profile shape
-
-When this class is no longer required, it is the user's responsability to free the memory using ``Profile.__dealloc__``.
 '''
 cdef class Profile:
     '''Codes to indicate the type of polycapillary external shape
@@ -172,7 +170,7 @@ cdef class Profile:
 
 '''Class containing a random number generator
 
-The :ref:``Rng`` class is  mapped to either gsl_rng or easy_rng. When this struct is no longer required, it is the user's responsability to free the memory using :ref:``Rng.__dealloc__``.
+The :ref:``Rng`` class is  mapped to either gsl_rng or easy_rng.``.
 '''
 cdef class Rng:
     cdef polycap_rng *rng
@@ -203,8 +201,6 @@ def ensure_int(x):
     return Z
 
 '''Class containing information about a polycapillary description such as shape and composition
-
-When this class is no longer required, it is the user's responsability to free the memory using :ref:``Description.__dealloc__``.
 '''
 cdef class Description:
     cdef polycap_description *description
@@ -280,8 +276,6 @@ cdef class Description:
     
 
 '''Class containing all output information such as simulated photon coordinates, direction, energies, weights, ...
-
-When this class is no longer required, it is the user's responsability to free the memory using :ref:``TransmissionEfficiencies.__dealloc__``.
 '''
 cdef class TransmissionEfficiencies:
     cdef polycap_transmission_efficiencies *trans_eff
@@ -370,8 +364,6 @@ cdef tuple vector2tuple(polycap_vector3 vec):
     return (vec.x, vec.y, vec.z)
 
 '''Class containing information about the simulated photon such as position and direction, energy and transmission weights.
-
-When this class is no longer required, it is the user's responsability to free the memory using :ref:``Photon.__dealloc__``.
 '''
 cdef class Photon:
     cdef polycap_photon *photon
@@ -491,8 +483,6 @@ cdef class Photon:
         return vector2tuple(polycap_photon_get_exit_electric_vector(self.photon))
 
 '''Class containing information on the source from which photons can be (randomly) selected
-
-When this struct is no longer required, it is the user's responsability to free the memory using :ref:``Source.__dealloc__``.
 '''
 cdef class Source:
     cdef polycap_source *source
@@ -584,7 +574,6 @@ cdef class Source:
         int n_photons,
         bool leak_calc = False):
         '''Obtain the transmission efficiencies for a given array of energies, and a full polycap_description.
-        Efficiencies are allocated by this function, and need to be freed with :ref:``TransmissionEfficiencies.__dealloc__``.
         :param max_threads: the amount of threads to use. Set to -1 to use the maximum available amount of threads.
         :type max_threads: int
         :param n_photons: the amount of photons to simulate that reach the polycapillary end
