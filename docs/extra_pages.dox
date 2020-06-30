@@ -117,12 +117,21 @@
  *
  * \page pyth_docs Python Docs
  * 
+ * The following instructions assume that all module attributes have been loaded:
+ *
+ * \code{.py}
+ * from polycap import *
+ * \endcode
+ *
  * \section Profile Profile
  * Class containing information about a polycapillary profile shape.
  * 
- * Create a new profile for a given profile type with supplied polycapillary properties.
+ * Create a new `Profile` instance for a given profile type with supplied polycapillary properties.
  *
- * Syntax: profile = Profile(polycap_profile_type type, double length, double rad_ext_upstream, double rad_ext_downstream, double rad_int_upstream, double rad_int_downstream, double focal_dist_upstream, double focal_dist_downstream)
+ * Syntax:
+ * \code{.py}
+ * profile = Profile(polycap_profile_type type, double length, double rad_ext_upstream, double rad_ext_downstream, double rad_int_upstream, double rad_int_downstream, double focal_dist_upstream, double focal_dist_downstream)
+ * \endcode
  *       - **type:** an integer or \ref profiletype that indicates the profile type
  *       - **length:** the polycapillary length, as measured along the central axis [cm]
  *       - **rad_ext_upstream:** external upstream polycapillary radius (photons stream from upstream to downstream) [cm]
@@ -131,46 +140,55 @@
  *       - **rad_int_downstream:** internal downstream capillary radius (photons stream from upstream to downstream) [cm]
  *       - **focal_dist_upstream:** focal distance upstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
  *       - **focal_dist_downstream:** focal distance downstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
- *       - **returns:** a new \ref Profile, or \c NULL if an error occurred
+ *       - **returns:** a new \ref Profile, or raises an exception if an error occurred.
  *
  * \subsection profiletype Profile type
  * 
  * Various optic shapes are allowed, including user-defined shapes. Three general external shapes are supported for straightforward external shape definition. In each case, the single capillary shape is assumed conical around the central capillary axis
- * 	- CONICAL: the external profile shape is a straight line between the polycapillary entrance and exit radii.
- *	- PARABOLOIDAL: a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
- *	- ELLIPSOIDAL: an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
+ * 	- **CONICAL:** the external profile shape is a straight line between the polycapillary entrance and exit radii.
+ *	- **PARABOLOIDAL:** a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
+ *	- **ELLIPSOIDAL:** an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
  *
  * \section rng Rng
  * 
  * Class containing a random number generator
  *
- * Get a new rng with seed provided by caller:
+ * Get a new `Rng` instance with seed optionally provided by caller:
  *
- * Syntax: rng = Rng([seed=None])
- *       - **seed:** [OPTIONAL] a seed provided by the caller, if not provided one is generated for the user. ``Unsigned long int``
+ * Syntax:
+ * \code{.py}
+ * rng = Rng([unsigned int seed=None])
+ * \endcode
+ *       - **seed:** [OPTIONAL] a seed provided by the caller, if not provided one is generated for the user.
  *       - **returns:** a new \ref rng
  *
  * \section Description Description
  *
  * Class containing information about a polycapillary description such as shape and composition
  * 
- * Create a new polycap_description by providing all its properties:
+ * Create a new `Description` instance by providing all its properties:
  *
- * Syntax: description = Description(Profile profile, double sig_rough, int64_t n_cap, object composition, double density)
+ * Syntax:
+ * \code{.py}
+ * description = Description(Profile profile, double sig_rough, int64_t n_cap, object composition, double density)
+ * \endcode
  *       - **profile:** \ref Profile containing outer polycapillary and single capillary shape coordinates
  *       - **sig_rough:** Surface rougness of the capillaries [Angstrom]
  *       - **n_cap:** The amount of capillaries in the hexagonally packed polycapillary optic
  *       - **composition:** capillary material composition XRayLib dictionary or string
  *       - **density:** Density of the capillary matrix [g/cm^{3}]
- *       - **returns:** a new \ref Description, or \c NULL if an error occurred	
+ *       - **returns:** a new \ref Description, or raises an exception if an error occurred.
  *
  * \section Source Source
  * 
  * Class containing information on the source from which photons can be (randomly) selected
  * 
- * Create a new Source class by providing all its properties:
+ * Create a new `Source` instance by providing all its properties:
  *
- * Syntax: source = Source(Description description, double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, object energies)
+ * Syntax:
+ * \code{.py}
+ * source = Source(Description description, double d_source, double src_x, double src_y, double src_sigx, double src_sigy, double src_shiftx, double src_shifty, object energies)
+ * \endcode
  *       - **description:** a \ref Description class
  *       - **d_source:** the distance between the source and polycapillary optic entrance window along the central axis [cm]
  *       - **src_x:** the source radius along the X (horizontal) direction [cm]
@@ -181,43 +199,55 @@
  *       - **src_shifty:** lateral shift of the source centre along the Y (vertical) direction with respect to the polycapillary optic central axis [cm]
  *       - **hor_pol:** the polarisation factor of the simulated source (-1 <= hor_pol <= 1)
  *       - **energies:** an array containing the discrete energies of which the source will emit photons
- *       - **returns:** a new \ref Source, or \c NULL if an error occurred
+ *       - **returns:** a new \ref Source, or raises an exception if an error occurred.
  * 
  * \subsection src_phot get_photon
  * 
- * Create a new random polycap_photon based on \ref Source. In the event of an error, \c NULL is returned and \c error is set appropriately.
+ * Create a new random `Photon` emitted by \ref Source.
  *
- * Syntax: photon = Source.get_photon(Rng rng)
- *       - **rng:** a \ref rng class, not None
- *   	 - **returns:** a new \ref Photon, or \c NULL if an error occurred
+ * Syntax:
+ * \code{.py}
+ * photon = source.get_photon(Rng rng)
+ * \endcode
+ *       - **rng:** a \ref rng instance, not None
+ *   	 - **returns:** a new \ref Photon, or raises an exception if an error occurred.
  * 
  * \subsection src_trans get_transmission_efficiencies
  *
- * Syntax: eff = Source.get_transmission_efficiencies(int max_threads, int n_photons[, bool leak_calc])
+ * Syntax:
+ * \code{.py}
+ * eff = source.get_transmission_efficiencies(int max_threads, int n_photons[, bool leak_calc])
+ * \endcode
  *       - **max_threads:** the amount of threads to use. Set to -1 to use the maximum available amount of threads.
  *       - **n_photons:** the amount of photons to simulate that reach the polycapillary end
- *       - **leak_calc: [OPTIONAL] True: perform leak calculation; (default) False: do not perform leak calculation
- *       - **returns:** a new \ref TransmissionEfficiencies class, or \c NULL if an error occurred
+ *       - **leak_calc**: [OPTIONAL] True: perform leak calculation; (default) False: do not perform leak calculation
+ *       - **returns:** a new \ref TransmissionEfficiencies instance, or raises an exception if an error occurred.
  * 
  * \section Photon Photon
  * 
  * Class containing information about the simulated photon such as position and direction, energy and transmission weights.
  *
- * Create a new polycap_photon with its initial position, direction and electric field vector:
- * Syntax: photon = Photon(Description description, Rng rng, object start_coords, object start_direction, object start_electric_vector, [bool ignore])
+ * Create a new `Photon` with its initial position, direction and electric field vector:
+ * Syntax:
+ * \code{.py}
+ * photon = Photon(Description description, Rng rng, object start_coords, object start_direction, object start_electric_vector, [bool ignore])
+ * \endcode
  *       - **description:** a \ref Description class
  *       - **rng:** a random number generator pointer, \ref rng
  *       - **start_coords:** photon start coordinates array [x,y,z]
  *       - **start_direction:** photon start direction array [x,y,z]
  *       - **start_electric_vector:** photon start electric field vector array [x,y,z]
- *       - **ignore:** [OPTIONAL] if set to True, a \c NULL Photon will be generated. Default is False.
- *       - **returns:** a new \ref Photon, or \c NULL if an error occurred
+ *       - **ignore:** [OPTIONAL] if set to True, a \c None Photon will be generated. Default is False.
+ *       - **returns:** a new \ref Photon, or raises an exception if an error occurred.
  *
  * \subsection phot_launch launch
  *
- * Simulate a single photon trajectory for a given \ref Description. For each single photon the transmission efficiency for all energies is calculated. Weights memory is allocated by this function and should be freed by the user.
+ * Simulate a single photon trajectory for a given \ref Description. For each single photon the transmission efficiencies for all energies are calculated.
  *
- * Syntax: weight = Photon.launch(object energies[, bool leak_calc])
+ * Syntax:
+ * \code{.py}
+ * weight = photon.launch(object energies[, bool leak_calc])
+ * \endcode
  *       - **energies:** a double array containing the discrete energies for which the transmission efficiency will be calculated [keV]
  *       - **leak_calc:** True: perform leak calculation; (default) False: do not perform leak calculation
  *       - **returns:** weights array that will contain the transmission efficiency values as a function of photon energy
@@ -226,38 +256,53 @@
  *
  * Retrieve exit coordinates from a \ref Photon class.
  *
- * Syntax: coord = Photon.get_exit_coords()
+ * Syntax:
+ * \code{.py}
+ * coord = photon.get_exit_coords()
+ * \endcode
  * 
  * \subsection phot_dir get_exit_direction
  *
  * Retrieve exit direction from a \ref Photon class.
  *
- * Syntax: dir = Photon.get_exit_direction()
+ * Syntax:
+ * \code{.py}
+ * dir = photon.get_exit_direction()
+ * \endcode
  * 
  * \subsection phot_elec get_exit_electric_vector
  *
  * Retrieve exit electric field vector from a \ref Photon class
  *
- * Syntax: vect = Photon.get_exit_electric_vector()
+ * Syntax:
+ * \code{.py}
+ * vect = Photon.get_exit_electric_vector()
+ * \endcode
  * 
  * \section TransmissionEfficiencies TransmissionEfficiencies
  * 
- * Class containing all output information such as simulated photon coordinates, direction, energies, weights, ...
+ * Class containing all output information such as simulated photon coordinates, direction, energies, weights, etc. This class cannot be instantiated directly, and objects can only be obtained as the output of \ref src_trans.
  *
  * \subsection TE_write write_hdf5
  * 
  * Write \ref TransmissionEfficiencies data to a HDF5 file:
  *
- * Syntax: TransmissionEfficiencies.write_hdf5(str filename)
+ * Syntax:
+ * \code{.py}
+ * eff.write_hdf5(str filename)
+ * \endcode
  *       - **filename:** a HDF5 file new, not None
- *       - **returns:** true or false, or \c NULL if an error occurred
+ *       - **returns:** None, or raises an exception if an error occurred.
  *
  * \subsection TE_data data
  * 
- * Extract data from a polycap_transmission_efficiencies struct. returned arrays should be freed by the user.
+ * Extract data from a \ref TransmissionEfficiencies instance. Access it as a property, not a method.
  *
- * Syntax: data = TransmissionEfficiencies.data() 
- *       - returns : tuple of (self.energies_np, self.efficiencies_np)
+ * Syntax:
+ * \code{.py}
+ * data = TransmissionEfficiencies.data
+ * \endcode
+ *       - **returns** : tuple of (self.energies_np, self.efficiencies_np)
  * 
  * \page examples Examples
  * 
