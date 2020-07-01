@@ -6,12 +6,12 @@
     <tab type="pages" visible="no" title="" intro=""/>
     <tab type="user" visible="yes" title="Installation instructions" url="@ref installation_instructions"/>
     <tab type="user" visible="yes" title="Usage" url="@ref usage"/>
-    <tab type="user" visible="yes" title="Examples" url="@ref examples"/>
-    <tab type="files" visible="yes" title="">
+    <tab type="files" visible="yes" title="C API">
       <tab type="filelist" visible="yes" title="" intro=""/>
       <tab type="globals" visible="yes" title="" intro=""/>
     </tab>
-    <tab type="examples" visible="yes" title="" intro=""/>  
+    <tab type="user" visible="yes" title="Python" url="@ref pyth_docs"/>
+    <tab type="user" visible="yes" title="Examples" url="@ref examples"/>
   </navindex>
 
   <!-- Layout definition for a class page -->

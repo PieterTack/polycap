@@ -107,8 +107,16 @@ cdef void polycap_set_exception(polycap_error *error) except *:
     PyErr_SetString(eclass, error.message)
     polycap_error_free(error)
 
+'''Class containing information about a polycapillary profile shape
+'''
 cdef class Profile:
-
+    '''Codes to indicate the type of polycapillary external shape
+    
+    In each case, the single capillary shape is assumed conical around the central capillary axis
+    -Conical shape: the external profile shape is a straight line between the polycapillary entrance and exit radii.
+    -Paraboloidal shape: a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
+    -Ellipsoidal shape: an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
+    '''
     CONICAL = POLYCAP_PROFILE_CONICAL
     PARABOLOIDAL = POLYCAP_PROFILE_PARABOLOIDAL
     ELLIPSOIDAL = POLYCAP_PROFILE_ELLIPSOIDAL
@@ -124,6 +132,24 @@ cdef class Profile:
 	double rad_int_downstream,
 	double focal_dist_upstream,
 	double focal_dist_downstream):
+        '''Create a new profile for a given profile type with supplied polycapillary properties
+        :param type: an integer or type that indicates the profile type
+        :param length: the polycapillary length, as measured along the central axis [cm]
+        :type length: double
+        :param rad_ext_upstream: external upstream polycapillary radius (photons stream from upstream to downstream) [cm]
+        :type rad_ext_upstream: double
+        :param rad_ext_downstream: external downstream polycapillary radius (photons stream from upstream to downstream) [cm]
+        :type rad_ext_downstream: double
+        :param rad_int_upstream: internal upstream capillary radius (photons stream from upstream to downstream) [cm]
+        :type rad_int_upstream: double
+        :param rad_int_downstream: internal downstream capillary radius (photons stream from upstream to downstream) [cm]
+        :type rad_int_downstream: double
+        :param focal_dist_upstream: focal distance upstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
+        :type focal_dist_upstream: double
+        :param focal_dist_downstream: focal distance downstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
+        :type focal_dist_downstream: double
+        :return: a new :ref:``Profile``, or \c NULL if an error occurred
+        '''
         cdef polycap_error *error = NULL
         self.profile = polycap_profile_new(
 	    type,
@@ -137,14 +163,23 @@ cdef class Profile:
             &error)
         polycap_set_exception(error)
 
-
     def __dealloc__(self):
+        '''Free the :ref:``Profile`` class and its associated data'''
         if self.profile is not NULL:
             polycap_profile_free(self.profile)
 
+'''Class containing a random number generator
+
+The :ref:``Rng`` class is  mapped to either gsl_rng or easy_rng.``.
+'''
 cdef class Rng:
     cdef polycap_rng *rng
     def __cinit__(self, seed=None):
+        '''get a new rng with seed provided by caller
+        :param seed: a seed provided by the caller, if not provided one is generated for the user
+        :type seed: unsigned long int
+        :return: a new :ref:``Rng``
+        '''
         if seed is None:
             self.rng = polycap_rng_new()
             return
@@ -152,6 +187,7 @@ cdef class Rng:
         self.rng = polycap_rng_new_with_seed(seed)
 
     def __dealloc__(self):
+        '''free a ``Rng`` class'''
         if self.rng is not NULL:
             polycap_rng_free(self.rng)
 
@@ -164,6 +200,8 @@ def ensure_int(x):
         Z = int(x)
     return Z
 
+'''Class containing information about a polycapillary description such as shape and composition
+'''
 cdef class Description:
     cdef polycap_description *description
     cdef object profile_py
@@ -174,6 +212,19 @@ cdef class Description:
         int64_t n_cap,
         object composition not None,
         double density):
+        '''Creates a new polycap_description by providing all its properties.
+        :param profile: :ref:``Profile`` containing outer polycapillary and single capillary shape coordinates
+        :type profile: polycap_profile
+        :param sig_rough: Surface rougness of the capillaries [Angstrom]
+        :type sig_rough: double
+        :param n_cap: The amount of capillaries in the hexagonally packed polycapillary optic
+        :type n_cap: int64_t
+        :param composition: capillary material composition XRayLib dictionary or string
+        :type composition: object
+        :param density: Density of the capillary matrix [g/cm<sup>3</sup>]
+        :type density: double
+        :return: a new :ref:``Description``, or \c NULL if an error occurred	
+        '''
 
         cdef np.npy_intp dims[1]
         cdef xrl_error *error_xrl = NULL
@@ -219,10 +270,13 @@ cdef class Description:
 #        self.profile_py.profile = polycap_description_get_profile(self.description)
 
     def __dealloc__(self):
+        '''free a :ref:``Description`` class and associated data'''
         if self.description is not NULL:
             polycap_description_free(self.description)
     
 
+'''Class containing all output information such as simulated photon coordinates, direction, energies, weights, ...
+'''
 cdef class TransmissionEfficiencies:
     cdef polycap_transmission_efficiencies *trans_eff
     cdef object energies_np
@@ -234,6 +288,7 @@ cdef class TransmissionEfficiencies:
         self.efficiencies_np = None
 
     def __dealloc__(self):
+        '''free a :ref:``TransmissionEfficiencies`` class and all associated data'''
         if self.trans_eff is not NULL:
             polycap_transmission_efficiencies_free(self.trans_eff)
         #if self.energies_np is not None:
@@ -242,12 +297,20 @@ cdef class TransmissionEfficiencies:
         #    Py_DECREF(self.efficiencies_np)
 
     def write_hdf5(self, str filename not None):
+        '''Write :ref:``TransmissionEfficiencies`` data to a hdf5 file
+        :param filename: a hdf5 file new, not None
+	:type filename: str
+        :return: true or false, or \c NULL if an error occurred
+        '''
         cdef polycap_error *error = NULL
         polycap_transmission_efficiencies_write_hdf5(self.trans_eff, filename.encode(), &error)
         polycap_set_exception(error)
 
     @property
     def data(self):
+        '''Extract data from a polycap_transmission_efficiencies struct. returned arrays should be freed by the user with polycap_free() or free().
+        return : tuple of (self.energies_np, self.efficiencies_np)
+        '''
         return (self.energies_np, self.efficiencies_np)
 
 
@@ -287,6 +350,10 @@ cdef class TransmissionEfficiencies:
         return rv
 
 cdef polycap_vector3 np2vector(np.ndarray[double, ndim=1] arr):
+    '''Class describing a 3 dimensional vector where x and y are horizontal and vertical directions compared to the polycapillary respectively, and z is the direction along the polycapillary length
+    :param arr: 1D numpy array [x,y,z]
+    :type arr: double
+    '''
     cdef polycap_vector3 rv
     rv.x = arr[0]
     rv.y = arr[1]
@@ -296,6 +363,8 @@ cdef polycap_vector3 np2vector(np.ndarray[double, ndim=1] arr):
 cdef tuple vector2tuple(polycap_vector3 vec):
     return (vec.x, vec.y, vec.z)
 
+'''Class containing information about the simulated photon such as position and direction, energy and transmission weights.
+'''
 cdef class Photon:
     cdef polycap_photon *photon
 
@@ -307,6 +376,21 @@ cdef class Photon:
         object start_electric_vector,
         bool ignore=False
         ):
+        '''Creates a new polycap_photon with its initial position, direction and electric field vector.
+        :param description: a :ref:``Description`` class
+        :type description: Description
+        :param rng: a random number generator pointer, :ref:``Rng``
+        :type rng: Rng
+        :param start_coords: photon start coordinates array [xyz]
+        :type start_coords: double array
+        :param start_direction: photon start direction array [xyz]
+        :type start_direction: double array
+        :param start_electric_vector: photon start electric field vector array [xyz]
+        :type start_electric_vector: double array
+        :param ignore: if set to True, a \c NULL Photon will be generated
+        :type ignore: bool
+        :return: a new :ref:``Photon``, or \c NULL if an error occurred
+        '''
         cdef polycap_vector3 start_coords_pc
         cdef polycap_vector3 start_direction_pc
         cdef polycap_vector3 start_electric_vector_pc
@@ -347,12 +431,22 @@ cdef class Photon:
             polycap_set_exception(error)
 
     def __dealloc__(self):
+        '''Free a :ref:``Photon`` class and all associated data'''
         if self.photon is not NULL:
             polycap_photon_free(self.photon)
 
     def launch(self,
         object energies not None,
         bool leak_calc = False):
+        '''Simulate a single photon trajectory for a given :ref:``Description``. For each single photon the transmission efficiency for all energies is calculated
+        Weights memory is allocated by this function and should be freed by the user.
+
+        :param energies: an array containing the discrete energies for which the transmission efficiency will be calculated [keV]
+        :type energies: double array
+        :param leak_calc: True: perform leak calculation; False: do not perform leak calculation
+        :type leak_calc: bool
+        :return: weights array that will contain the transmission efficiency values as a function of photon energy
+        '''
 
         energies = np.asarray(energies, dtype=np.double)
         energies = np.atleast_1d(energies)
@@ -377,14 +471,19 @@ cdef class Photon:
         return weights_np
 
     def get_exit_coords(self):
+        '''Retrieve exit coordinates from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_coords(self.photon))
 
     def get_exit_direction(self):
+        '''Retrieve exit direction from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_direction(self.photon))
 
     def get_exit_electric_vector(self):
+        '''Retrieve exit electric field vector from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_electric_vector(self.photon))
 
+'''Class containing information on the source from which photons can be (randomly) selected
+'''
 cdef class Source:
     cdef polycap_source *source
 
@@ -399,6 +498,29 @@ cdef class Source:
         double src_shifty,
 	double hor_pol,
 	object energies not None):
+        '''Creates a new Source class by providing all its properties
+        :param description: a :ref:``Description`` class
+        :type description: Description
+        :param d_source: the distance between the source and polycapillary optic entrance window along the central axis [cm]
+        :type d_source: double
+        :param src_x: the source radius along the X (horizontal) direction [cm]
+        :type src_x: double
+        :param src_y: the source radius along the y (vertical) direction [cm]
+        :type src_y: double
+        :param src_sigx: the maximal divergence of photons along the X (horizontal) direction [rad]. Negative values in src_sigx or src_sigy represent homogeneous polycapillary optic illumination.
+        :type src_sigx: double
+        :param src_sigy: the maximal divergence of photons along the Y (vertical) direction [rad]. Negative values in src_sigx or src_sigy represent homogeneous polycapillary optic illumination.
+        :type src_sigy: double
+        :param src_shiftx: lateral shift of the source centre along the X (horizontal) direction with respect to the polycapillary optic central axis [cm]
+        :type src_shiftx: double
+        :param src_shifty: lateral shift of the source centre along the Y (vertical) direction with respect to the polycapillary optic central axis [cm]
+        :type src_shifty: double
+        :param hor_pol: the polarisation factor of the simulated source (-1 <= hor_pol <= 1)
+        :type hor_pol: double
+        :param energies: an array containing the discrete energies of which the source will emit photons
+        :type energies: double array
+        :return: a new :ref:``Source``, or \c NULL if an error occurred
+        '''
 
         energies = np.asarray(energies, dtype=np.double)
         energies = np.atleast_1d(energies)
@@ -422,11 +544,18 @@ cdef class Source:
         polycap_set_exception(error)
 
     def __dealloc__(self):
+        '''free a :ref:``Source`` class and associated data'''
         if self.source is not NULL:
             polycap_source_free(self.source)
 
     def get_photon(self,
         Rng rng not None):
+        '''Create a new random polycap_photon based on :ref:``Source``
+        In the event of an error, \c NULL is returned and \c error is set appropriately.
+        :param rng : a :ref:``Rng`` class, not None
+        :type rng: Rng
+    	:return : a new polycap_photon, or \c NULL if an error occurred
+        '''
 
         cdef polycap_error *error = NULL
         cdef polycap_photon *photon = polycap_source_get_photon(
@@ -444,6 +573,15 @@ cdef class Source:
         int max_threads,
         int n_photons,
         bool leak_calc = False):
+        '''Obtain the transmission efficiencies for a given array of energies, and a full polycap_description.
+        :param max_threads: the amount of threads to use. Set to -1 to use the maximum available amount of threads.
+        :type max_threads: int
+        :param n_photons: the amount of photons to simulate that reach the polycapillary end
+        :type n_photons: int
+        :param leak_calc: True: perform leak calculation; False: do not perform leak calculation
+        :type leak_calc: bool
+        :return: a new :ref:``TransmissionEfficiencies`` class, or \c NULL if an error occurred
+        '''
 
         cdef polycap_error *error = NULL
         cdef polycap_transmission_efficiencies *transmission_efficiencies = polycap_source_get_transmission_efficiencies(

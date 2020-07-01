@@ -20,7 +20,6 @@ cdef extern from "polycap-profile.h" nogil:
         POLYCAP_PROFILE_PARABOLOIDAL
         POLYCAP_PROFILE_ELLIPSOIDAL
 
-
     polycap_profile* polycap_profile_new(
 	polycap_profile_type type,
 	double length,

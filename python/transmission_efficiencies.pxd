@@ -18,7 +18,6 @@ cdef extern from "stdbool.h" nogil:
 cdef extern from "polycap-transmission-efficiencies.h" nogil:
     ctypedef struct polycap_transmission_efficiencies
 
-    
     void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *efficiencies)
 
     bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficiencies *efficiencies, const char *filename, polycap_error **error)
