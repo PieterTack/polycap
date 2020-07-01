@@ -33,7 +33,9 @@
  * \page installation_instructions Installation instructions
  *  
  * \section requirements Requirements
+ *
  * \subsection xraylib xraylib
+ *
  * **Polycap** makes use of **xraylib** to obtain values for the linear attenuation coefficient, as well as atomic scattering factors for the elements in the capillary matrix.
  * **xraylib** provides access to some of the most respected databases of physical data in the field of X-rays.
  * The core of **xraylib** is a library, written in ANSI C, containing over 40 functions to be used to retrieve data from these databases.
@@ -44,22 +46,25 @@
  * Information on obtaining and installing can be found [in the official documentation](https://github.com/tschoonj/xraylib/wiki/Installation-instructions).
  * 
  * \subsection hdf5 HDF5
+ *
  * The **HDF5** library is used by **polycap** to save all output information in a single, structured and compact file. This software library runs on a range of computational platforms, from laptops to massively parallel systems, and implements a high-level API with C, C++, Fortran 90, and Java interfaces.
  * It contains a rich set of integrated performance features that allow for access time and storage space optimizations as well as tools and applications for managing, manipulating, viewing, and analyzing the data in the collection.
  *
  * The **HDF5** source code can be downloaded from [this](https://support.hdfgroup.org/HDF5/release/obtainsrc.html#conf) source. However, it should be available using most package managers (apt, yum, dnf, Homebrew, MacPorts, MSYS2 etc).
  * 
  * \subsection openMP OpenMP
+ *
  * The **Polycap** code make use of **OpenMP** for its multi-core processing capabilities.
  * As such, the compiler used to compile the **Polycap** code must implement **OpenMP** functionality. Check the [OpenMP.org](https://www.openmp.org/resources/openmp-compilers-tools/) website for a complete list of compilers implementing **OpenMP**.
  *
  * It is strongly advised to use the [GNU GCC](https://gcc.gnu.org/install/) compiler to compile **Polycap**.
  * 
  * \subsection gsl GNU Scientific Library
- * TODO
  *
+ * The GNU Scientific Library is a software library for numerical computations in applied mathematics and science. The GSL is written in C; wrappers are available for other programming languages. The GSL is part of the GNU Project and is distributed under the GNU General Public License.
  *
  * \subsection easyrng easyRNG
+ *
  * **Polycap** uses **easyRNG**'s random number generators when present at compilation time. If not, it will make use of the GNU Scientific Library for this purpose.
  * **easyRNG** is a simple library for C and Fortran providing access to several pseudo-random
  * number generators and pseudo-random number distributions.
@@ -75,23 +80,116 @@
  * The source code release tarballs are hosted on the Github repository, in the [releases section](https://github.com/tschoonj/easyRNG/releases).
  *
  * \subsection python Python bindings
- * **Polycap** ships with support for Python. In order to generate these at build time, you will need a complete installation of Python, including the headers, as well as Cython and Numpy. These should be easy to install with any package manager. We support both Python 2.7 and 3.x
  *
- * \section downloading4 Downloading the Polycap Software
+ * **Polycap** ships with support for Python. In order to generate these at build time, you will need a complete installation of Python, including the headers, as well as Cython and Numpy. These should be easy to install with any package manager. We support Python 3.6+
+ *
+ * \section downloading Downloading the Polycap Software
  * 
- * TODO
+ *  The source code release tarballs are hosted on the Github repository, in the [releases section](https://github.com/PieterTack/polycap/releases).
+ *  Just get the latest tarball and run the following commands:
+ *
+ *       tar xfvz polycap-x.y.tar.gz
+ *       cd polycap-x.y
+ *       mkdir build ; cd build
+ *       meson
+ *       ninja
+ *       ninja install
+ *
+ *  Alternatively, use `./configure`, `make` and `make install`.
+ *
+ *  \subsection condaforge Conda-Forge
+ *
+ *  Users of the [Python Anaconda distribution](https://www.anaconda.com/products/individual) can install polycap, including its python bindings,  from the conda-forge channel:
+ *
+ *  > `conda install -c conda-forge polycap`
+ *
+ *  Conda packages are available for Windows, macOS and Linux. **Please note that this is currently our only line of support for the Windows platform!**
+ *
+ *  \subsection homebrew Homebrew
+ *
+ *  Homebrew users can install polycap via Tom Schoonjans' tap:
+ *
+ *  > `brew install tschoonj/tap/polycap`
+ *
+ *  \subsection linux Linux
+ *
+ *  \subsubsection rhel Fedora, Centos and Scientific Linux
+ *
+ *  To facilitate the installation on RPM based Linux distributions, the package includes a spec file which can be used to produce RPM packages for linux distributions that support them (Fedora, Red Hat etc). The developers have built 64-bit RPM packages of Gtkmm-PLplot for the officially supported Fedora and Redhat EL/CentOS/Scientific Linux 7 and 8 distributions. Access to their RPM repository can be obtained as follows for Fedora distros:
+ *
+ * > `sudo rpm -Uvh http://xmi-yum.tomschoonjans.eu/xmi-repo-key-fedora.noarch.rpm`
+ *
+ * for Red Hat EL 7 based distributions:
+ *
+ * > `sudo rpm -Uvh http://xmi-yum.tomschoonjans.eu/xmi-repo-key-7.0-1.el7.noarch.rpm`
+ *
+ * for Red Hat EL 8 based distributions:
+ *
+ * > `sudo rpm -Uvh http://xmi-yum.tomschoonjans.eu/xmi-repo-key-8.0-1.el8.noarch.rpm`
+ *
+ * The polycap themselves can then be downloaded using yum (or \c dnf which is increasingly being used nowadays):
+ *
+ * > `sudo yum install polycap polycap-devel polycap-python polycap-doc`
+ *
+ * Updates can be installed in a similar way:
+ *
+ * > `sudo yum update polycap polycap-devel polycap-python polycap-doc`
+ *
+ * \subsubsection debian Debian and Ubuntu
+ *
+ * Packages were created for Debian and Ubuntu. Currently the following flavors are supported: Debian Buster and several Ubuntu versions .
+ * In order to access these packages using your favorite package manager, execute the following command to import my public key:
+ *
+ * > `curl http://xmi-apt.tomschoonjans.eu/xmi.packages.key | sudo apt-key add -`
+ *
+ * Next, add the package download location corresponding to your distribution to the /etc/apt/sources.list file (as root):
+ *
+ * Debian Buster:
+ *
+ *       deb http://xmi-apt.tomschoonjans.eu/debian buster stable
+ *       deb-src http://xmi-apt.tomschoonjans.eu/debian buster stable
+ *
+ * Ubuntu Bionic 18.04:
+ *
+ *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu bionic stable
+ *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu bionic stable
+ *
+ * Ubuntu Eoan 19.10:
+ *
+ *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu eoan stable
+ *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu eoan stable
+ *
+ * Ubuntu Focal 20.04:
+ *
+ *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu focal stable
+ *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu focal stable
+ *
+ * When the sources.list file contains the correct download locations, update the apt cache by running:
+ *
+ * > `sudo apt-get update`
+ *
+ * After this, one can install polycap by executing the following command:
+ *
+ * > `sudo apt-get install libpolycap libpolycap-dev libpolycap-doc python3-polycap`
  *
  * \subsection head Github repository
  *                                                                                                                    
- * People interested in running the latest development version will have to clone the Github repository.             
- * Make sure you have the above mentioned dependencies installed, as well as the GNU autotools (autoconf, automake and libtool).
+ * People interested in running the latest development version will have to clone the Github repository, and install meson and ninja:
  *
- *       git clone git@github.com:PieterTack/polycap.git                                                             
+ *       git clone git@github.com:PieterTack/polycap.git
  *       cd polycap
+ *       mkdir build ; cd build
+ *       meson .. 
+ *       ninja
+ *       ninja install
+ *
+ * If building with GNU autotools is preferred, install autoconf, automake, libtool and mm-common.
+ *
+ *       git clone git@github.com:PieterTack/polycap.git
+ *       cd gtkmm-plplot
  *       autoreconf -i
  *       ./configure
  *       make
- *       make check
  *       make install
  *
  * \page usage Usage
