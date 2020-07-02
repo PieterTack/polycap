@@ -178,7 +178,7 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 //===========================================
 // define intersection point between photon path and polycapillary optic external wall
 // 	function assumes photon_coord just exited optic, and as such has to go back along direction (i.e. in opposite direction than the one supplied by user)
-polyap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polycap_vector3 photon_direction, polycap_profile *profile, polycap_error **error)
+polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polycap_vector3 photon_direction, polycap_profile *profile, polycap_error **error)
 {
 	double hex_edge_norm1[2], hex_edge_norm2[2], hex_edge_norm3[3]; //normal vectors of edges of the hexagonal polycap shape
 	double d_hexcen_beg; //distance between polycap centre and edges (along edge norm)
