@@ -187,7 +187,7 @@ struct _polycap_images
   };
 
 int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord, polycap_error **error);
-polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polycap_vector3 photon_direction, polycap_profile *profile, polycap_error **error);
+polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polycap_vector3 photon_direction, polycap_profile *profile, polycap_error **error);
 void polycap_norm(polycap_vector3 *vect);
 double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2);
 int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, bool leak_calc, polycap_error **error);

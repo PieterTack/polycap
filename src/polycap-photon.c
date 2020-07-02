@@ -178,7 +178,7 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 //===========================================
 // define intersection point between photon path and polycapillary optic external wall
 // 	function assumes photon_coord just exited optic, and as such has to go back along direction (i.e. in opposite direction than the one supplied by user)
-polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polycap_vector3 photon_direction, polycap_profile *profile, polycap_error **error)
+polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polycap_vector3 photon_direction, polycap_profile *profile, polycap_error **error)
 {
 	double hex_edge_norm1[2], hex_edge_norm2[2], hex_edge_norm3[3]; //normal vectors of edges of the hexagonal polycap shape
 	double d_hexcen_beg, d_hexcen_end; //distance between polycap centre and edges (along edge norm)
@@ -220,13 +220,13 @@ polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyca
 		z_id = z_id+1;
 		dir = -1;
 	} else {
-		z_id = z_id;
+		// z_id = z_id;
 		dir = 1;
 	}
 	do {
 		z_id += dir;
-		phot_temp.x = photon_coord.x + phot_dir.x * (rofile->z[z_id]-photon_coord.z)/phot_dir.z;
-		phot_temp.y = photon_coord.y + phot_dir.y * (rofile->z[z_id]-photon_coord.z)/phot_dir.z;
+		phot_temp.x = photon_coord.x + phot_dir.x * (profile->z[z_id]-photon_coord.z)/phot_dir.z;
+		phot_temp.y = photon_coord.y + phot_dir.y * (profile->z[z_id]-photon_coord.z)/phot_dir.z;
 		phot_temp.z = profile->z[z_id];
 		if(polycap_photon_within_pc_boundary(current_polycap_ext, photon_coord, NULL) != polycap_photon_within_pc_boundary(profile->ext[z_id], phot_temp, NULL)){
 			// photon goes from out to inside optic in this segment
@@ -348,7 +348,7 @@ polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyca
 	phot_temp.y = photon_coord.y + phot_dir.y * (z_fin-photon_coord.z)/phot_dir.z;
 	phot_temp.z = photon_coord.z + phot_dir.z * (z_fin-photon_coord.z)/phot_dir.z;
 
-	return phot_temp;
+	return &phot_temp;
 
 }
 

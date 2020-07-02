@@ -934,6 +934,7 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cn
 	double n_shells; //amount of capillary shells in polycapillary
 	double r_i, q_i, z; //indices of selected capillary and radial distance z
 	polycap_vector3 cap_coord0, cap_coord1, phot_coord0, phot_coord1, temp_phot;
+	polycap_vector3 *phot_inter; //intersection coordinate of photn propagation and PC exterior
 	double rad0, rad1, alfa;
 	polycap_vector3 interact_coords, surface_norm;
 	double q_new=0, r_new=0;
@@ -1109,10 +1110,11 @@ next_hexagon:
 			*q_cntr = q_new;
 			if(polycap_photon_within_pc_boundary(photon->description->profile->ext[photon->description->profile->nmax], temp_phot, error) == 0){
 				//photon not in polycap at exit window, so escaped through walls
-				photon_coord_rel.x = temp_phot.x - photon->exit_coords.x;
-				photon_coord_rel.y = temp_phot.y - photon->exit_coords.y;
-				photon_coord_rel.z = temp_phot.z - photon->exit_coords.z;
-				temp_phot = polycap_photon_pc_intersect(temp_phot, photon->exit_direction, photon->description->profile, error);
+				phot_inter = polycap_photon_pc_intersect(temp_phot, photon->exit_direction, photon->description->profile, error);
+				photon_coord_rel.x = phot_inter->x - photon->exit_coords.x;
+				photon_coord_rel.y = phot_inter->y - photon->exit_coords.y;
+				photon_coord_rel.z = phot_inter->z - photon->exit_coords.z;
+				free(phot_inter);
 				*d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));
 				return 3;
 			} else { //photon was in walls at most outer shell, but reached exit window still
@@ -1174,10 +1176,11 @@ next_hexagon:
 		// calculate d_travel and set q_cntr and r_cntr for photon that got this far
 		if(polycap_photon_within_pc_boundary(photon->description->profile->ext[photon->description->profile->nmax], temp_phot, error) == 0){
 			//photon not in polycap at exit window, so escaped through side walls
-			temp_phot = polycap_photon_pc_intersect(temp_phot, photon->exit_direction, photon->description->profile, error);
-			photon_coord_rel.x = temp_phot.x - photon->exit_coords.x;
-			photon_coord_rel.y = temp_phot.y - photon->exit_coords.y;
-			photon_coord_rel.z = temp_phot.z - photon->exit_coords.z;
+			phot_inter = polycap_photon_pc_intersect(temp_phot, photon->exit_direction, photon->description->profile, error);
+			photon_coord_rel.x = phot_inter->x - photon->exit_coords.x;
+			photon_coord_rel.y = phot_inter->y - photon->exit_coords.y;
+			photon_coord_rel.z = phot_inter->z - photon->exit_coords.z;
+			free(phot_inter);
 			*d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));
 			return 3;
 		} else { //photon was in walls at most outer shell, but reached exit window still
