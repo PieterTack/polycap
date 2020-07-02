@@ -184,7 +184,7 @@ polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyc
 	double d_hexcen_beg, d_hexcen_end; //distance between polycap centre and edges (along edge norm)
 	double dp1b, dp2b, dp3b, dp1e, dp2e, dp3e; //dot products; distance of photon_coord along hex edge norms
 	polycap_vector3 phot_temp, phot_dir, phot_beg, phot_end;
-	int i, z_id, dir, broke=0;
+	int i, z_id=0, dir, broke=0;
 	double current_polycap_ext;
 	double z1=1000., z2=1000., z3=1000., z_fin; //solutions to z-coordinate of intersection
 
