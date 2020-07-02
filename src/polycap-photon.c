@@ -181,7 +181,7 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polycap_vector3 photon_direction, polycap_profile *profile, polycap_error **error)
 {
 	double hex_edge_norm1[2], hex_edge_norm2[2], hex_edge_norm3[3]; //normal vectors of edges of the hexagonal polycap shape
-	double d_hexcen_beg; //distance between polycap centre and edges (along edge norm)
+	double d_hexcen_beg, d_hexcen_end; //distance between polycap centre and edges (along edge norm)
 	double dp1b, dp2b, dp3b, dp1e, dp2e, dp3e; //dot products; distance of photon_coord along hex edge norms
 	polycap_vector3 phot_temp, phot_dir, phot_beg, phot_end;
 	int i, z_id, dir, broke=0;
@@ -191,11 +191,11 @@ polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyca
 	//argument sanity checks
 	if(photon_direction.z == 0.){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_pc_intersect: photon_direction.z must be different from 0");
-		return -1;
+		return NULL;
 	}
 	if(profile == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_pc_intersect: profile must not be NULL");
-		return -1;
+		return NULL;
 	}
 
 	hex_edge_norm1[0] = 0; //vertical hexagon edge x vector
@@ -239,7 +239,7 @@ polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyca
 	//	segment defined between z_id and z_id-dir
 	if (broke == 0){
 		//no intersection was found
-		return -1;
+		return NULL;
 	}
 	phot_beg.x = photon_coord.x + phot_dir.x * (profile->z[z_id]-photon_coord.z)/phot_dir.z;
 	phot_beg.y = photon_coord.y + phot_dir.y * (profile->z[z_id]-photon_coord.z)/phot_dir.z;
@@ -259,9 +259,9 @@ polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyca
 	dp3e = fabs(hex_edge_norm3[0]*phot_end.x + hex_edge_norm3[1]*phot_end.y);
 
 	// interpolate where dp1, dp2 and dp3 become equal to d_cen2hexedge
-	z1 = (dp1b - d_hexcen_beg) / (d_hexcen_beg-d_hexcen_end - dp1b+dp1e) * (profile->ext[z_id]-profile->ext[z_id-dir]) + profile->ext[z_id]
-	z2 = (dp2b - d_hexcen_beg) / (d_hexcen_beg-d_hexcen_end - dp2b+dp2e) * (profile->ext[z_id]-profile->ext[z_id-dir]) + profile->ext[z_id]
-	z3 = (dp3b - d_hexcen_beg) / (d_hexcen_beg-d_hexcen_end - dp3b+dp3e) * (profile->ext[z_id]-profile->ext[z_id-dir]) + profile->ext[z_id]
+	z1 = (dp1b - d_hexcen_beg) / (d_hexcen_beg-d_hexcen_end - dp1b+dp1e) * (profile->ext[z_id]-profile->ext[z_id-dir]) + profile->ext[z_id];
+	z2 = (dp2b - d_hexcen_beg) / (d_hexcen_beg-d_hexcen_end - dp2b+dp2e) * (profile->ext[z_id]-profile->ext[z_id-dir]) + profile->ext[z_id];
+	z3 = (dp3b - d_hexcen_beg) / (d_hexcen_beg-d_hexcen_end - dp3b+dp3e) * (profile->ext[z_id]-profile->ext[z_id-dir]) + profile->ext[z_id];
 
 	// if multiple found coordinates, select the one within found segment and with lowest z value.
 	if(dir < 0){
@@ -274,7 +274,7 @@ polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyca
 			} else if (z3 >= z1 && z3 >= z2){
 				z_fin = z3;
 			} else {
-				return -1
+				return NULL;
 			}
 		} else if (z2 >= profile->z[z_id] && z2 <= profile->z[z_id-dir] && z3 >= profile->z[z_id] && z3 <= profile->z[z_id-dir]){ // only z2 and z3 are viable
 			if(z3 > z2){
@@ -301,7 +301,7 @@ polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyca
 		} else if (z3 >= profile->z[z_id] && z3 <= profile->z[z_id-dir]){ // only z3 is viable
 			z_fin = z3;
 		} else {
-			return -1; //none of the solutions is viable (not within the found segment!
+			return NULL; //none of the solutions is viable (not within the found segment!
 		}
 	} else {
 		//profile->z[z_id-dir] < profile->z[z_id]
@@ -313,7 +313,7 @@ polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyca
 			} else if (z3 <= z1 && z3 <= z2){
 				z_fin = z3;
 			} else {
-				return -1
+				return NULL;
 			}
 		} else if (z2 <= profile->z[z_id] && z2 >= profile->z[z_id-dir] && z3 <= profile->z[z_id] && z3 >= profile->z[z_id-dir]){ // only z2 and z3 are viable
 			if(z3 < z2){
@@ -340,7 +340,7 @@ polycap_vector3 polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyca
 		} else if (z3 <= profile->z[z_id] && z3 >= profile->z[z_id-dir]){ // only z3 is viable
 			z_fin = z3;
 		} else {
-			return -1; //none of the solutions is viable (not within the found segment!
+			return NULL; //none of the solutions is viable (not within the found segment!
 		}
 	}
 

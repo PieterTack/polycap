@@ -452,7 +452,6 @@ STATIC double polycap_refl(double e, double theta, double density, double scatf,
 */
 //===========================================
 STATIC double polycap_refl_polar(double e, double density, double scatf, double lin_abs_coeff, polycap_vector3 surface_norm, polycap_photon *photon, polycap_vector3 *electric_vector, polycap_error **error) {
-	// theta is the angle between photon direction and surface normal
 	// scatf = SUM( (weight/A) * (Z + f')) over all elements in capillary material
 	// surface_norm is the surface normal vector
 	double alfa, beta; //alfa and beta component for Fresnel equation delta term (delta = alfa - i*beta)
@@ -462,7 +461,7 @@ STATIC double polycap_refl_polar(double e, double density, double scatf, double 
 	polycap_vector3 s_dir, p_dir; //vector along s and p direction (p_dir is orthogonal to s_dir and surface_norm)
 	double frac_s, frac_p; //fraction of electric_vector corresponding to s and p directions
 	double angle_a, angle_b, angle_c; //some cos of angles between electric vector and (a=s_dir, b=surface_norm, c=p_dir)
-	double cos_theta, sin_theta;
+	double cos_theta, sin_theta, theta; // theta is the angle between photon direction and surface normal
 	_Dcomplex n_inv, our_csqrt, tmp;
 	double r_s_double, r_p_double, rtot;
 
@@ -1113,7 +1112,7 @@ next_hexagon:
 				photon_coord_rel.x = temp_phot.x - photon->exit_coords.x;
 				photon_coord_rel.y = temp_phot.y - photon->exit_coords.y;
 				photon_coord_rel.z = temp_phot.z - photon->exit_coords.z;
-				temp_phot = polycap_photon_pc_intersect(temp_phot, photon->exit_direction, photon->description->profile);
+				temp_phot = polycap_photon_pc_intersect(temp_phot, photon->exit_direction, photon->description->profile, error);
 				*d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));
 				return 3;
 			} else { //photon was in walls at most outer shell, but reached exit window still
@@ -1175,7 +1174,7 @@ next_hexagon:
 		// calculate d_travel and set q_cntr and r_cntr for photon that got this far
 		if(polycap_photon_within_pc_boundary(photon->description->profile->ext[photon->description->profile->nmax], temp_phot, error) == 0){
 			//photon not in polycap at exit window, so escaped through side walls
-			temp_phot = polycap_photon_pc_intersect(temp_phot, photon->exit_direction, photon->description->profile);
+			temp_phot = polycap_photon_pc_intersect(temp_phot, photon->exit_direction, photon->description->profile, error);
 			photon_coord_rel.x = temp_phot.x - photon->exit_coords.x;
 			photon_coord_rel.y = temp_phot.y - photon->exit_coords.y;
 			photon_coord_rel.z = temp_phot.z - photon->exit_coords.z;
@@ -1325,7 +1324,7 @@ printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, te
 					printf("Segment end: photon not in polycap!!; i: %i, i+1: %i, nmax: %i\n",i, i+1, description->profile->nmax);
 					return -3;
 				}
-			else{ //polycapillary case
+			} else { //polycapillary case
 				if(polycap_photon_within_pc_boundary(current_polycap_ext, photon_coord, error) == 0){
 					printf("Segment end: photon not in polycap!!; i: %i, i+1: %i, nmax: %i\n",i, i+1, description->profile->nmax);
 					return -3;
