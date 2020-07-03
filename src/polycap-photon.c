@@ -348,7 +348,11 @@ polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyc
 	phot_temp.y = photon_coord.y + phot_dir.y * (z_fin-photon_coord.z)/phot_dir.z;
 	phot_temp.z = photon_coord.z + phot_dir.z * (z_fin-photon_coord.z)/phot_dir.z;
 
-	return &phot_temp;
+	polycap_vector3 *rv = malloc(sizeof(polycap_vector3));
+	
+	*rv = phot_temp;
+
+	return rv;
 
 }
 

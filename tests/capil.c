@@ -115,7 +115,7 @@ void test_polycap_refl_polar() {
 	surface_norm.z = 0.;
 
 	//won't work
-	test = polycap_refl_polar(-1, -1*M_PI, 0.,-1., -1., surface_norm, photon, &electric_vector, &error);
+	test = polycap_refl_polar(-1, 0.,-1., -1., surface_norm, photon, &electric_vector, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
@@ -126,7 +126,7 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 1.; //s-polarised
 	photon->exit_electric_vector.y = 0.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
+	test = polycap_refl_polar(e, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.) < 1.e-5);
 	assert(electric_vector.x == 1);
@@ -140,7 +140,7 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 1.; //s-polarised
 	photon->exit_electric_vector.y = 0.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
+	test = polycap_refl_polar(e, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.984522) < 1.e-5);
 	assert(electric_vector.x == 1);
@@ -154,7 +154,7 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 1.; //s-polarised
 	photon->exit_electric_vector.y = 0.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
+	test = polycap_refl_polar(e, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.496310) < 1.e-5);
 	assert(electric_vector.x == 1);
@@ -168,7 +168,7 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 0.; //p-polarised
 	photon->exit_electric_vector.y = 1.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
+	test = polycap_refl_polar(e, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.) < 1.e-5);
 
@@ -179,7 +179,7 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 0.; //p-polarised
 	photon->exit_electric_vector.y = 1.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
+	test = polycap_refl_polar(e, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.984522) < 1.e-5);
 	assert(electric_vector.x == 0);
@@ -193,7 +193,7 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 0.; //p-polarised
 	photon->exit_electric_vector.y = 1.;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
+	test = polycap_refl_polar(e, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.496310) < 1.e-5);
 	assert(electric_vector.x == 0);
@@ -207,7 +207,7 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 0.707107; //non-polarised
 	photon->exit_electric_vector.y = 0.707107;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
+	test = polycap_refl_polar(e, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.984522) < 1.e-5);
 	assert((electric_vector.x - 0.707107) < 1.e-5);
@@ -221,7 +221,7 @@ void test_polycap_refl_polar() {
 	photon->exit_electric_vector.x = 0.707107; //non-polarised
 	photon->exit_electric_vector.y = 0.707107;
 	photon->exit_electric_vector.z = 0.;
-	test = polycap_refl_polar(e, theta, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
+	test = polycap_refl_polar(e, density, scatf, lin_abs_coeff, surface_norm, photon, &electric_vector, &error);
 	assert(test != -1);
 	assert(fabs(test - 0.496310) < 1.e-5);
 	assert((electric_vector.x - 0.707107) < 1.e-5);
