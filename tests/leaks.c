@@ -638,12 +638,18 @@ void test_polycap_capil_reflect_leak() {
 	//should work
 	polycap_clear_error(&error);
 	double alfa = 2.e-3;
+	photon->exit_direction.x = cos(M_PI_2-alfa)/(surface_norm.x-surface_norm.y);
+	photon->exit_direction.y = -1.*photon->exit_direction.x;
+	photon->exit_direction.z = sqrt(1.- (photon->exit_direction.x*photon->exit_direction.x + photon->exit_direction.y*photon->exit_direction.y));
 	test = polycap_capil_reflect(photon, alfa, surface_norm, true, &error);
 	assert(test == 1);
 	assert(fabs(photon->weight[0] - 0.984522) < 1.e-5);
 
 	polycap_clear_error(&error);
 	alfa = 3.1e-3;
+	photon->exit_direction.x = cos(M_PI_2-alfa)/(surface_norm.x-surface_norm.y);
+	photon->exit_direction.y = -1.*photon->exit_direction.x;
+	photon->exit_direction.z = sqrt(1.- (photon->exit_direction.x*photon->exit_direction.x + photon->exit_direction.y*photon->exit_direction.y));
 	photon->weight[0] = 1.;
 	test = polycap_capil_reflect(photon, alfa, surface_norm, true, &error);
 	assert(test == 1);
@@ -651,6 +657,9 @@ void test_polycap_capil_reflect_leak() {
 
 	polycap_clear_error(&error);
 	alfa = M_PI_2;
+	photon->exit_direction.x = cos(M_PI_2-alfa)/(surface_norm.x-surface_norm.y);
+	photon->exit_direction.y = -1.*photon->exit_direction.x;
+	photon->exit_direction.z = sqrt(1.- (photon->exit_direction.x*photon->exit_direction.x + photon->exit_direction.y*photon->exit_direction.y));
 	photon->weight[0] = 1.;
 	test = polycap_capil_reflect(photon, alfa, surface_norm, true, &error);
 	assert(test == 0);

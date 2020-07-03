@@ -491,8 +491,7 @@ STATIC double polycap_refl_polar(double e, double density, double scatf, double 
 	//	Do not normalise photon->exit_direction; it's needed in non-normalised form in polycap_capil_trace()
 	if(sqrt(surface_norm.x*surface_norm.x+surface_norm.y*surface_norm.y+surface_norm.z*surface_norm.z) != 1)
 		polycap_norm(&surface_norm);
-	theta = fabs(M_PI_2-acos(polycap_scalar(surface_norm, photon->exit_direction))); //TODO: verify this should not be M_PI_2 - theta...
-printf("theta: %lf\n", theta);
+	theta = acos(polycap_scalar(surface_norm, photon->exit_direction));
 	if (theta < 0.){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: theta must be greater than 0");
 		return -1;

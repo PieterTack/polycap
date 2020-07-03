@@ -235,6 +235,7 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 #elif defined(HAVE_UNLINK)
 	unlink("temp.h5"); // cleanup
 #endif
+	polycap_clear_error(&error);
 
 	// compare multiple photon_launch() to get_transmission_efficiencies()
 	double *weights;
@@ -245,21 +246,25 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	polycap_rng *rng;
 	rng = polycap_rng_new_with_seed(20000);
 	do{ 
-		phot_ini += 1;
 		photon = polycap_source_get_photon(source, rng, &error);
 		test = polycap_photon_launch(photon, 7, energies, &weights, false, &error);
 		if(test == 1){
-			for(j=0; j<7; j++)
+			for(j=0; j<7; j++){
 				assert(weights[j] >= 0.);
 				assert(weights[j] <= 1.);
 				w_tot[j] += weights[j];
+			}
 			phot_transm += 1;
 		}
+		if(test != -2 && test != -1){
+			phot_ini += 1;
+		} else polycap_clear_error(&error);  //photon was not in optic entrance window or some other error
 		free(weights);
 		polycap_photon_free(photon);
 	} while(phot_transm < 30000);
 	for(j=0; j<7; j++)
 		w_tot[j] = w_tot[j]/phot_ini;
+printf("Launch: %li, transm: %li, eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: %lf\n", phot_ini, phot_transm, w_tot[0], w_tot[1], w_tot[2], w_tot[3], w_tot[4], w_tot[5], w_tot[6]);
 	assert(fabs(efficiencies->efficiencies[0] - w_tot[j]) <= 0.005); //1 keV
 	assert(fabs(efficiencies->efficiencies[1] - w_tot[j]) <= 0.005); //5 keV
 	assert(fabs(efficiencies->efficiencies[2] - w_tot[j]) <= 0.005); //10 keV
