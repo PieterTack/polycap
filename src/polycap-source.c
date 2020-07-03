@@ -1060,9 +1060,12 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		sum_not_transmitted += not_transmitted_temp[i];
 	}
 	
-	//TODO: Continue working with simulated open area, as this should be a more honoust comparisson?
-	//This will also influence the efficiencies test output etc...
-//	description->open_area = (double)sum_iexit/(sum_iexit+sum_not_entered);
+	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_iexit+sum_not_entered+sum_not_transmitted);
+	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)(sum_iexit+sum_not_transmitted)/(sum_iexit+sum_not_entered+sum_not_transmitted));
+	printf("iexit: %" PRId64 ", no enter: %" PRId64 ", no trans: %" PRId64 "\n",sum_iexit,sum_not_entered,sum_not_transmitted);
+
+	//Continue working with simulated open area, as this should be a more honoust comparisson?
+	description->open_area = (double)(sum_iexit+sum_not_transmitted)/(sum_iexit+sum_not_entered+sum_not_transmitted);
 
 	// Complete output structure
 	efficiencies->n_energies = source->n_energies;
@@ -1076,9 +1079,6 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	}
 //printf("//////\n");
 
-	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_iexit+sum_not_entered);
-	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_iexit/(sum_iexit+sum_not_entered));
-	printf("iexit: %" PRId64 ", no enter: %" PRId64 ", no trans: %" PRId64 "\n",sum_iexit,sum_not_entered,sum_not_transmitted);
 
 	//free alloc'ed memory
 	free(sum_weights);
