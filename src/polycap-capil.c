@@ -486,16 +486,17 @@ STATIC double polycap_refl_polar(double e, double density, double scatf, double 
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: photon cannot be NULL");
 		return -1;
 	}
-	theta = acos(polycap_scalar(surface_norm, photon->exit_direction)); //TODO: verify this should not be M_PI_2 - theta...
-	if (theta < 0.){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: theta must be greater than 0");
-		return -1;
-	}
 
 	//Make sure the supplied vectors are normalised
 	//	Do not normalise photon->exit_direction; it's needed in non-normalised form in polycap_capil_trace()
 	if(sqrt(surface_norm.x*surface_norm.x+surface_norm.y*surface_norm.y+surface_norm.z*surface_norm.z) != 1)
 		polycap_norm(&surface_norm);
+	theta = fabs(M_PI_2-acos(polycap_scalar(surface_norm, photon->exit_direction))); //TODO: verify this should not be M_PI_2 - theta...
+printf("theta: %lf\n", theta);
+	if (theta < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_refl_polar: theta must be greater than 0");
+		return -1;
+	}
 	if(sqrt(photon->exit_electric_vector.x*photon->exit_electric_vector.x+photon->exit_electric_vector.y*photon->exit_electric_vector.y+photon->exit_electric_vector.z*photon->exit_electric_vector.z) != 1)
 		polycap_norm(&photon->exit_electric_vector);
 

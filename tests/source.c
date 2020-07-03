@@ -240,11 +240,14 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	double *weights;
 	double w_tot[7]={0.,0.,0.,0.,0.,0.,0.};
 	int64_t phot_ini=0, phot_transm=0;
-	int j=0;
+	int j=0, test;
+	polycap_photon *photon;
+	polycap_rng *rng;
+	rng = polycap_rng_new_with_seed(20000);
 	do{ 
 		phot_ini += 1;
 		photon = polycap_source_get_photon(source, rng, &error);
-		test = polycap_photon_launch(photon, 7, &energies, &weights, false, &error);
+		test = polycap_photon_launch(photon, 7, energies, &weights, false, &error);
 		if(test == 1){
 			for(j=0; j<7; j++)
 				assert(weights[j] >= 0.);
@@ -253,9 +256,10 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 			phot_transm += 1;
 		}
 		free(weights);
-	} while(phot_transm < 30000)
+		polycap_photon_free(photon);
+	} while(phot_transm < 30000);
 	for(j=0; j<7; j++)
-		w_tot[j] = w_tot[j]/phot_ini
+		w_tot[j] = w_tot[j]/phot_ini;
 	assert(fabs(efficiencies->efficiencies[0] - w_tot[j]) <= 0.005); //1 keV
 	assert(fabs(efficiencies->efficiencies[1] - w_tot[j]) <= 0.005); //5 keV
 	assert(fabs(efficiencies->efficiencies[2] - w_tot[j]) <= 0.005); //10 keV
@@ -263,6 +267,7 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	assert(fabs(efficiencies->efficiencies[4] - w_tot[j]) <= 0.005); //20 keV
 	assert(fabs(efficiencies->efficiencies[5] - w_tot[j]) <= 0.005); //25 keV
 	assert(fabs(efficiencies->efficiencies[6] - w_tot[j]) <= 0.005); //30 keV
+	polycap_rng_free(rng);
 
 	polycap_transmission_efficiencies_free(efficiencies);
 	polycap_source_free(source);

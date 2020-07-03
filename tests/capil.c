@@ -307,6 +307,9 @@ void test_polycap_capil_reflect() {
 	//should work
 	polycap_clear_error(&error);
 	double alfa = 2.e-3;
+	photon->exit_direction.x = (M_PI_2-alfa)/(surface_norm.x-surface_norm.y);
+	photon->exit_direction.y = -1.*photon->exit_direction.x;
+	photon->exit_direction.z = 1. - photon->exit_direction.x*photon->exit_direction.x - photon->exit_direction.y*photon->exit_direction.y;
 	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
 	assert(test == 1);
 	assert(fabs(photon->weight[0] - 0.984522) < 1.e-5);
