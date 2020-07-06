@@ -647,6 +647,9 @@ void test_polycap_capil_reflect_leak() {
 
 	polycap_clear_error(&error);
 	alfa = 3.1e-3;
+	photon->exit_coords.x = 0.;
+	photon->exit_coords.y = 0.;
+	photon->exit_coords.z = 0.;
 	photon->exit_direction.x = cos(M_PI_2-alfa)/(surface_norm.x-surface_norm.y);
 	photon->exit_direction.y = -1.*photon->exit_direction.x;
 	photon->exit_direction.z = sqrt(1.- (photon->exit_direction.x*photon->exit_direction.x + photon->exit_direction.y*photon->exit_direction.y));
@@ -657,12 +660,15 @@ void test_polycap_capil_reflect_leak() {
 
 	polycap_clear_error(&error);
 	alfa = M_PI_2;
+	photon->exit_coords.x = 0.;
+	photon->exit_coords.y = 0.;
+	photon->exit_coords.z = 0.;
 	photon->exit_direction.x = cos(M_PI_2-alfa)/(surface_norm.x-surface_norm.y);
 	photon->exit_direction.y = -1.*photon->exit_direction.x;
 	photon->exit_direction.z = sqrt(1.- (photon->exit_direction.x*photon->exit_direction.x + photon->exit_direction.y*photon->exit_direction.y));
 	photon->weight[0] = 1.;
 	test = polycap_capil_reflect(photon, alfa, surface_norm, true, &error);
-	assert(test == 0);
+	assert(test == -2); //without leak_calc returns 0 here. Leak simulation returns a certain error in polycap_capil_trace which carries to polycap_capil_reflect
 	assert(fabs(photon->weight[0] - 0.) < 1.e-5);
 
 
@@ -1093,13 +1099,13 @@ void test_polycap_source_leak() {
 	assert(efficiencies->images->i_exit == n_photons);
 	assert(efficiencies->images->i_leak > 0);
 	assert(efficiencies->images->i_recap > 0);
-	assert(fabs(efficiencies->efficiencies[0] - 0.353) <= 0.05); //1 keV
-	assert(fabs(efficiencies->efficiencies[1] - 0.291) <= 0.05); //5 keV
-	assert(fabs(efficiencies->efficiencies[2] - 0.114) <= 0.05); //10 keV
-	assert(fabs(efficiencies->efficiencies[3] - 0.043) <= 0.05); //15 keV
-	assert(fabs(efficiencies->efficiencies[4] - 0.021) <= 0.05); //20 keV
+	assert(fabs(efficiencies->efficiencies[0] - 0.424) <= 0.05); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - 0.349) <= 0.05); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - 0.135) <= 0.05); //10 keV
+	assert(fabs(efficiencies->efficiencies[3] - 0.050) <= 0.05); //15 keV
+	assert(fabs(efficiencies->efficiencies[4] - 0.022) <= 0.05); //20 keV
 	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.05); //25 keV
-	assert(fabs(efficiencies->efficiencies[6] - 0.007) <= 0.05); //30 keV
+	assert(fabs(efficiencies->efficiencies[6] - 0.006) <= 0.05); //30 keV
 
 	//Now redo test without leaks, to check for differences in non-leak event transmission efficiency
 	polycap_clear_error(&error);

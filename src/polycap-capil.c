@@ -1305,6 +1305,8 @@ printf("	phot start.x: %lf, y: %lf, z: %lf, start dir.x: %lf, y: %lf, z: %lf\n",
 printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, temp.x: %lf, y: %lf, z: %lf\n", photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, i, photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z, temp_phot.x, temp_phot.y, temp_phot.z);
 */
 //so here photon is not within polycap, but is within radial distance of capillary with central axis [cap_x,cap_y]
+//TODO: if a photon comes in at very steep angle (close to PI/2) chances are high it skips to out of polycap within one segment, triggering this error, without looking for interaction!
+//Perhaps this check should be removed, or moved to later point in the for loop
 			return -3;
 		}
 

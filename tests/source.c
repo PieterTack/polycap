@@ -264,13 +264,13 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	for(j=0; j<7; j++)
 		w_tot[j] = w_tot[j]/phot_ini; 
 printf("Launch: %li, transm: %li, eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: %lf\n", phot_ini, phot_transm, w_tot[0], w_tot[1], w_tot[2], w_tot[3], w_tot[4], w_tot[5], w_tot[6]);
-	assert(fabs(efficiencies->efficiencies[0] - w_tot[0]) <= 0.005); //1 keV
-	assert(fabs(efficiencies->efficiencies[1] - w_tot[1]) <= 0.005); //5 keV
-	assert(fabs(efficiencies->efficiencies[2] - w_tot[2]) <= 0.005); //10 keV
-	assert(fabs(efficiencies->efficiencies[3] - w_tot[3]) <= 0.005); //15 keV
-	assert(fabs(efficiencies->efficiencies[4] - w_tot[4]) <= 0.005); //20 keV
-	assert(fabs(efficiencies->efficiencies[5] - w_tot[5]) <= 0.005); //25 keV
-	assert(fabs(efficiencies->efficiencies[6] - w_tot[6]) <= 0.005); //30 keV
+	assert(fabs(efficiencies->efficiencies[0] - w_tot[0]) <= 0.0075); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - w_tot[1]) <= 0.0075); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - w_tot[2]) <= 0.0075); //10 keV
+	assert(fabs(efficiencies->efficiencies[3] - w_tot[3]) <= 0.0075); //15 keV
+	assert(fabs(efficiencies->efficiencies[4] - w_tot[4]) <= 0.0075); //20 keV
+	assert(fabs(efficiencies->efficiencies[5] - w_tot[5]) <= 0.0075); //25 keV
+	assert(fabs(efficiencies->efficiencies[6] - w_tot[6]) <= 0.0075); //30 keV
 	polycap_rng_free(rng);
 
 	polycap_transmission_efficiencies_free(efficiencies);
