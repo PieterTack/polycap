@@ -49,7 +49,7 @@
 
 //===========================================
 // calculates the intersection point coordinates of the photon trajectory and a given linear segment of the capillary wall
-STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 phot_coord0, polycap_vector3 phot_coord1, polycap_vector3 photon_dir, polycap_vector3 *photon_coord, polycap_vector3 *surface_norm, double *alfa, polycap_error **error)
+STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 phot_coord0, polycap_vector3 phot_coord1, polycap_vector3 photon_dir, polycap_vector3 *photon_coord, polycap_vector3 *surface_norm, polycap_error **error)
 {
 	double d_proj; //distance vector projection factor
 	polycap_vector3 cap_coord; //capillary axis coordinate at interact_coord.z
@@ -90,10 +90,6 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: surface_norm must not be NULL");
 		return -1;
 	}
-	if (alfa == NULL){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: alfa must not be NULL");
-		return -1;
-	}
 	if (cap_coord0.z != phot_coord0.z || cap_coord1.z != phot_coord1.z){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_segment: cap_coord and phot_coord must have identical z coordinate");
 		return -1;
@@ -103,7 +99,6 @@ STATIC int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap
 		return -1;
 	}
 
-	*alfa = 0.0; //angle between surface normal and photon direction, set to 0 for now in case of premature return
 	surface_norm->x = 0.0; //set in case of premature return
 	surface_norm->y = 0.0;
 	surface_norm->z = 0.0;
@@ -250,11 +245,6 @@ printf("surf_norm.x: %lf, y: %lf, z: %lf\n", surface_norm->x, surface_norm->y, s
 	surface_norm->z = cga * interact_norm.z / d_cap_inter + sga * cap_dir.z / d_cap_coord;
 	polycap_norm(surface_norm);
 //printf("surf_norm.x: %lf, y: %lf, z: %lf\n", surface_norm->x, surface_norm->y, surface_norm->z);
-
-
-	// Finally, alfa is the angle between photon_dir and surface_norm
-	*alfa = acos(polycap_scalar(*surface_norm,photon_dir)); //angle between surface normal and photon direction
-//printf("	alfa = %lf\n",*alfa*180./M_PI);
 
 	// And store interaction coordinates in photon_coord
 	photon_coord->x = interact_coord.x;
@@ -572,7 +562,7 @@ STATIC double polycap_refl_polar(double e, double density, double scatf, double 
 //	this is done by simply adding r_p and r_s
 }
 //===========================================
-int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, bool leak_calc, polycap_error **error)
+int polycap_capil_reflect(polycap_photon *photon, polycap_vector3 surface_norm, bool leak_calc, polycap_error **error)
 {
 	int i, iesc=-5, wall_trace=0, iesc_temp=0;
 	double cons1, r_rough;
@@ -591,19 +581,25 @@ int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 s
 	int z_id=0;
 	double current_polycap_ext;
 	polycap_vector3 electric_vector; //new electric vector after reflection will be stored here
+	double alfa; // angle between photon direction and capillary surface
 
 	//argument sanity check
-	if (alfa < 0.){
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: alfa must be greater than 0");
-		return -1;
-	}
 	if (photon == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: photon must not be NULL");
+		return -1;
+	}
+	if (&surface_norm == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: surface_norm must not be NULL");
 		return -1;
 	}
 	polycap_description *description = photon->description;
 	if (description == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: description must not be NULL");
+		return -1;
+	}
+	alfa = M_PI_2-acos(polycap_scalar(photon->exit_direction, surface_norm)); //TODO: M_PI_2-acos or just acos?
+	if (alfa < 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: alfa must be greater than 0");
 		return -1;
 	}
 
@@ -935,7 +931,7 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cn
 	double r_i, q_i, z; //indices of selected capillary and radial distance z
 	polycap_vector3 cap_coord0, cap_coord1, phot_coord0, phot_coord1, temp_phot;
 	polycap_vector3 *phot_inter=NULL; //intersection coordinate of photn propagation and PC exterior
-	double rad0, rad1, alfa;
+	double rad0, rad1;
 	polycap_vector3 interact_coords, surface_norm;
 	double q_new=0, r_new=0;
 	double d_phot0; //distances between photon and capillary axis
@@ -1040,7 +1036,7 @@ printf("	trace wall: phot not in cap wall, q: %lf r: %lf\n",q_i, r_i);
 			cap_coord1.y = 0.;
 			cap_coord1.z = photon->description->profile->z[z_id+1];
 			//looking for intersection of photon from outside to inside of capillary
-			iesc = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, phot_coord0, phot_coord1, photon->exit_direction, &interact_coords, &surface_norm, &alfa, error);
+			iesc = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, phot_coord0, phot_coord1, photon->exit_direction, &interact_coords, &surface_norm, error);
 			z_id++;
 		} while(iesc != 1 && z_id < photon->description->profile->nmax-1); //if iesc == 0 next intersection was found
 
@@ -1157,7 +1153,7 @@ next_hexagon:
 			cap_coord1.z = photon->description->profile->z[z_id+1];
 			//looking for intersection of photon from outside to inside of capillary
 //printf("*Segmenting for wall_trace\n");
-			iesc = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, phot_coord0, phot_coord1, photon->exit_direction, &interact_coords, &surface_norm, &alfa, error);
+			iesc = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, phot_coord0, phot_coord1, photon->exit_direction, &interact_coords, &surface_norm, error);
 			z_id++;
 		} while(iesc != 1 && z_id < photon->description->profile->nmax-1); //if iesc == 0 next intersection was found
 		if(z_id >= photon->description->profile->nmax && iesc != 0){ //no intersection was found in this capillary, try looking for different one
@@ -1326,7 +1322,8 @@ printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, te
 		phot_coord1.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i+1]-photon->exit_coords.z)/photon->exit_direction.z;
 		phot_coord1.z = description->profile->z[i+1];
 		//looking for intersection of photon from inside to outside of capillary
-		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, phot_coord0, phot_coord1, photon_dir, &photon_coord, &surface_norm, &alfa, error);
+		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, phot_coord0, phot_coord1, photon_dir, &photon_coord, &surface_norm, error);
+		alfa = acos(polycap_scalar(surface_norm, photon_dir));
 		if(alfa > M_PI/2. || alfa < 0.){
 			iesc = -5;
 		}
@@ -1387,13 +1384,11 @@ printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, te
 				printf("polycap_capil_trace: Warning: photon intersection outside of optic?!\n");
 				iesc = -3;
 			} else {
-				alfa = M_PI_2 - alfa;
-			
-				iesc = polycap_capil_reflect(photon, alfa, surface_norm, leak_calc, error);
+				iesc = polycap_capil_reflect(photon, surface_norm, leak_calc, error);
 				if(iesc == 1){
-					photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(alfa) * surface_norm.x;
-					photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(alfa) * surface_norm.y;
-					photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(alfa) * surface_norm.z;
+					photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(M_PI_2-alfa) * surface_norm.x; //TODO: M_PI_2-alfa?
+					photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(M_PI_2-alfa) * surface_norm.y;
+					photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(M_PI_2-alfa) * surface_norm.z;
 					polycap_norm(&photon->exit_direction);
 					photon->i_refl++;
 				}

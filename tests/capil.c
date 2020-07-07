@@ -26,7 +26,7 @@ void test_polycap_capil_segment() {
 	polycap_error *error = NULL;
 	int test = 0;
 	polycap_vector3 cap_coord0, cap_coord1, photon_dir, photon_coord, surface_norm, phot_coord0, phot_coord1;
-	double cap_rad0=0.005, cap_rad1=0.005, alfa;
+	double cap_rad0=0.005, cap_rad1=0.005;//, alfa;
 
 	cap_coord0.x = 0.;
 	cap_coord0.y = 0.;
@@ -45,16 +45,15 @@ void test_polycap_capil_segment() {
 	photon_dir.z = 0.1;
 
 	//won't work
-	test = polycap_capil_segment(cap_coord0, cap_coord1, -1, -1, phot_coord0, phot_coord1, photon_dir, NULL, NULL, NULL, &error);
+	test = polycap_capil_segment(cap_coord0, cap_coord1, -1, -1, phot_coord0, phot_coord1, photon_dir, NULL, NULL, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
 	//Should work
 	polycap_clear_error(&error);
-	test = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, phot_coord0, phot_coord1, photon_dir, &photon_coord, &surface_norm, &alfa, &error);
+	test = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, phot_coord0, phot_coord1, photon_dir, &photon_coord, &surface_norm, &error);
 	assert(test == 1);
-//	assert(fabs(alfa - 1.563725) < 1.e-5); //value before phot_dir was normalized in segment function
-	assert(fabs(alfa - 1.500203) < 1.e-5);
+//	assert(fabs(alfa - 1.500203) < 1.e-5);
 	assert(fabs(photon_coord.x - 0.003536) < 1.e-5);
 	assert(fabs(photon_coord.y - (-0.003536)) < 1.e-5);
 	assert(fabs(photon_coord.z - 0.070711) < 1.e-5);
@@ -290,7 +289,7 @@ void test_polycap_capil_reflect() {
 	polycap_clear_error(&error);
 
 	//won't work
-	test = polycap_capil_reflect(NULL, -1, surface_norm, false, &error);
+	test = polycap_capil_reflect(NULL, surface_norm, false, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
@@ -300,7 +299,7 @@ void test_polycap_capil_reflect() {
 	photon->exit_direction.x = cos(M_PI_2-alfa)/(surface_norm.x-surface_norm.y);
 	photon->exit_direction.y = -1.*photon->exit_direction.x;
 	photon->exit_direction.z = sqrt(1.- (photon->exit_direction.x*photon->exit_direction.x + photon->exit_direction.y*photon->exit_direction.y));
-	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
+	test = polycap_capil_reflect(photon, surface_norm, false, &error);
 	assert(test == 1);
 	assert(fabs(photon->weight[0] - 0.984522) < 1.e-5);
 
@@ -310,7 +309,7 @@ void test_polycap_capil_reflect() {
 	photon->exit_direction.y = -1.*photon->exit_direction.x;
 	photon->exit_direction.z = sqrt(1.- (photon->exit_direction.x*photon->exit_direction.x + photon->exit_direction.y*photon->exit_direction.y));
 	photon->weight[0] = 1.;
-	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
+	test = polycap_capil_reflect(photon, surface_norm, false, &error);
 	assert(test == 1);
 	assert(fabs(photon->weight[0] - 0.496310) < 1.e-5);
 
@@ -320,7 +319,7 @@ void test_polycap_capil_reflect() {
 	photon->exit_direction.y = -1.*photon->exit_direction.x;
 	photon->exit_direction.z = sqrt(1.- (photon->exit_direction.x*photon->exit_direction.x + photon->exit_direction.y*photon->exit_direction.y));
 	photon->weight[0] = 1.;
-	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
+	test = polycap_capil_reflect(photon, surface_norm, false, &error);
 	assert(test == 0);
 	assert(fabs(photon->weight[0] - 0.) < 1.e-5);
 
@@ -330,7 +329,7 @@ void test_polycap_capil_reflect() {
 	photon->exit_direction.y = -1.*photon->exit_direction.x;
 	photon->exit_direction.z = sqrt(1.- (photon->exit_direction.x*photon->exit_direction.x + photon->exit_direction.y*photon->exit_direction.y));
 	photon->weight[0] = 1.;
-	test = polycap_capil_reflect(photon, alfa, surface_norm, false, &error);
+	test = polycap_capil_reflect(photon, surface_norm, false, &error);
 	assert(test == 0);
 	assert(fabs(photon->weight[0] - 0.000035) < 1.e-5);
 

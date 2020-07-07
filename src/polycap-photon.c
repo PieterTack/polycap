@@ -574,7 +574,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	if(d_ph_capcen > current_cap_rad && photon->start_coords.z == 0){ //photon hits capillary wall on entrance
 		//Check whether photon is transmitted through wall (i.e. generates leak or recap events)
 		if(leak_calc)
-			polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
+			polycap_capil_reflect(photon, central_axis, leak_calc, NULL);
 		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies()
 	} //TODO: there is also the case where photon is launched within capillary wall at z>0...
 
