@@ -1063,7 +1063,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	}
 	
 	printf("Average number of reflections: %lf, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_iexit+sum_not_entered+sum_not_transmitted);
-	printf("Open area Calculated: %lf, Simulated: %lf\n",description->open_area, (double)(sum_iexit+sum_not_transmitted)/(sum_iexit+sum_not_entered+sum_not_transmitted));
+	printf("Open area Calculated: %lf, Simulated: %lf\n",((round(sqrt(12. * description->n_cap - 3.)/6.-0.5)+0.5)*6.)*((round(sqrt(12. * description->n_cap - 3.)/6.-0.5)+0.5)*6.)/12.*(description->profile->cap[0]*description->profile->cap[0]*M_PI)/(3.*sin(M_PI/3)*description->profile->ext[0]*description->profile->ext[0]), (double)(sum_iexit+sum_not_transmitted)/(sum_iexit+sum_not_entered+sum_not_transmitted));
 	printf("iexit: %" PRId64 ", no enter: %" PRId64 ", no trans: %" PRId64 "\n",sum_iexit,sum_not_entered,sum_not_transmitted);
 
 	//Continue working with simulated open area, as this should be a more honoust comparisson?
