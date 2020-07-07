@@ -398,6 +398,8 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	double current_polycap_ext = 0; //optic exterior radius at current photon z position
 	double current_cap_rad = 0; //capillary internal radius at current photon z position
 	double current_cap_x, current_cap_y; // capillary central axis coordinate at current photon z position
+	int wall_trace=0, r_cntr, q_cntr;
+	double d_travel=0;
 
 	//argument sanity check
 	if (photon == NULL) {
@@ -476,8 +478,8 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
 
 	//define polycapillary-to-photonsource axis 
-	//!!TODO:this has to be changed. Now we assume all sources are in a straight line with PC central axis!!
-	//e.g. no PC tilt
+	//Now we assume all sources are in a straight line with PC central axis
+	//i.e. no PC tilt. This can be simulated by source offset and changing divergency
 	central_axis.x = 0;
 	central_axis.y = 0;
 	central_axis.z = 1;
@@ -571,12 +573,125 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		current_cap_y = cap_y[0];
 	}
 	d_ph_capcen = sqrt( (photon->start_coords.x-current_cap_x)*(photon->start_coords.x-current_cap_x) + (photon->start_coords.y-current_cap_y)*(photon->start_coords.y-current_cap_y) );
-	if(d_ph_capcen > current_cap_rad && photon->start_coords.z == 0){ //photon hits capillary wall on entrance
+	if(d_ph_capcen > current_cap_rad){
 		//Check whether photon is transmitted through wall (i.e. generates leak or recap events)
-		if(leak_calc)
+		if(leak_calc && photon->start_coords.z == 0){ //photon hits capillary wall on entrance
+			// set central_axis to surface norm of glass wall at PC entrance
+			central_axis.x = 0;
+			central_axis.y = 0;
+			central_axis.z = 1;
 			polycap_capil_reflect(photon, central_axis, leak_calc, NULL);
-		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies()
-	} //TODO: there is also the case where photon is launched within capillary wall at z>0...
+			return 2; //simulates new photon in polycap_source_get_transmission_efficiencies() and adds to open area
+		}
+		if(leak_calc && photon->start_coords.z > 0){ // case where photon is launched within capillary wall at z>0
+			// first check if photon propagates through wall, or is absorbed
+			wall_trace = polycap_capil_trace_wall(photon, &d_travel, &r_cntr, &q_cntr, error);
+			if(wall_trace <= 0){
+				return -1; //simulates new photon in polycap_source_get_transmission_efficiencies(), but does not add to open area
+			} else { //photon translated through wall, so trace it using adjusted weights and new capillary coordinates
+				for(i=0; i < photon->n_energies; i++)
+					photon->weight[i] = photon->weight[i] * exp(-1.*d_travel*photon->amu[i]);
+				photon->exit_coords.x = photon->exit_coords.x +
+					(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.x;
+				photon->exit_coords.y = photon->exit_coords.y +
+					(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.y;
+				photon->exit_coords.z = photon->exit_coords.z +
+					(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.z;
+				if(wall_trace == 3){ //photon leaves optic through side wall
+					photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * ++photon->n_leaks);
+					if(photon->leaks == NULL){
+						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->leaks -> %s", strerror(errno));
+						return -1;
+					}
+					photon->leaks[photon->n_leaks-1].coords = photon->exit_coords;
+					photon->leaks[photon->n_leaks-1].direction = photon->exit_direction;
+					photon->leaks[photon->n_leaks-1].elecv = photon->exit_electric_vector;
+					photon->leaks[photon->n_leaks-1].n_refl = photon->i_refl;
+					photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
+					memcpy(photon->leaks[photon->n_leaks-1].weight, photon->weight, sizeof(double)*photon->n_energies);
+				}
+				if(wall_trace == 2){ //photon propagates in wall to exit window
+					photon->recap = realloc(photon->recap, sizeof(polycap_leak) * ++photon->n_recap);
+					if(photon->recap == NULL){
+						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->recap -> %s", strerror(errno));
+						return -1;
+					}
+					photon->recap[photon->n_recap-1].coords = photon->exit_coords;
+					photon->recap[photon->n_recap-1].direction = photon->exit_direction;
+					photon->recap[photon->n_recap-1].elecv = photon->exit_electric_vector;
+					photon->recap[photon->n_recap-1].n_refl = photon->i_refl;
+					photon->recap[photon->n_recap-1].weight = malloc(sizeof(double) * photon->n_energies);
+					memcpy(photon->recap[photon->n_recap-1].weight, photon->weight, sizeof(double)*photon->n_energies);
+				}
+				if(wall_trace == 1){ //photon entered new capillary
+					photon->d_travel = photon->d_travel + d_travel;
+					for(i=0; i<=description->profile->nmax; i++){
+						z = photon->description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+						cap_y[i] = r_cntr * (3./2) * z;
+						cap_x[i] = (2.* q_cntr+r_cntr) * cos(M_PI/6.) * z;
+						if(description->profile->z[i] <= photon->exit_coords.z) *ix = i; //set ix to current photon segment id
+					}
+					for(i=0; i<=description->profile->nmax; i++){
+						iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, leak_calc, error);
+						if(iesc != 1){ //as long as iesc = 1 photon is still reflecting in capillary
+							//iesc == 0, which means this photon has reached its final point (weight[*] <1e-4)
+							//alternatively, iesc can be -2 or -3due to not finding intersection point, as the photon reached the end of the capillary
+							break;
+						}
+					}
+					if(iesc == -1 || iesc == -3){ //some error occurred
+						free(cap_x);
+						free(cap_y);
+						return -1;
+					}
+					if(iesc == 1 || iesc == -2){ // photon reached end of optic, and has to be stored as such
+						photon->exit_coords.x = photon->exit_coords.x + photon->exit_direction.x * ((photon->description->profile->z[photon->description->profile->nmax]-photon->exit_coords.z)/photon->exit_direction.z );
+						photon->exit_coords.y = photon->exit_coords.y + photon->exit_direction.y * ((photon->description->profile->z[photon->description->profile->nmax]-photon->exit_coords.z)/photon->exit_direction.z);
+						photon->exit_coords.z = photon->exit_coords.z + photon->exit_direction.z * ((photon->description->profile->z[photon->description->profile->nmax]-photon->exit_coords.z)/photon->exit_direction.z);
+						iesc = polycap_photon_within_pc_boundary(photon->description->profile->ext[photon->description->profile->nmax], photon->exit_coords, error);
+						if(iesc == 0){ //it's a leak event
+							photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * ++photon->n_leaks);
+							if(photon->leaks == NULL){
+								polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->leaks -> %s", strerror(errno));
+								return -1;
+							}
+							photon->leaks[photon->n_leaks-1].coords = photon->exit_coords;
+							photon->leaks[photon->n_leaks-1].direction = photon->exit_direction;
+							photon->leaks[photon->n_leaks-1].elecv = photon->exit_electric_vector;
+							photon->leaks[photon->n_leaks-1].n_refl = photon->i_refl;
+							photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
+							memcpy(photon->leaks[photon->n_leaks-1].weight, photon->weight, sizeof(double)*photon->n_energies);
+						} else if(iesc == 1){ //it's a recap event
+							photon->recap = realloc(photon->recap, sizeof(polycap_leak) * ++photon->n_recap);
+							if(photon->recap == NULL){
+								polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->recap -> %s", strerror(errno));
+								return -1;
+							}
+							photon->recap[photon->n_recap-1].coords = photon->exit_coords;
+							photon->recap[photon->n_recap-1].direction = photon->exit_direction;
+							photon->recap[photon->n_recap-1].elecv = photon->exit_electric_vector;
+							photon->recap[photon->n_recap-1].n_refl = photon->i_refl;
+							photon->recap[photon->n_recap-1].weight = malloc(sizeof(double) * photon->n_energies);
+							memcpy(photon->recap[photon->n_recap-1].weight, photon->weight, sizeof(double)*photon->n_energies);				
+						}
+					}
+				} //if(wall_trace == 1)
+				// all leak and recap events are stored in photon->leaks and photon->recap, so clear current photon weights and return
+				// 	will return 1 as original photon was absorbed. In order to cooperate with polycap_source_get_transmission_efficiencies() we'll also set exit_coords to outside exit window, so that it does not count to open area, but does store leak and recap events
+				for(i=0; i < photon->n_energies; i++)
+					photon->weight[i] = 0.;
+				photon->exit_coords.x = photon->description->profile->ext[photon->description->profile->nmax]+1.; //+1 for sure outside
+				photon->exit_coords.y = photon->description->profile->ext[photon->description->profile->nmax]+1.;
+				photon->exit_coords.z = photon->description->profile->z[photon->description->profile->nmax];
+				photon->exit_direction.x = photon->start_direction.x;
+				photon->exit_direction.y = photon->start_direction.y;
+				photon->exit_direction.z = photon->start_direction.z;
+				polycap_norm(&photon->exit_direction);
+				return 1;
+			} //if wall_trace >0
+		} //if(leak_calc && photon->start_coords.z > 0)
+		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies() and adds to open area
+	} //if(d_ph_capcen > current_cap_rad)
 
 	//polycap_capil_trace should be ran description->profile->nmax at most,
 	//	which means it essentially reflected once every known capillary coordinate

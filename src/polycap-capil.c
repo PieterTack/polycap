@@ -597,7 +597,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_vector3 surface_norm, 
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: description must not be NULL");
 		return -1;
 	}
-	alfa = M_PI_2-acos(polycap_scalar(photon->exit_direction, surface_norm)); //TODO: M_PI_2-acos or just acos?
+	alfa = polycap_scalar(photon->exit_direction, surface_norm); 
 	if (alfa < 0.){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: alfa must be greater than 0");
 		return -1;
@@ -1386,7 +1386,7 @@ printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, te
 			} else {
 				iesc = polycap_capil_reflect(photon, surface_norm, leak_calc, error);
 				if(iesc == 1){
-					photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(M_PI_2-alfa) * surface_norm.x; //TODO: M_PI_2-alfa?
+					photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(M_PI_2-alfa) * surface_norm.x;
 					photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(M_PI_2-alfa) * surface_norm.y;
 					photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(M_PI_2-alfa) * surface_norm.z;
 					polycap_norm(&photon->exit_direction);
