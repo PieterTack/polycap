@@ -107,8 +107,8 @@ class TestPolycapPhoton(unittest.TestCase):
             photon = polycap.Photon(None, polycap.Rng(), start_coords, start_direction, start_electric_vector)
 
     def test_photon_bad_coords(self):
-        start_coords = (0., 0. , 0.)
-        start_direction = ( 0.005, -0.005, 0.1)
+        start_coords = (0.15104418, 0.087000430 , 0.)
+        start_direction = ( 0., 0., 1.)
         start_electric_vector = (0.5, 0.5, 0.)
         photon = polycap.Photon(TestPolycapPhoton.description, polycap.Rng(), start_coords, start_direction, start_electric_vector)
         self.assertIsNone(photon.launch(10.0))

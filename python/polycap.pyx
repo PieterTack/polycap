@@ -458,7 +458,7 @@ cdef class Photon:
            
         rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, leak_calc, &error)
         polycap_set_exception(error)
-        if rv == 0:
+        if rv == 2 or rv == -2 or rv == -1: #TODO: user should get some info on whether it was 2 or other value, as 2 should count towards open area...
             return None
 
         # copy weights to numpy array, free and return
