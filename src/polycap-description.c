@@ -90,6 +90,7 @@ polycap_description* polycap_description_new(polycap_profile *profile, double si
 {
 	int i;
 	polycap_description *description;
+	double n_cap_temp;
 
 	//Perform source_temp and description argument sanity check
 	if (sig_rough < 0.0){
@@ -210,7 +211,9 @@ polycap_description* polycap_description_new(polycap_profile *profile, double si
 	//NOTE: user should free old profile memory him/herself
 
 	// Calculate open area
-	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap;
+	n_cap_temp = (round(sqrt(12. * description->n_cap - 3.)/6.-0.5)+0.5)*6.;
+	n_cap_temp = (n_cap_temp*n_cap_temp+3)/12;
+	description->open_area = (description->profile->cap[0]*description->profile->cap[0]*M_PI)*n_cap_temp/(3.*sin(M_PI/3)*description->profile->ext[0]*description->profile->ext[0]);
 	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
 	if(polycap_profile_validate(description->profile, description->n_cap, error) != 1){
 		polycap_clear_error(error);

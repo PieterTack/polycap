@@ -112,6 +112,7 @@ void test_polycap_source_new_from_file() {
 	polycap_clear_error(&error);
 	source = polycap_source_new_from_file(EXAMPLE_DIR"ellip_l9.inp", &error);
 	assert(source != NULL);
+	assert(fabs(source->description->open_area - 0.696365) < 1e-5);
 	
 	//check whether description_new gives same results as new_from_file given identical parameters
 	int iz[2]={8,14};

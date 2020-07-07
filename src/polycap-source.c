@@ -231,6 +231,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	double rad_int_upstream, rad_int_downstream;
 	double focal_dist_upstream, focal_dist_downstream;
 	char *single_cap_profile_file = NULL, *central_axis_file = NULL, *external_shape_file = NULL;
+	double n_cap;
 
 	//argument sanity check
 	if (filename == NULL) {
@@ -364,7 +365,9 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	polycap_description_check_weight(description->nelem, description->wi, error);
 
 	// Calculate open area
-	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap; //TODO: n_cap should here be the actual number of capillaries used, not the theoretically supplied one (i.e. 200000 capillaries does not form perfect hexagonal stacking, so a few less/more are simulated)
+	n_cap = (round(sqrt(12. * description->n_cap - 3.)/6.-0.5)+0.5)*6.;
+	n_cap = (n_cap*n_cap+3)/12;
+	description->open_area = (description->profile->cap[0]*description->profile->cap[0]*M_PI)*n_cap/(3.*sin(M_PI/3)*description->profile->ext[0]*description->profile->ext[0]);
 
 	//Perform source and description argument sanity check
 	if (source->d_source < 0.0){
@@ -755,7 +758,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				temp_vect.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
 				temp_vect.z = description->profile->z[description->profile->nmax];
 				if(round(sqrt(12. * photon->description->n_cap - 3.)/6.-0.5) == 0.){ //monocapillary case
-					if(sqrt((temp_vect.x)*(temp_vect.x) + (temp_vect.y)*(temp_vect.y)) > description->profile->ext[description->profile->nmax]){ //TODO: this check will fail with monocap offsets from central axis (001)! 
+					if(sqrt((temp_vect.x)*(temp_vect.x) + (temp_vect.y)*(temp_vect.y)) > description->profile->ext[description->profile->nmax]){ 
 						iesc = 0;
 					} else {
 						iesc = 1;
@@ -764,7 +767,6 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],temp_vect, NULL);
 				}
 			}
-//if(iesc == 0) printf("***Does this occur?\n"); //TODO This almost never occurs with leak_calc, often without leak_calc??
 			//Register succesfully transmitted photon, as well as save start coordinates and direction
 			if(iesc == 1){
 				iexit_temp[thread_id]++;
@@ -1060,8 +1062,8 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		sum_not_transmitted += not_transmitted_temp[i];
 	}
 	
-	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_iexit+sum_not_entered+sum_not_transmitted);
-	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)(sum_iexit+sum_not_transmitted)/(sum_iexit+sum_not_entered+sum_not_transmitted));
+	printf("Average number of reflections: %lf, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_iexit+sum_not_entered+sum_not_transmitted);
+	printf("Open area Calculated: %lf, Simulated: %lf\n",description->open_area, (double)(sum_iexit+sum_not_transmitted)/(sum_iexit+sum_not_entered+sum_not_transmitted));
 	printf("iexit: %" PRId64 ", no enter: %" PRId64 ", no trans: %" PRId64 "\n",sum_iexit,sum_not_entered,sum_not_transmitted);
 
 	//Continue working with simulated open area, as this should be a more honoust comparisson?
