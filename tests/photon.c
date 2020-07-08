@@ -35,12 +35,8 @@ void test_polycap_photon_scatf() {
 	double focal_dist_upstream = 1000.0;
 	double focal_dist_downstream = 0.5;
 	double energies = 10.0;
-	polycap_rng *rng;
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
-
-	// Create new rng
-	rng = polycap_rng_new_with_seed(20000);
 
 	//make some structures that are required to run the function
 	start_coords.x = 0.;
@@ -57,7 +53,7 @@ void test_polycap_photon_scatf() {
 	polycap_clear_error(&error);
 	description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 	photon->n_energies = 1.;
@@ -82,12 +78,10 @@ void test_polycap_photon_scatf() {
 	polycap_photon_free(photon);
 	polycap_description_free(description);
 	polycap_profile_free(profile);
-	polycap_rng_free(rng);
 }
 
 void test_polycap_photon_new() {
 	polycap_error *error = NULL; //this has to be set to NULL before feeding to the function!
-	polycap_rng *rng;
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
 
@@ -102,12 +96,8 @@ void test_polycap_photon_new() {
 	start_electric_vector.y = 0.5;
 	start_electric_vector.z = 0.;
 
-	// Create new rng
-	rng = polycap_rng_new_with_seed(20000);
-
-
 	//This won't work
-	photon = polycap_photon_new(NULL, NULL, start_coords, start_direction, start_electric_vector, &error);
+	photon = polycap_photon_new(NULL, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon == NULL);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
 
@@ -126,7 +116,7 @@ void test_polycap_photon_new() {
 	polycap_clear_error(&error);
 	polycap_description *description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	assert( photon->start_coords.x == start_coords.x);
 	assert( photon->start_coords.y == start_coords.y);
@@ -163,7 +153,6 @@ void test_polycap_photon_new() {
 	assert( test_vect.y == start_electric_vector.y);
 	assert( test_vect.z == start_electric_vector.z);
 
-	polycap_rng_free(rng);
 	polycap_photon_free(photon);
 	polycap_description_free(description);
 	polycap_profile_free(profile);
@@ -207,7 +196,6 @@ void test_polycap_photon_launch() {
 	double *weights;
 	int test;
 	double energies = 10.0;
-	polycap_rng *rng;
 	polycap_photon *photon;
 	polycap_vector3 start_coords, start_direction, start_electric_vector;
 	int iz[2]={8,14};
@@ -220,9 +208,6 @@ void test_polycap_photon_launch() {
 	double rad_int_downstream = 9.9153E-5;
 	double focal_dist_upstream = 1000.0;
 	double focal_dist_downstream = 0.5;
-
-	// Create new rng
-	rng = polycap_rng_new_with_seed(20000);
 
 	//make some structures that are required to run the function
 	start_coords.x = 0.;
@@ -239,7 +224,7 @@ void test_polycap_photon_launch() {
 	polycap_clear_error(&error);
 	description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 
@@ -315,7 +300,6 @@ void test_polycap_photon_launch() {
 	polycap_photon_free(photon);
 	polycap_description_free(description);
 	polycap_profile_free(profile);
-	polycap_rng_free(rng);
 }
 
 int main(int argc, char *argv[]) {

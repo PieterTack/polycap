@@ -370,7 +370,6 @@ cdef class Photon:
 
     def __cinit__(self, 
         Description description,
-        Rng rng,
         object start_coords,
         object start_direction,
         object start_electric_vector,
@@ -379,8 +378,6 @@ cdef class Photon:
         '''Creates a new polycap_photon with its initial position, direction and electric field vector.
         :param description: a :ref:``Description`` class
         :type description: Description
-        :param rng: a random number generator pointer, :ref:``Rng``
-        :type rng: Rng
         :param start_coords: photon start coordinates array [xyz]
         :type start_coords: double array
         :param start_direction: photon start direction array [xyz]
@@ -402,9 +399,6 @@ cdef class Photon:
             if description is None:
                 raise ValueError("description cannot be None")
 
-            if rng is None:
-                raise ValueError("rng cannot be None")
-
             start_coords = np.asarray(start_coords, dtype=np.double)
             if len(start_coords.shape) != 1 or start_coords.size != 3:
                 raise ValueError("start_coords must have exactly three elements")
@@ -423,7 +417,6 @@ cdef class Photon:
 
             self.photon = polycap_photon_new(
                 description.description,
-                rng.rng,
                 start_coords_pc,
                 start_direction_pc,
                 start_electric_vector_pc,
@@ -458,7 +451,7 @@ cdef class Photon:
            
         rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, leak_calc, &error)
         polycap_set_exception(error)
-        if rv == 2 or rv == -2 or rv == -1: #TODO: user should get some info on whether it was 2 or other value, as 2 should count towards open area...
+        if rv == 2 or rv == -2 or rv == -1:
             return None
 
         # copy weights to numpy array, free and return

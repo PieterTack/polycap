@@ -23,7 +23,6 @@
 
 #include "polycap-error.h"
 #include "polycap-description.h"
-#include "polycap-rng.h"
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -49,7 +48,6 @@ typedef struct _polycap_photon                      polycap_photon;
 /** Creates a new polycap_photon with its initial position, direction and electric field vector.
  *
  * \param description a polycap_description
- * \param rng a random number generator pointer
  * \param start_coords photon start coordinates
  * \param start_direction photon start direction
  * \param start_electric_vector photon start electric field vector
@@ -59,7 +57,6 @@ typedef struct _polycap_photon                      polycap_photon;
 POLYCAP_EXTERN
 polycap_photon* polycap_photon_new(
 	polycap_description *description,
-	polycap_rng *rng,
 	polycap_vector3 start_coords,
 	polycap_vector3 start_direction,
 	polycap_vector3 start_electric_vector,

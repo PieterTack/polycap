@@ -137,7 +137,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	polycap_norm(&start_electric_vector);
 
 	// Create photon structure
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, error);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, error);
 	photon->src_start_coords = src_start_coords;
 
 	return photon;
@@ -195,7 +195,12 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source->energies -> %s", strerror(errno));
 		return NULL;
 	}
-
+	source->rng = malloc(sizeof(polycap_rng));
+	if(source->rng == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source->rng -> %s", strerror(errno));
+		return NULL;
+	}
+	
 	source->d_source = d_source;
 	source->src_x = src_x;
 	source->src_y = src_y;
@@ -206,8 +211,8 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 	source->hor_pol = hor_pol;
 	source->n_energies = n_energies;
 	memcpy(source->energies, energies, sizeof(double)*n_energies);
+	source->rng = polycap_rng_new();
 	source->description = polycap_description_new(description->profile, description->sig_rough, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
-	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
 	if(source->description == NULL){
 		polycap_clear_error(error);
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
@@ -224,6 +229,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	FILE *fptr;
 	int i, filecheck;
 	polycap_description *description;
+	polycap_rng *rng;
 	polycap_source *source;
 	double e_start, e_final, delta_e;
 	int type, nphotons;
@@ -245,6 +251,12 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 		return NULL;
 	}
 
+	rng = calloc(1, sizeof(polycap_rng));
+	if(rng == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new_from_file: could not allocate memory for rng -> %s", strerror(errno));
+		return NULL;
+	}
+	
 	source = calloc(1, sizeof(polycap_source));
 	if(source == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new_from_file: could not allocate memory for source -> %s", strerror(errno));
@@ -253,6 +265,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	}
 
 	source->description = description;
+	source->rng = polycap_rng_new();
 
 	//read input file
 	fptr = fopen(filename,"r");
@@ -1098,6 +1111,9 @@ void polycap_source_free(polycap_source *source)
 
 	if (source->description)
 		polycap_description_free(source->description);
+
+	if (source->rng)
+		polycap_rng_free(source->rng);
 
 	if (source->energies)
 		free(source->energies);

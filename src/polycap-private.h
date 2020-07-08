@@ -104,6 +104,7 @@ struct _polycap_description
 struct _polycap_source
   {
   polycap_description *description;
+  polycap_rng *rng;
   double d_source;
   double src_x;
   double src_y;
@@ -128,7 +129,6 @@ typedef struct _polycap_leak 	polycap_leak;
 
 struct _polycap_photon
   {
-  polycap_rng *rng;
   polycap_description *description;
   polycap_leak *leaks;
   polycap_leak *recap;

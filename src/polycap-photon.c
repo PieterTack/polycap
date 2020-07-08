@@ -95,17 +95,13 @@ void polycap_photon_scatf(polycap_photon *photon, polycap_error **error)
 
 //===========================================
 // construct a new polycap_photon with its initial position, direction, electric field vector
-polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng *rng, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, polycap_error **error)
+polycap_photon* polycap_photon_new(polycap_description *description, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, polycap_error **error)
 {
 	polycap_photon *photon;
 
 	//argument sanity check
 	if (description == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: description cannot be NULL");
-		return NULL;
-	}
-	if (rng == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: rng cannot be NULL");
 		return NULL;
 	}
 	if (start_coords.z < 0.) {
@@ -124,9 +120,6 @@ polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon -> %s", strerror(errno));
 		return NULL;
 	}
-
-	//assign *rng pointer
-	photon->rng = rng;
 
 	photon->description = description;
 

@@ -252,7 +252,6 @@ void test_polycap_capil_reflect() {
 	double energies = 10.;
 	int iz[2]={8,14};
 	double wi[2]={53.0,47.0};
-	polycap_rng *rng;
 	polycap_photon *photon;
 	
 	profile = polycap_profile_new(POLYCAP_PROFILE_ELLIPSOIDAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
@@ -269,10 +268,8 @@ void test_polycap_capil_reflect() {
 	surface_norm.x = 0.707107;
 	surface_norm.y = -0.707107;
 	surface_norm.z = 0.;
-	// Create new rng
-	rng = polycap_rng_new_with_seed(20000);
 
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 	photon->n_energies = 1.;
@@ -336,7 +333,6 @@ void test_polycap_capil_reflect() {
 	polycap_description_free(description);
 	polycap_profile_free(profile);
 	polycap_photon_free(photon);
-	polycap_rng_free(rng);
 }
 
 void test_polycap_capil_trace() {
@@ -354,7 +350,6 @@ void test_polycap_capil_trace() {
 	double energies = 10.;
 	int iz[2]={8,14};
 	double wi[2]={53.0,47.0};
-	polycap_rng *rng;
 	polycap_photon *photon;
 	int ix_val = 0;
 	int *ix=&ix_val, i;
@@ -375,10 +370,8 @@ void test_polycap_capil_trace() {
 	start_electric_vector.x = 0.5;
 	start_electric_vector.y = 0.5;
 	start_electric_vector.z = 0.;
-	// Create new rng
-	rng = polycap_rng_new_with_seed(20000);
 
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 	photon->n_energies = 1.;
@@ -423,7 +416,7 @@ void test_polycap_capil_trace() {
 
 	//works, with reflection and sufficient weight
 	*ix = 0;
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 	photon->n_energies = 1.;
@@ -456,7 +449,7 @@ void test_polycap_capil_trace() {
 
 	//Works but photon is absorbed
 	*ix = 0;
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 	photon->n_energies = 1.;
@@ -480,7 +473,7 @@ void test_polycap_capil_trace() {
 	start_direction.x = 0.0;
 	start_direction.y = 0.0;
 	start_direction.z = 1.0;
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, &error);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
 	photon->n_energies = 1.;
@@ -499,7 +492,6 @@ void test_polycap_capil_trace() {
 	polycap_description_free(description);
 	polycap_profile_free(profile);
 	polycap_photon_free(photon);
-	polycap_rng_free(rng);
 	free(cap);
 }
 

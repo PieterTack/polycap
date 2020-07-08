@@ -725,7 +725,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_vector3 surface_norm, 
 			// to do so, make new (temporary) photon, as well as current capillary central axes arrays
 			// and call polycap_capil_trace().
 			// 	Calling polycap_photon_launch() instead would set weights to 1, which could lead to unnecessary calculation
-			phot_temp = polycap_photon_new(photon->description, photon->rng, leak_coords, photon->exit_direction, photon->exit_electric_vector, error);
+			phot_temp = polycap_photon_new(photon->description, leak_coords, photon->exit_direction, photon->exit_electric_vector, error);
 			phot_temp->i_refl = photon->i_refl; //phot_temp reflect photon->i_refl times before starting its reflection inside new capillary, so add this to total amount
 			phot_temp->n_leaks = 0; //set leaks to 0
 			phot_temp->n_recap = 0; //set recap to 0
