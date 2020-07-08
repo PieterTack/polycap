@@ -8,10 +8,16 @@
  * as a result of a series of reflections within the capillary optic. Additionally, each transmitted photon is characterized by its exit coordinate, direction and electric field vector
  * as well as traveled photon path length within the polycapillary optic. These parameters are saved in an HDF5 output file.
  *
- * At each photon - capillary wall interaction the reflectivity is determined by the Fresnel equation:
+ * The polycapillary optic's profile is considered to be of hexagonal shape, due to a hexagonal packing of the single capillaries.
+ *
+ * At each photon - capillary wall interaction the reflectivity is determined by the Fresnel equations for s and p polarized light:
  * \f[
-	R_{f}(\theta,E) = \left| 
-		\frac{\theta - \sqrt{\theta^{2} - 2\delta(E)}}{\theta + \sqrt{\theta^{2} - 2\delta(E)}}
+	R_{s}(\theta,E) = \left|
+		\frac{n_{1} \cos{\theta} - n_{2} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2} }}{n_{1} \cos{\theta} + n_{2} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2} }}
+		\right|^{2}
+	\\
+	R_{p}(\theta,E) = \left|
+		\frac{n_{1} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2} } - n_{2} \cos{\theta}}{n_{1} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2}  } + n_{2}  \cos{\theta}}
 		\right|^{2}
    \f]
  * with \f$\theta\f$ the glancing angle of the incident radiation and  \f$\delta\f$ defined as \f$\delta = \alpha - i\beta\f$ with
@@ -232,8 +238,8 @@
  * \endcode
  *       - **type:** an integer or \ref profiletype that indicates the profile type
  *       - **length:** the polycapillary length, as measured along the central axis [cm]
- *       - **rad_ext_upstream:** external upstream polycapillary radius (photons stream from upstream to downstream) [cm]
- *       - **rad_ext_downstream:** external downstream polycapillary radius (photons stream from upstream to downstream) [cm]
+ *       - **rad_ext_upstream:** external upstream polycapillary radius (photons stream from upstream to downstream) [cm]. This radius represents the radius of a circle circumscribing the hexagonal optic area.
+ *       - **rad_ext_downstream:** external downstream polycapillary radius (photons stream from upstream to downstream) [cm]. This radius represents the radius of a circle circumscribing the hexagonal optic area.
  *       - **rad_int_upstream:** internal upstream capillary radius (photons stream from upstream to downstream) [cm]
  *       - **rad_int_downstream:** internal downstream capillary radius (photons stream from upstream to downstream) [cm]
  *       - **focal_dist_upstream:** focal distance upstream of the polycapillary optic (photons stream from upstream to downstream) [cm]

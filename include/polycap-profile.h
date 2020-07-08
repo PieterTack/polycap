@@ -59,8 +59,8 @@ typedef struct _polycap_profile                     polycap_profile;
  * \param type an integer or type that indicates the profile type
  * \param length the polycapillary length, as measured along the central axis [cm]
  * \param rad_ext_upstream external upstream polycapillary radius (photons stream from upstream to downstream) [cm]
- * \param rad_ext_downstream external downstream polycapillary radius (photons stream from upstream to downstream) [cm]
- * \param rad_int_upstream internal upstream capillary radius (photons stream from upstream to downstream) [cm]
+ * \param rad_ext_downstream external downstream polycapillary radius (photons stream from upstream to downstream) [cm]. This radius represents the radius of a circle circumscribing the hexagonal optic area.
+ * \param rad_int_upstream internal upstream capillary radius (photons stream from upstream to downstream) [cm]. This radius represents the radius of a circle circumscribing the hexagonal optic area.
  * \param rad_int_downstream internal downstream capillary radius (photons stream from upstream to downstream) [cm]
  * \param focal_dist_upstream focal distance upstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
  * \param focal_dist_downstream focal distance downstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
@@ -79,7 +79,6 @@ polycap_profile* polycap_profile_new(
 	double focal_dist_downstream,
 	polycap_error **error);
 
-//TODO: perhaps it would be a good idea to define a new filetype that would combine these three into a single file? Best to use something like XML for convenience... this could then be polycap_profile_new_from_xml
 /** Create a new profile given ASCII files correponding to the old polycap program format.
  *
  * Each file contains a 2 column data set, preceded by the amount of rows in the data set. The first column contains the Z-coordinate, running from 0 to polycappillary length, and the second column contains the corresponding radius. The Z-coordinates should be the same over all files.
