@@ -557,7 +557,7 @@ cdef class Source:
             &error)
         polycap_set_exception(error)
 
-        rv = Photon(None, None, None, None, None, ignore=True)
+        rv = Photon(None, None, None, None, ignore=True)
         rv.photon = photon
 
         return rv

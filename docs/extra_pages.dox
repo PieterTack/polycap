@@ -328,10 +328,9 @@
  * Create a new `Photon` with its initial position, direction and electric field vector:
  * Syntax:
  * \code{.py}
- * photon = Photon(Description description, Rng rng, object start_coords, object start_direction, object start_electric_vector, [bool ignore])
+ * photon = Photon(Description description, object start_coords, object start_direction, object start_electric_vector, [bool ignore])
  * \endcode
  *       - **description:** a \ref Description class
- *       - **rng:** a random number generator pointer, \ref rng
  *       - **start_coords:** photon start coordinates array [x,y,z]
  *       - **start_direction:** photon start direction array [x,y,z]
  *       - **start_electric_vector:** photon start electric field vector array [x,y,z]
