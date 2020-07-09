@@ -1,8 +1,6 @@
 ##Example in python to obtain polycapillary optic transmission efficiency curve, and launching a single photon
 import polycap
 import numpy as np
-import os
-import sys
 import matplotlib.pyplot as plt
 
 # Optic parameters
