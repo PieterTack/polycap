@@ -15,6 +15,7 @@
 #include "config.h"
 #include "polycap-private.h"
 #include <polycap-source.h>
+#include <polycap-photon.h>
 #ifdef NDEBUG
   #undef NDEBUG
 #endif
@@ -111,6 +112,7 @@ void test_polycap_source_new_from_file() {
 	polycap_clear_error(&error);
 	source = polycap_source_new_from_file(EXAMPLE_DIR"ellip_l9.inp", &error);
 	assert(source != NULL);
+	assert(fabs(source->description->open_area - 0.696365) < 1e-5);
 	
 	//check whether description_new gives same results as new_from_file given identical parameters
 	int iz[2]={8,14};
@@ -202,15 +204,6 @@ void test_polycap_source_get_transmission_efficiencies() {
 	assert(efficiencies != NULL);
 printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: %lf\n", efficiencies->efficiencies[0], efficiencies->efficiencies[1], efficiencies->efficiencies[2], efficiencies->efficiencies[3], efficiencies->efficiencies[4], efficiencies->efficiencies[5], efficiencies->efficiencies[6]);
 /*
-	assert(fabs(efficiencies->efficiencies[0] - 0.227) <= 0.005); //1 keV
-	assert(fabs(efficiencies->efficiencies[1] - 0.190) <= 0.005); //5 keV
-	assert(fabs(efficiencies->efficiencies[2] - 0.073) <= 0.005); //10 keV
-	assert(fabs(efficiencies->efficiencies[3] - 0.028) <= 0.005); //15 keV
-	assert(fabs(efficiencies->efficiencies[4] - 0.013) <= 0.005); //20 keV
-	assert(fabs(efficiencies->efficiencies[5] - 0.007) <= 0.005); //25 keV
-	assert(fabs(efficiencies->efficiencies[6] - 0.004) <= 0.005); //30 keV
-*/
-	//These are values with old normalisation (weight/iexit*open_area instead of (weight/(iexit+not_transm))*open_area)
 	assert(fabs(efficiencies->efficiencies[0] - 0.353) <= 0.01); //1 keV
 	assert(fabs(efficiencies->efficiencies[1] - 0.291) <= 0.01); //5 keV
 	assert(fabs(efficiencies->efficiencies[2] - 0.114) <= 0.0075); //10 keV
@@ -218,6 +211,14 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	assert(fabs(efficiencies->efficiencies[4] - 0.021) <= 0.005); //20 keV
 	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.005); //25 keV
 	assert(fabs(efficiencies->efficiencies[6] - 0.007) <= 0.005); //30 keV
+*/
+	assert(fabs(efficiencies->efficiencies[0] - 0.424) <= 0.01); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - 0.349) <= 0.01); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - 0.135) <= 0.0075); //10 keV
+	assert(fabs(efficiencies->efficiencies[3] - 0.050) <= 0.005); //15 keV
+	assert(fabs(efficiencies->efficiencies[4] - 0.022) <= 0.005); //20 keV
+	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.005); //25 keV
+	assert(fabs(efficiencies->efficiencies[6] - 0.006) <= 0.005); //30 keV
 
 	// Try writing
 	assert(!polycap_transmission_efficiencies_write_hdf5(efficiencies, NULL, &error));
@@ -234,6 +235,44 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 #elif defined(HAVE_UNLINK)
 	unlink("temp.h5"); // cleanup
 #endif
+	polycap_clear_error(&error);
+
+	// compare multiple photon_launch() to get_transmission_efficiencies()
+	double *weights;
+	double w_tot[7]={0.,0.,0.,0.,0.,0.,0.};
+	int64_t phot_ini=0, phot_transm=0;
+	int j=0, test;
+	polycap_photon *photon;
+	polycap_rng *rng;
+	rng = polycap_rng_new_with_seed(20000);
+	do{ 
+		photon = polycap_source_get_photon(source, rng, &error);
+		test = polycap_photon_launch(photon, 7, energies, &weights, false, &error);
+		if(test == 1){
+			for(j=0; j<7; j++){
+				assert(weights[j] >= 0.);
+				assert(weights[j] <= 1.);
+				w_tot[j] += weights[j];
+			}
+			phot_transm += 1;
+		}
+		if(test != -2 && test != -1){
+			phot_ini += 1;
+		} else polycap_clear_error(&error);  //photon was not in optic entrance window or some other error
+		free(weights);
+		polycap_photon_free(photon);
+	} while(phot_transm < 30000);
+	for(j=0; j<7; j++)
+		w_tot[j] = w_tot[j]/phot_ini; 
+printf("Launch: %li, transm: %li, eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: %lf\n", phot_ini, phot_transm, w_tot[0], w_tot[1], w_tot[2], w_tot[3], w_tot[4], w_tot[5], w_tot[6]);
+	assert(fabs(efficiencies->efficiencies[0] - w_tot[0]) <= 0.0075); //1 keV
+	assert(fabs(efficiencies->efficiencies[1] - w_tot[1]) <= 0.0075); //5 keV
+	assert(fabs(efficiencies->efficiencies[2] - w_tot[2]) <= 0.0075); //10 keV
+	assert(fabs(efficiencies->efficiencies[3] - w_tot[3]) <= 0.0075); //15 keV
+	assert(fabs(efficiencies->efficiencies[4] - w_tot[4]) <= 0.0075); //20 keV
+	assert(fabs(efficiencies->efficiencies[5] - w_tot[5]) <= 0.0075); //25 keV
+	assert(fabs(efficiencies->efficiencies[6] - w_tot[6]) <= 0.0075); //30 keV
+	polycap_rng_free(rng);
 
 	polycap_transmission_efficiencies_free(efficiencies);
 	polycap_source_free(source);

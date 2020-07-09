@@ -20,7 +20,7 @@ polycap_minor_version = polycap_version_array[1].to_int()
 # z = revision
 # If libtool_soversion is updated as described in libtool's documentation,
 # x.y.z will usually *not* be equal to meson.project_version().
-libtool_soversion = [1, 0, 1]
+libtool_soversion = [2, 0, 0]
 polycap_libversion = '@0@.@1@.@2@'.format(
   libtool_soversion[0] - libtool_soversion[2],
   libtool_soversion[2],

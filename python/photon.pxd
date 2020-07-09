@@ -12,7 +12,6 @@
 
 from error cimport polycap_error
 from description cimport polycap_description
-from rng cimport polycap_rng
 
 cdef extern from "polycap-photon.h" nogil:
 
@@ -25,7 +24,6 @@ cdef extern from "polycap-photon.h" nogil:
 
     polycap_photon* polycap_photon_new(
         polycap_description *description,
-        polycap_rng *rng,
         polycap_vector3 start_coords,
         polycap_vector3 start_direction,
         polycap_vector3 start_electric_vector,

@@ -89,7 +89,6 @@ void polycap_source_free(polycap_source *source);
 POLYCAP_EXTERN
 polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *rng, polycap_error **error);
 
-//TODO: This will recursively call the appropriate polycap_profile_new_* routines. Again here a XML variant could be useful...
 /** Load a polycap_description from given ASCII *.inp input file correponding to the old polycap program format.
  *
  * \param filename directory path to an ASCII input file. Default extension *.inp.

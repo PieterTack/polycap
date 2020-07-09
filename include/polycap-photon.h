@@ -23,7 +23,6 @@
 
 #include "polycap-error.h"
 #include "polycap-description.h"
-#include "polycap-rng.h"
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -49,7 +48,6 @@ typedef struct _polycap_photon                      polycap_photon;
 /** Creates a new polycap_photon with its initial position, direction and electric field vector.
  *
  * \param description a polycap_description
- * \param rng a random number generator pointer
  * \param start_coords photon start coordinates
  * \param start_direction photon start direction
  * \param start_electric_vector photon start electric field vector
@@ -59,7 +57,6 @@ typedef struct _polycap_photon                      polycap_photon;
 POLYCAP_EXTERN
 polycap_photon* polycap_photon_new(
 	polycap_description *description,
-	polycap_rng *rng,
 	polycap_vector3 start_coords,
 	polycap_vector3 start_direction,
 	polycap_vector3 start_electric_vector,
@@ -75,7 +72,7 @@ polycap_photon* polycap_photon_new(
  * \param weights an array that will contain the transmission efficiency values
  * \param leak_calc True: perform leak calculation; False: do not perform leak calculation
  * \param error a pointer to a \c NULL polycap_error, or \c NULL
- * \returns an int: 0 if photon was absorbed by the polycapillary, 1 if photon reached the end of the polycapillary, 2 if photon hits capillary wall on entrace, 3 if photon is not propagating towards optic entrance at start, -1 on error
+ * \returns an int: 0 if photon was absorbed by the polycapillary, 1 if photon reached the end of the polycapillary, 2 if photon hits capillary wall on entrace, -2 if photon is not propagating towards optic entrance at start, -1 on error
  */
 POLYCAP_EXTERN
 int polycap_photon_launch(

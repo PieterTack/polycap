@@ -36,10 +36,10 @@
 #ifdef TEST_BUILD
   #define STATIC 
   // additional prototypes for the tests
-  int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 phot_coord0, polycap_vector3 phot_coord1, polycap_vector3 photon_dir, polycap_vector3 *photon_coord, polycap_vector3 *surface_norm, double *alfa, polycap_error **error);
+  int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 phot_coord0, polycap_vector3 phot_coord1, polycap_vector3 photon_dir, polycap_vector3 *photon_coord, polycap_vector3 *surface_norm, polycap_error **error);
 //  int polycap_capil_segment(polycap_vector3 cap_coord0, polycap_vector3 cap_coord1, double cap_rad0, double cap_rad1, polycap_vector3 *photon_coord, polycap_vector3 photon_dir, polycap_vector3 *surface_norm, double *alfa, polycap_error **error);
   double polycap_refl(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_error **error);
-  double polycap_refl_polar(double e, double theta, double density, double scatf, double lin_abs_coeff, polycap_vector3 surface_norm, polycap_photon *photon, polycap_vector3 *electric_vector, polycap_error **error);
+  double polycap_refl_polar(double e, double density, double scatf, double lin_abs_coeff, polycap_vector3 surface_norm, polycap_photon *photon, polycap_vector3 *electric_vector, polycap_error **error);
 #else
   #define STATIC static
 #endif
@@ -77,7 +77,7 @@
 polycap_rng * polycap_rng_alloc(const polycap_rng_type * T);
 void polycap_rng_set(const polycap_rng * r, unsigned long int s);
 double polycap_rng_uniform(const polycap_rng * r);
-int polycap_capil_reflect(polycap_photon *photon, double alfa, polycap_vector3 surface_norm, bool leak_calc, polycap_error **error);
+int polycap_capil_reflect(polycap_photon *photon, polycap_vector3 surface_norm, bool leak_calc, polycap_error **error);
 
 //================================
 
@@ -104,6 +104,7 @@ struct _polycap_description
 struct _polycap_source
   {
   polycap_description *description;
+  polycap_rng *rng;
   double d_source;
   double src_x;
   double src_y;
@@ -128,7 +129,6 @@ typedef struct _polycap_leak 	polycap_leak;
 
 struct _polycap_photon
   {
-  polycap_rng *rng;
   polycap_description *description;
   polycap_leak *leaks;
   polycap_leak *recap;
@@ -187,6 +187,7 @@ struct _polycap_images
   };
 
 int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord, polycap_error **error);
+polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polycap_vector3 photon_direction, polycap_profile *profile, polycap_error **error);
 void polycap_norm(polycap_vector3 *vect);
 double polycap_scalar(polycap_vector3 vect1, polycap_vector3 vect2);
 int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *description, double *cap_x, double *cap_y, bool leak_calc, polycap_error **error);

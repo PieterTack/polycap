@@ -137,7 +137,7 @@ polycap_photon* polycap_source_get_photon(polycap_source *source, polycap_rng *r
 	polycap_norm(&start_electric_vector);
 
 	// Create photon structure
-	photon = polycap_photon_new(description, rng, start_coords, start_direction, start_electric_vector, error);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, error);
 	photon->src_start_coords = src_start_coords;
 
 	return photon;
@@ -195,7 +195,12 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source->energies -> %s", strerror(errno));
 		return NULL;
 	}
-
+	source->rng = malloc(sizeof(polycap_rng));
+	if(source->rng == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source->rng -> %s", strerror(errno));
+		return NULL;
+	}
+	
 	source->d_source = d_source;
 	source->src_x = src_x;
 	source->src_y = src_y;
@@ -206,8 +211,8 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 	source->hor_pol = hor_pol;
 	source->n_energies = n_energies;
 	memcpy(source->energies, energies, sizeof(double)*n_energies);
+	source->rng = polycap_rng_new();
 	source->description = polycap_description_new(description->profile, description->sig_rough, description->n_cap, description->nelem, description->iz, description->wi, description->density, NULL);
-	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
 	if(source->description == NULL){
 		polycap_clear_error(error);
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
@@ -224,6 +229,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	FILE *fptr;
 	int i, filecheck;
 	polycap_description *description;
+	polycap_rng *rng;
 	polycap_source *source;
 	double e_start, e_final, delta_e;
 	int type, nphotons;
@@ -231,6 +237,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	double rad_int_upstream, rad_int_downstream;
 	double focal_dist_upstream, focal_dist_downstream;
 	char *single_cap_profile_file = NULL, *central_axis_file = NULL, *external_shape_file = NULL;
+	double n_cap;
 
 	//argument sanity check
 	if (filename == NULL) {
@@ -244,6 +251,12 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 		return NULL;
 	}
 
+	rng = calloc(1, sizeof(polycap_rng));
+	if(rng == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new_from_file: could not allocate memory for rng -> %s", strerror(errno));
+		return NULL;
+	}
+	
 	source = calloc(1, sizeof(polycap_source));
 	if(source == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new_from_file: could not allocate memory for source -> %s", strerror(errno));
@@ -252,6 +265,7 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	}
 
 	source->description = description;
+	source->rng = polycap_rng_new();
 
 	//read input file
 	fptr = fopen(filename,"r");
@@ -364,7 +378,9 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	polycap_description_check_weight(description->nelem, description->wi, error);
 
 	// Calculate open area
-	description->open_area = (description->profile->cap[0]/description->profile->ext[0]) * (description->profile->cap[0]/description->profile->ext[0]) * description->n_cap; //TODO: n_cap should here be the actual number of capillaries used, not the theoretically supplied one (i.e. 200000 capillaries does not form perfect hexagonal stacking, so a few less/more are simulated)
+	n_cap = (round(sqrt(12. * description->n_cap - 3.)/6.-0.5)+0.5)*6.;
+	n_cap = (n_cap*n_cap+3)/12;
+	description->open_area = (description->profile->cap[0]*description->profile->cap[0]*M_PI)*n_cap/(3.*sin(M_PI/3)*description->profile->ext[0]*description->profile->ext[0]);
 
 	//Perform source and description argument sanity check
 	if (source->d_source < 0.0){
@@ -755,7 +771,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 				temp_vect.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[description->profile->nmax] - photon->exit_coords.z)/photon->exit_direction.z;
 				temp_vect.z = description->profile->z[description->profile->nmax];
 				if(round(sqrt(12. * photon->description->n_cap - 3.)/6.-0.5) == 0.){ //monocapillary case
-					if(sqrt((temp_vect.x)*(temp_vect.x) + (temp_vect.y)*(temp_vect.y)) > description->profile->ext[description->profile->nmax]){ //TODO: this check will fail with monocap offsets from central axis (001)! 
+					if(sqrt((temp_vect.x)*(temp_vect.x) + (temp_vect.y)*(temp_vect.y)) > description->profile->ext[description->profile->nmax]){ 
 						iesc = 0;
 					} else {
 						iesc = 1;
@@ -764,7 +780,6 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					iesc = polycap_photon_within_pc_boundary(description->profile->ext[description->profile->nmax],temp_vect, NULL);
 				}
 			}
-//if(iesc == 0) printf("***Does this occur?\n"); //TODO This almost never occurs with leak_calc, often without leak_calc??
 			//Register succesfully transmitted photon, as well as save start coordinates and direction
 			if(iesc == 1){
 				iexit_temp[thread_id]++;
@@ -1060,9 +1075,12 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		sum_not_transmitted += not_transmitted_temp[i];
 	}
 	
-	//TODO: Continue working with simulated open area, as this should be a more honoust comparisson?
-	//This will also influence the efficiencies test output etc...
-//	description->open_area = (double)sum_iexit/(sum_iexit+sum_not_entered);
+	printf("Average number of reflections: %lf, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_iexit+sum_not_entered+sum_not_transmitted);
+	printf("Open area Calculated: %lf, Simulated: %lf\n",((round(sqrt(12. * description->n_cap - 3.)/6.-0.5)+0.5)*6.)*((round(sqrt(12. * description->n_cap - 3.)/6.-0.5)+0.5)*6.)/12.*(description->profile->cap[0]*description->profile->cap[0]*M_PI)/(3.*sin(M_PI/3)*description->profile->ext[0]*description->profile->ext[0]), (double)(sum_iexit+sum_not_transmitted)/(sum_iexit+sum_not_entered+sum_not_transmitted));
+	printf("iexit: %" PRId64 ", no enter: %" PRId64 ", no trans: %" PRId64 "\n",sum_iexit,sum_not_entered,sum_not_transmitted);
+
+	//Continue working with simulated open area, as this should be a more honoust comparisson?
+	description->open_area = (double)(sum_iexit+sum_not_transmitted)/(sum_iexit+sum_not_entered+sum_not_transmitted);
 
 	// Complete output structure
 	efficiencies->n_energies = source->n_energies;
@@ -1076,9 +1094,6 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	}
 //printf("//////\n");
 
-	printf("Average number of reflections: %f, Simulated photons: %" PRId64 "\n",(double)sum_irefl/n_photons,sum_iexit+sum_not_entered);
-	printf("Open area Calculated: %f, Simulated: %f\n",description->open_area, (double)sum_iexit/(sum_iexit+sum_not_entered));
-	printf("iexit: %" PRId64 ", no enter: %" PRId64 ", no trans: %" PRId64 "\n",sum_iexit,sum_not_entered,sum_not_transmitted);
 
 	//free alloc'ed memory
 	free(sum_weights);
@@ -1096,6 +1111,9 @@ void polycap_source_free(polycap_source *source)
 
 	if (source->description)
 		polycap_description_free(source->description);
+
+	if (source->rng)
+		polycap_rng_free(source->rng);
 
 	if (source->energies)
 		free(source->energies);

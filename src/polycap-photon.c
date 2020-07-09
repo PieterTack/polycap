@@ -95,17 +95,13 @@ void polycap_photon_scatf(polycap_photon *photon, polycap_error **error)
 
 //===========================================
 // construct a new polycap_photon with its initial position, direction, electric field vector
-polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng *rng, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, polycap_error **error)
+polycap_photon* polycap_photon_new(polycap_description *description, polycap_vector3 start_coords, polycap_vector3 start_direction, polycap_vector3 start_electric_vector, polycap_error **error)
 {
 	polycap_photon *photon;
 
 	//argument sanity check
 	if (description == NULL) {
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: description cannot be NULL");
-		return NULL;
-	}
-	if (rng == NULL) {
-		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_new: rng cannot be NULL");
 		return NULL;
 	}
 	if (start_coords.z < 0.) {
@@ -124,9 +120,6 @@ polycap_photon* polycap_photon_new(polycap_description *description, polycap_rng
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_new: could not allocate memory for photon -> %s", strerror(errno));
 		return NULL;
 	}
-
-	//assign *rng pointer
-	photon->rng = rng;
 
 	photon->description = description;
 
@@ -176,6 +169,187 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 }
 
 //===========================================
+// define intersection point between photon path and polycapillary optic external wall
+// 	function assumes photon_coord just exited optic, and as such has to go back along direction (i.e. in opposite direction than the one supplied by user)
+polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polycap_vector3 photon_direction, polycap_profile *profile, polycap_error **error)
+{
+	double hex_edge_norm1[2], hex_edge_norm2[2], hex_edge_norm3[3]; //normal vectors of edges of the hexagonal polycap shape
+	double d_hexcen_beg, d_hexcen_end; //distance between polycap centre and edges (along edge norm)
+	double dp1b, dp2b, dp3b, dp1e, dp2e, dp3e; //dot products; distance of photon_coord along hex edge norms
+	polycap_vector3 phot_temp, phot_dir, phot_beg, phot_end;
+	int i, z_id=0, dir, broke=0;
+	double current_polycap_ext;
+	double z1=1000., z2=1000., z3=1000., z_fin; //solutions to z-coordinate of intersection
+
+	//argument sanity checks
+	if(photon_direction.z == 0.){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_pc_intersect: photon_direction.z must be different from 0");
+		return NULL;
+	}
+	if(profile == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_pc_intersect: profile must not be NULL");
+		return NULL;
+	}
+
+	hex_edge_norm1[0] = 0; //vertical hexagon edge x vector
+	hex_edge_norm1[1] = 1; //vertical hexagon edge y vector
+	hex_edge_norm2[0] = cos(M_PI/6); //upper right and lower left hexagon edge x vector
+	hex_edge_norm2[1] = sin(M_PI/6); //upper right and lower left hexagon edge y vector
+	hex_edge_norm3[0] = cos(-1.*M_PI/6); //upper left and lower right hexagon edge x vector
+	hex_edge_norm3[1] = sin(-1.*M_PI/6); //upper left and lower right hexagon edge y vector
+
+	//inverse direction of propagation
+	phot_dir.x = -1.*photon_direction.x;
+	phot_dir.y = -1.*photon_direction.y;
+	phot_dir.z = -1.*photon_direction.z;
+
+	//find segment along z where intersection should occur
+	for(i=0; i<= profile->nmax; i++){
+		if(profile->z[i] <= photon_coord.z)
+			z_id = i;
+	}
+	current_polycap_ext = (profile->ext[z_id+1]-profile->ext[z_id])/(profile->z[z_id+1]-profile->z[z_id]) * (photon_coord.z - profile->z[z_id]) + profile->ext[z_id];
+	if(phot_dir.z < 0.){
+		z_id = z_id+1;
+		dir = -1;
+	} else {
+		// z_id = z_id;
+		dir = 1;
+	}
+	do {
+		z_id += dir;
+		phot_temp.x = photon_coord.x + phot_dir.x * (profile->z[z_id]-photon_coord.z)/phot_dir.z;
+		phot_temp.y = photon_coord.y + phot_dir.y * (profile->z[z_id]-photon_coord.z)/phot_dir.z;
+		phot_temp.z = profile->z[z_id];
+		if(polycap_photon_within_pc_boundary(current_polycap_ext, photon_coord, NULL) != polycap_photon_within_pc_boundary(profile->ext[z_id], phot_temp, NULL)){
+			// photon goes from out to inside optic in this segment
+			broke = 1;
+			break;
+		}
+	} while (z_id >= 0 && z_id <= profile->nmax);
+
+	//determine photon coordinates at start and end of segment
+	//	segment defined between z_id and z_id-dir
+	if (broke == 0){
+		//no intersection was found
+		return NULL;
+	}
+	phot_beg.x = photon_coord.x + phot_dir.x * (profile->z[z_id]-photon_coord.z)/phot_dir.z;
+	phot_beg.y = photon_coord.y + phot_dir.y * (profile->z[z_id]-photon_coord.z)/phot_dir.z;
+	phot_beg.z = photon_coord.z + phot_dir.z * (profile->z[z_id]-photon_coord.z)/phot_dir.z;
+	phot_end.x = photon_coord.x + phot_dir.x * (profile->z[z_id-dir]-photon_coord.z)/phot_dir.z;
+	phot_end.y = photon_coord.y + phot_dir.y * (profile->z[z_id-dir]-photon_coord.z)/phot_dir.z;
+	phot_end.z = photon_coord.z + phot_dir.z * (profile->z[z_id-dir]-photon_coord.z)/phot_dir.z;
+
+	// define d_cen2hexedge and dp1,2,3 at start and end of segment
+	d_hexcen_beg = sqrt( (profile->ext[z_id] * profile->ext[z_id]) - ((profile->ext[z_id]/2.) * (profile->ext[z_id]/2.)) );
+	d_hexcen_end = sqrt( (profile->ext[z_id-dir] * profile->ext[z_id-dir]) - ((profile->ext[z_id-dir]/2.) * (profile->ext[z_id-dir]/2.)) );
+	dp1b = fabs(hex_edge_norm1[0]*phot_beg.x + hex_edge_norm1[1]*phot_beg.y);
+	dp2b = fabs(hex_edge_norm2[0]*phot_beg.x + hex_edge_norm2[1]*phot_beg.y);
+	dp3b = fabs(hex_edge_norm3[0]*phot_beg.x + hex_edge_norm3[1]*phot_beg.y);
+	dp1e = fabs(hex_edge_norm1[0]*phot_end.x + hex_edge_norm1[1]*phot_end.y);
+	dp2e = fabs(hex_edge_norm2[0]*phot_end.x + hex_edge_norm2[1]*phot_end.y);
+	dp3e = fabs(hex_edge_norm3[0]*phot_end.x + hex_edge_norm3[1]*phot_end.y);
+
+	// interpolate where dp1, dp2 and dp3 become equal to d_cen2hexedge
+	z1 = (dp1b - d_hexcen_beg) / (d_hexcen_beg-d_hexcen_end - dp1b+dp1e) * (profile->ext[z_id]-profile->ext[z_id-dir]) + profile->ext[z_id];
+	z2 = (dp2b - d_hexcen_beg) / (d_hexcen_beg-d_hexcen_end - dp2b+dp2e) * (profile->ext[z_id]-profile->ext[z_id-dir]) + profile->ext[z_id];
+	z3 = (dp3b - d_hexcen_beg) / (d_hexcen_beg-d_hexcen_end - dp3b+dp3e) * (profile->ext[z_id]-profile->ext[z_id-dir]) + profile->ext[z_id];
+
+	// if multiple found coordinates, select the one within found segment and with lowest z value.
+	if(dir < 0){
+		//profile->z[z_id-dir] > profile->z[z_id]
+		if(z1 >= profile->z[z_id] && z1 <= profile->z[z_id-dir] && z2 >= profile->z[z_id] && z2 <= profile->z[z_id-dir] && z3 >= profile->z[z_id] && z3 <= profile->z[z_id-dir]){ //all are viable answers, only use lowest value
+			if(z1 >= z2 && z1 >= z3){
+				z_fin = z1;
+			} else if (z2 >= z1 && z2 >= z3){
+				z_fin = z2;
+			} else if (z3 >= z1 && z3 >= z2){
+				z_fin = z3;
+			} else {
+				return NULL;
+			}
+		} else if (z2 >= profile->z[z_id] && z2 <= profile->z[z_id-dir] && z3 >= profile->z[z_id] && z3 <= profile->z[z_id-dir]){ // only z2 and z3 are viable
+			if(z3 > z2){
+				z_fin = z3;
+			} else{
+				z_fin = z2;
+			}
+		} else if (z1 >= profile->z[z_id] && z1 <= profile->z[z_id-dir] && z3 >= profile->z[z_id] && z3 <= profile->z[z_id-dir]){ // only z1 and z3 are viable
+			if(z1 > z3){
+				z_fin = z1;
+			} else{
+				z_fin = z3;
+			}
+		} else if (z1 >= profile->z[z_id] && z1 <= profile->z[z_id-dir] && z2 >= profile->z[z_id] && z2 <= profile->z[z_id-dir]){ // only z1 and z2 are viable
+			if(z1 > z2){
+				z_fin = z1;
+			} else{
+				z_fin = z2;
+			}
+		} else if (z1 >= profile->z[z_id] && z1 <= profile->z[z_id-dir]){ // only z1 is viable
+			z_fin = z1;
+		} else if (z2 >= profile->z[z_id] && z2 <= profile->z[z_id-dir]){ // only z2 is viable
+			z_fin = z2;
+		} else if (z3 >= profile->z[z_id] && z3 <= profile->z[z_id-dir]){ // only z3 is viable
+			z_fin = z3;
+		} else {
+			return NULL; //none of the solutions is viable (not within the found segment!
+		}
+	} else {
+		//profile->z[z_id-dir] < profile->z[z_id]
+		if(z1 <= profile->z[z_id] && z1 >= profile->z[z_id-dir] && z2 <= profile->z[z_id] && z2 >= profile->z[z_id-dir] && z3 <= profile->z[z_id] && z3 >= profile->z[z_id-dir]){ //all are viable answers, only use lowest value
+			if(z1 <= z2 && z1 <= z3){
+				z_fin = z1;
+			} else if (z2 <= z1 && z2 <= z3){
+				z_fin = z2;
+			} else if (z3 <= z1 && z3 <= z2){
+				z_fin = z3;
+			} else {
+				return NULL;
+			}
+		} else if (z2 <= profile->z[z_id] && z2 >= profile->z[z_id-dir] && z3 <= profile->z[z_id] && z3 >= profile->z[z_id-dir]){ // only z2 and z3 are viable
+			if(z3 < z2){
+				z_fin = z3;
+			} else{
+				z_fin = z2;
+			}
+		} else if (z1 <= profile->z[z_id] && z1 >= profile->z[z_id-dir] && z3 <= profile->z[z_id] && z3 >= profile->z[z_id-dir]){ // only z1 and z3 are viable
+			if(z1 < z3){
+				z_fin = z1;
+			} else{
+				z_fin = z3;
+			}
+		} else if (z1 <= profile->z[z_id] && z1 >= profile->z[z_id-dir] && z2 <= profile->z[z_id] && z2 >= profile->z[z_id-dir]){ // only z1 and z2 are viable
+			if(z1 < z2){
+				z_fin = z1;
+			} else{
+				z_fin = z2;
+			}
+		} else if (z1 <= profile->z[z_id] && z1 >= profile->z[z_id-dir]){ // only z1 is viable
+			z_fin = z1;
+		} else if (z2 <= profile->z[z_id] && z2 >= profile->z[z_id-dir]){ // only z2 is viable
+			z_fin = z2;
+		} else if (z3 <= profile->z[z_id] && z3 >= profile->z[z_id-dir]){ // only z3 is viable
+			z_fin = z3;
+		} else {
+			return NULL; //none of the solutions is viable (not within the found segment!
+		}
+	}
+
+	phot_temp.x = photon_coord.x + phot_dir.x * (z_fin-photon_coord.z)/phot_dir.z;
+	phot_temp.y = photon_coord.y + phot_dir.y * (z_fin-photon_coord.z)/phot_dir.z;
+	phot_temp.z = photon_coord.z + phot_dir.z * (z_fin-photon_coord.z)/phot_dir.z;
+
+	polycap_vector3 *rv = malloc(sizeof(polycap_vector3));
+	
+	*rv = phot_temp;
+
+	return rv;
+
+}
+
+//===========================================
 void polycap_norm(polycap_vector3 *vect)
 {
 	double sum = 0;
@@ -217,6 +391,8 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	double current_polycap_ext = 0; //optic exterior radius at current photon z position
 	double current_cap_rad = 0; //capillary internal radius at current photon z position
 	double current_cap_x, current_cap_y; // capillary central axis coordinate at current photon z position
+	int wall_trace=0, r_cntr, q_cntr;
+	double d_travel=0;
 
 	//argument sanity check
 	if (photon == NULL) {
@@ -295,8 +471,8 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5);
 
 	//define polycapillary-to-photonsource axis 
-	//!!TODO:this has to be changed. Now we assume all sources are in a straight line with PC central axis!!
-	//e.g. no PC tilt
+	//Now we assume all sources are in a straight line with PC central axis
+	//i.e. no PC tilt. This can be simulated by source offset and changing divergency
 	central_axis.x = 0;
 	central_axis.y = 0;
 	central_axis.z = 1;
@@ -390,12 +566,125 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		current_cap_y = cap_y[0];
 	}
 	d_ph_capcen = sqrt( (photon->start_coords.x-current_cap_x)*(photon->start_coords.x-current_cap_x) + (photon->start_coords.y-current_cap_y)*(photon->start_coords.y-current_cap_y) );
-	if(d_ph_capcen > current_cap_rad && photon->start_coords.z == 0){ //photon hits capillary wall on entrance
+	if(d_ph_capcen > current_cap_rad){
 		//Check whether photon is transmitted through wall (i.e. generates leak or recap events)
-		if(leak_calc)
-			polycap_capil_reflect(photon, acos(polycap_scalar(central_axis,photon->exit_direction)), central_axis, leak_calc, NULL);
-		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies()
-	} //TODO: there is also the case where photon is launched within capillary wall at z>0...
+		if(leak_calc && photon->start_coords.z == 0){ //photon hits capillary wall on entrance
+			// set central_axis to surface norm of glass wall at PC entrance
+			central_axis.x = 0;
+			central_axis.y = 0;
+			central_axis.z = 1;
+			polycap_capil_reflect(photon, central_axis, leak_calc, NULL);
+			return 2; //simulates new photon in polycap_source_get_transmission_efficiencies() and adds to open area
+		}
+		if(leak_calc && photon->start_coords.z > 0){ // case where photon is launched within capillary wall at z>0
+			// first check if photon propagates through wall, or is absorbed
+			wall_trace = polycap_capil_trace_wall(photon, &d_travel, &r_cntr, &q_cntr, error);
+			if(wall_trace <= 0){
+				return -1; //simulates new photon in polycap_source_get_transmission_efficiencies(), but does not add to open area
+			} else { //photon translated through wall, so trace it using adjusted weights and new capillary coordinates
+				for(i=0; i < photon->n_energies; i++)
+					photon->weight[i] = photon->weight[i] * exp(-1.*d_travel*photon->amu[i]);
+				photon->exit_coords.x = photon->exit_coords.x +
+					(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.x;
+				photon->exit_coords.y = photon->exit_coords.y +
+					(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.y;
+				photon->exit_coords.z = photon->exit_coords.z +
+					(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.z;
+				if(wall_trace == 3){ //photon leaves optic through side wall
+					photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * ++photon->n_leaks);
+					if(photon->leaks == NULL){
+						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->leaks -> %s", strerror(errno));
+						return -1;
+					}
+					photon->leaks[photon->n_leaks-1].coords = photon->exit_coords;
+					photon->leaks[photon->n_leaks-1].direction = photon->exit_direction;
+					photon->leaks[photon->n_leaks-1].elecv = photon->exit_electric_vector;
+					photon->leaks[photon->n_leaks-1].n_refl = photon->i_refl;
+					photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
+					memcpy(photon->leaks[photon->n_leaks-1].weight, photon->weight, sizeof(double)*photon->n_energies);
+				}
+				if(wall_trace == 2){ //photon propagates in wall to exit window
+					photon->recap = realloc(photon->recap, sizeof(polycap_leak) * ++photon->n_recap);
+					if(photon->recap == NULL){
+						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->recap -> %s", strerror(errno));
+						return -1;
+					}
+					photon->recap[photon->n_recap-1].coords = photon->exit_coords;
+					photon->recap[photon->n_recap-1].direction = photon->exit_direction;
+					photon->recap[photon->n_recap-1].elecv = photon->exit_electric_vector;
+					photon->recap[photon->n_recap-1].n_refl = photon->i_refl;
+					photon->recap[photon->n_recap-1].weight = malloc(sizeof(double) * photon->n_energies);
+					memcpy(photon->recap[photon->n_recap-1].weight, photon->weight, sizeof(double)*photon->n_energies);
+				}
+				if(wall_trace == 1){ //photon entered new capillary
+					photon->d_travel = photon->d_travel + d_travel;
+					for(i=0; i<=description->profile->nmax; i++){
+						z = photon->description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+						cap_y[i] = r_cntr * (3./2) * z;
+						cap_x[i] = (2.* q_cntr+r_cntr) * cos(M_PI/6.) * z;
+						if(description->profile->z[i] <= photon->exit_coords.z) *ix = i; //set ix to current photon segment id
+					}
+					for(i=0; i<=description->profile->nmax; i++){
+						iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, leak_calc, error);
+						if(iesc != 1){ //as long as iesc = 1 photon is still reflecting in capillary
+							//iesc == 0, which means this photon has reached its final point (weight[*] <1e-4)
+							//alternatively, iesc can be -2 or -3due to not finding intersection point, as the photon reached the end of the capillary
+							break;
+						}
+					}
+					if(iesc == -1 || iesc == -3){ //some error occurred
+						free(cap_x);
+						free(cap_y);
+						return -1;
+					}
+					if(iesc == 1 || iesc == -2){ // photon reached end of optic, and has to be stored as such
+						photon->exit_coords.x = photon->exit_coords.x + photon->exit_direction.x * ((photon->description->profile->z[photon->description->profile->nmax]-photon->exit_coords.z)/photon->exit_direction.z );
+						photon->exit_coords.y = photon->exit_coords.y + photon->exit_direction.y * ((photon->description->profile->z[photon->description->profile->nmax]-photon->exit_coords.z)/photon->exit_direction.z);
+						photon->exit_coords.z = photon->exit_coords.z + photon->exit_direction.z * ((photon->description->profile->z[photon->description->profile->nmax]-photon->exit_coords.z)/photon->exit_direction.z);
+						iesc = polycap_photon_within_pc_boundary(photon->description->profile->ext[photon->description->profile->nmax], photon->exit_coords, error);
+						if(iesc == 0){ //it's a leak event
+							photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * ++photon->n_leaks);
+							if(photon->leaks == NULL){
+								polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->leaks -> %s", strerror(errno));
+								return -1;
+							}
+							photon->leaks[photon->n_leaks-1].coords = photon->exit_coords;
+							photon->leaks[photon->n_leaks-1].direction = photon->exit_direction;
+							photon->leaks[photon->n_leaks-1].elecv = photon->exit_electric_vector;
+							photon->leaks[photon->n_leaks-1].n_refl = photon->i_refl;
+							photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
+							memcpy(photon->leaks[photon->n_leaks-1].weight, photon->weight, sizeof(double)*photon->n_energies);
+						} else if(iesc == 1){ //it's a recap event
+							photon->recap = realloc(photon->recap, sizeof(polycap_leak) * ++photon->n_recap);
+							if(photon->recap == NULL){
+								polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->recap -> %s", strerror(errno));
+								return -1;
+							}
+							photon->recap[photon->n_recap-1].coords = photon->exit_coords;
+							photon->recap[photon->n_recap-1].direction = photon->exit_direction;
+							photon->recap[photon->n_recap-1].elecv = photon->exit_electric_vector;
+							photon->recap[photon->n_recap-1].n_refl = photon->i_refl;
+							photon->recap[photon->n_recap-1].weight = malloc(sizeof(double) * photon->n_energies);
+							memcpy(photon->recap[photon->n_recap-1].weight, photon->weight, sizeof(double)*photon->n_energies);				
+						}
+					}
+				} //if(wall_trace == 1)
+				// all leak and recap events are stored in photon->leaks and photon->recap, so clear current photon weights and return
+				// 	will return 1 as original photon was absorbed. In order to cooperate with polycap_source_get_transmission_efficiencies() we'll also set exit_coords to outside exit window, so that it does not count to open area, but does store leak and recap events
+				for(i=0; i < photon->n_energies; i++)
+					photon->weight[i] = 0.;
+				photon->exit_coords.x = photon->description->profile->ext[photon->description->profile->nmax]+1.; //+1 for sure outside
+				photon->exit_coords.y = photon->description->profile->ext[photon->description->profile->nmax]+1.;
+				photon->exit_coords.z = photon->description->profile->z[photon->description->profile->nmax];
+				photon->exit_direction.x = photon->start_direction.x;
+				photon->exit_direction.y = photon->start_direction.y;
+				photon->exit_direction.z = photon->start_direction.z;
+				polycap_norm(&photon->exit_direction);
+				return 1;
+			} //if wall_trace >0
+		} //if(leak_calc && photon->start_coords.z > 0)
+		return 2; //simulates new photon in polycap_source_get_transmission_efficiencies() and adds to open area
+	} //if(d_ph_capcen > current_cap_rad)
 
 	//polycap_capil_trace should be ran description->profile->nmax at most,
 	//	which means it essentially reflected once every known capillary coordinate
