@@ -1,0 +1,15 @@
+extraction:
+  cpp:
+    prepare:
+      packages:
+        - libhdf5-dev
+        - libgsl-dev
+    after_prepare:
+      - curl -OL http://lvserver.ugent.be/xraylib/xraylib-4.0.0.tar.gz && tar xvfz xraylib-4.0.0.tar.gz && cd xraylib-4.0.0 && ./configure --prefix=$HOME/xraylib && make && make install
+      - export PKG_CONFIG_PATH=$HOME/xraylib/lib/pkgconfig
+      - export LD_LIBRARY_PATH=$HOME/xraylib/lib
+    index:
+      build_command:
+        - make
+        - make check TESTS=
+
