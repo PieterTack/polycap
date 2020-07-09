@@ -11,7 +11,115 @@ on:
       - master
 
 jobs:
-  build:
+
+  msys2:
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        cc:
+          - clang
+          - gcc
+        buildsystem:
+          - autotools
+          - meson
+        rng:
+          - easyRNG
+          - gsl
+        include:
+          - cc: clang
+            cxx: clang++
+          - cc: gcc
+            cxx: g++
+        exclude:
+          - cc: clang
+            buildsystem: autotools
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: msys2/setup-msys2@v1
+      with:
+        update: true
+        install: >
+          base-devel
+          git
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-gcc-fortran
+          mingw-w64-x86_64-libtool
+          mingw-w64-x86_64-meson
+          mingw-w64-x86_64-clang
+          mingw-w64-x86_64-openmp
+          mingw-w64-x86_64-lld
+          mingw-w64-x86_64-hdf5
+          mingw-w64-x86_64-pkg-config
+          mingw-w64-x86_64-curl
+          mingw-w64-x86_64-gsl
+          mingw-w64-x86_64-cython
+          mingw-w64-x86_64-python3-numpy
+          automake
+          autoconf
+          make
+          patch
+    - uses: actions/checkout@v2
+    - name: Install xraylib
+      run: |
+        set -ex
+        curl -OLs https://xraylib.tomschoonjans.eu/xraylib-${XRAYLIB_VERSION}.tar.gz
+        tar xvfz xraylib-${XRAYLIB_VERSION}.tar.gz
+        cd xraylib-${XRAYLIB_VERSION}
+        ./configure
+        make
+        make install
+        set +ex
+      env:
+        CC: gcc
+        CFLAGS: " -Wno-error=deprecated-declarations "
+        XRAYLIB_VERSION: 4.0.0
+    - name: Install easyrng
+      if: matrix.rng == 'easyRNG'
+      run: |
+        set -ex
+        curl -OLs https://github.com/tschoonj/easyRNG/releases/download/easyRNG-${EASYRNG_VERSION}/easyRNG-${EASYRNG_VERSION}.tar.gz
+        tar xvfz easyRNG-${EASYRNG_VERSION}.tar.gz
+        cd easyRNG-${EASYRNG_VERSION}
+        ./configure
+        make
+        make install
+        set +ex
+      env:
+        CC: gcc
+        CXX: g++
+        EASYRNG_VERSION: 1.2
+    - name: Build and test with Autotools
+      if: matrix.buildsystem == 'autotools'
+      run: |
+        set -ex
+        autoreconf -fi
+        ./configure || (cat config.log && exit 1)
+        make
+        make check
+        set +ex
+      env:
+        CC: ${{matrix.cc}}
+        CYTHON: cython
+        HDF5_CFLAGS: "-I/mingw64/include"
+        HDF5_LIBS: "-L/mingw64/lib -lhdf5"
+        PYTHON: python3
+    - name: Build and test with Meson
+      if: matrix.buildsystem == 'meson'
+      run: |
+        set -ex
+        mkdir build-tmp
+        cd build-tmp
+        meson --buildtype=debugoptimized -Dpython=python3 -Dbuild-documentation=false ..
+        ninja
+        ninja test
+        set +ex
+      env:
+        CC: ${{matrix.cc}}
+
+  unix:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
