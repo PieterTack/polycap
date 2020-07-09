@@ -20,7 +20,7 @@
 		\frac{n_{1} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2} } - n_{2} \cos{\theta}}{n_{1} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2}  } + n_{2}  \cos{\theta}}
 		\right|^{2}
    \f]
- * with \f$\theta\f$ the glancing angle of the incident radiation and  \f$\delta\f$ defined as \f$\delta = \alpha - i\beta\f$ with
+ * with \f$\theta\f$ the glancing angle of the incident radiation and  \f$nf$ defined as \f$n = \alpha - i\beta\f$ with
  *\f[
 	\alpha = \left(\frac{hc}{E}\right)^{2}
 		\frac{N_{A}r_{0}\rho}{2\pi}
