@@ -507,7 +507,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	if(efficiencies->images->i_leak > 0){
 		//Write leak photons data
 		//Make Leaks group
-		Leaks_id = H5Gcreate2(file, "/Leaks", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		Leaks_id = H5Gcreate2(file, "/ExternalLeaks", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 			//write coordinates
 		//Copy coordinate data to temporary array for straightforward HDF5 writing
 		data_temp = malloc(sizeof(double)*efficiencies->images->i_leak*3);
@@ -523,7 +523,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		//Define temporary dataset dimension
 		dim[0] = 3;
 		dim[1] = efficiencies->images->i_leak;
-		if (!polycap_h5_write_dataset(file, 2, dim, "/Leaks/Coordinates", data_temp,"[cm,cm,cm]", error))
+		if (!polycap_h5_write_dataset(file, 2, dim, "/ExternalLeaks/Coordinates", data_temp,"[cm,cm,cm]", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
@@ -541,7 +541,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		//Define temporary dataset dimension
 		dim[0] = 2;
 		dim[1] = efficiencies->images->i_leak;
-		if (!polycap_h5_write_dataset(file, 2, dim, "/Leaks/Direction", data_temp,"[cm,cm]", error))
+		if (!polycap_h5_write_dataset(file, 2, dim, "/ExternalLeaks/Direction", data_temp,"[cm,cm]", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
@@ -549,7 +549,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		//Define temporary dataset dimension
 		dim[1] = efficiencies->n_energies;
 		dim[0] = efficiencies->images->i_leak;
-		if (!polycap_h5_write_dataset(file, 2, dim, "/Leaks/Weights", efficiencies->images->leak_coord_weights,"[keV,a.u.]", error))
+		if (!polycap_h5_write_dataset(file, 2, dim, "/ExternalLeaks/Weights", efficiencies->images->leak_coord_weights,"[keV,a.u.]", error))
 			return false;
 		//Save weight average as function of energy
 		data_temp = malloc(sizeof(double)*efficiencies->n_energies);
@@ -561,7 +561,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 			data_temp[j] = data_temp[j] / (double)efficiencies->images->i_start;
 		}
 		n_energies_temp = efficiencies->n_energies;
-		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Leaks/Weight_Total", data_temp,"a.u.", error))
+		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/ExternalLeaks/Weight_Total", data_temp,"a.u.", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
@@ -574,7 +574,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		}
 		for(j=0; j<n_energies_temp; j++)
 			data_temp[j] = (double)efficiencies->images->leak_n_refl[j];
-		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Leaks/N_Reflections", data_temp,"a.u.", error))
+		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/ExternalLeaks/N_Reflections", data_temp,"a.u.", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
@@ -586,7 +586,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	//Write recap photons data
 	//Make Recap group
 	if(efficiencies->images->i_recap > 0){
-		Recap_id = H5Gcreate2(file, "/Recap", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		Recap_id = H5Gcreate2(file, "/InternalLeaks", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 			//write coordinates
 		//Copy coordinate data to temporary array for straightforward HDF5 writing
 		data_temp = malloc(sizeof(double)*efficiencies->images->i_recap*3);
@@ -602,7 +602,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		//Define temporary dataset dimension
 		dim[0] = 3;
 		dim[1] = efficiencies->images->i_recap;
-		if (!polycap_h5_write_dataset(file, 2, dim, "/Recap/Coordinates", data_temp,"[cm,cm,cm]", error))
+		if (!polycap_h5_write_dataset(file, 2, dim, "/InternalLeaks/Coordinates", data_temp,"[cm,cm,cm]", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
@@ -620,7 +620,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		//Define temporary dataset dimension
 		dim[0] = 2;
 		dim[1] = efficiencies->images->i_recap;
-		if (!polycap_h5_write_dataset(file, 2, dim, "/Recap/Direction", data_temp,"[cm,cm]", error))
+		if (!polycap_h5_write_dataset(file, 2, dim, "/InternalLeaks/Direction", data_temp,"[cm,cm]", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
@@ -637,7 +637,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		//Define temporary dataset dimension
 		dim[0] = 2;
 		dim[1] = efficiencies->images->i_recap;
-		if (!polycap_h5_write_dataset(file, 2, dim, "/Recap/Electric_Vector", data_temp,"[cm,cm]", error))
+		if (!polycap_h5_write_dataset(file, 2, dim, "/InternalLeaks/Electric_Vector", data_temp,"[cm,cm]", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
@@ -645,7 +645,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		//Define temporary dataset dimension
 		dim[1] = efficiencies->n_energies;
 		dim[0] = efficiencies->images->i_recap;
-		if (!polycap_h5_write_dataset(file, 2, dim, "/Recap/Weights", efficiencies->images->recap_coord_weights,"[keV,a.u.]", error))
+		if (!polycap_h5_write_dataset(file, 2, dim, "/InternalLeaks/Weights", efficiencies->images->recap_coord_weights,"[keV,a.u.]", error))
 			return false;
 		//Save weight average as function of energy
 		data_temp = malloc(sizeof(double)*efficiencies->n_energies);
@@ -657,7 +657,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 			data_temp[j] = data_temp[j] / (double)efficiencies->images->i_start;
 		}
 		n_energies_temp = efficiencies->n_energies;
-		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Recap/Weight_Total", data_temp,"a.u.", error))
+		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/InternalLeaks/Weight_Total", data_temp,"a.u.", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
@@ -670,7 +670,7 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		}
 		for(j=0; j<n_energies_temp; j++)
 			data_temp[j] = (double)efficiencies->images->recap_n_refl[j];
-		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/Recap/N_Reflections", data_temp,"a.u.", error))
+		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/InternalLeaks/N_Reflections", data_temp,"a.u.", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
