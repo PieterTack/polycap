@@ -40,7 +40,7 @@ description = polycap.Description(profile, surface_rough, n_capillaries, composi
 start_coords = (0., 0. , 0.)
 start_direction = (0, 0, 1.0)
 start_electric_vector = (0.5, 0.5, 0.)
-photon = polycap.Photon(description, polycap.Rng(), start_coords, start_direction, start_electric_vector)
+photon = polycap.Photon(description, start_coords, start_direction, start_electric_vector)
 weights = photon.launch(np.linspace(1, 25.0, 250))
 
 # Calculate transmission efficiency curve of given optic
