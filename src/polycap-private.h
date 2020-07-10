@@ -130,10 +130,10 @@ typedef struct _polycap_leak 	polycap_leak;
 struct _polycap_photon
   {
   polycap_description *description;
-  polycap_leak *leaks;
-  polycap_leak *recap;
-  int64_t n_leaks;
-  int64_t n_recap;
+  polycap_leak *extleak;
+  polycap_leak *intleak;
+  int64_t n_extleak;
+  int64_t n_intleak;
   polycap_vector3 start_coords;
   polycap_vector3 start_direction;
   polycap_vector3 start_electric_vector;
@@ -173,17 +173,17 @@ struct _polycap_images
   int64_t *pc_exit_nrefl;
   double *pc_exit_dtravel;
   double *exit_coord_weights;
-  int64_t i_leak;
-  double *leak_coords[3];
-  double *leak_dir[2];
-  double *leak_coord_weights;
-  int64_t *leak_n_refl;
-  int64_t i_recap;
-  double *recap_coords[3];
-  double *recap_dir[2];
-  double *recap_elecv[2];
-  double *recap_coord_weights;
-  int64_t *recap_n_refl;
+  int64_t i_extleak;
+  double *extleak_coords[3];
+  double *extleak_dir[2];
+  double *extleak_coord_weights;
+  int64_t *extleak_n_refl;
+  int64_t i_intleak;
+  double *intleak_coords[3];
+  double *intleak_dir[2];
+  double *intleak_elecv[2];
+  double *intleak_coord_weights;
+  int64_t *intleak_n_refl;
   };
 
 int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 photon_coord, polycap_error **error);
@@ -195,7 +195,7 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *capx
 char *polycap_read_input_line(FILE *fptr, polycap_error **error);
 void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error);
 void polycap_photon_scatf(polycap_photon *photon, polycap_error **error);
-void polycap_leak_free(polycap_leak *leak, int64_t n_leaks);
+void polycap_leak_free(polycap_leak *leak, int64_t n_leak);
 
 #endif
 
