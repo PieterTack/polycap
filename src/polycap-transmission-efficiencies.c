@@ -504,43 +504,43 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/PC_Exit/D_Travel", efficiencies->images->pc_exit_dtravel,"[cm]", error))
 		return false;
 
-	if(efficiencies->images->i_leak > 0){
+	if(efficiencies->images->i_extleak > 0){
 		//Write leak photons data
 		//Make Leaks group
 		Leaks_id = H5Gcreate2(file, "/ExternalLeaks", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 			//write coordinates
 		//Copy coordinate data to temporary array for straightforward HDF5 writing
-		data_temp = malloc(sizeof(double)*efficiencies->images->i_leak*3);
+		data_temp = malloc(sizeof(double)*efficiencies->images->i_extleak*3);
 		if(data_temp == NULL){
 			polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 			return false;
 		}
-		for(j=0;j<efficiencies->images->i_leak;j++){
-			data_temp[j] = efficiencies->images->leak_coords[0][j];
-			data_temp[j+efficiencies->images->i_leak] = efficiencies->images->leak_coords[1][j];
-			data_temp[j+efficiencies->images->i_leak*2] = efficiencies->images->leak_coords[2][j];
+		for(j=0;j<efficiencies->images->i_extleak;j++){
+			data_temp[j] = efficiencies->images->extleak_coords[0][j];
+			data_temp[j+efficiencies->images->i_extleak] = efficiencies->images->extleak_coords[1][j];
+			data_temp[j+efficiencies->images->i_extleak*2] = efficiencies->images->extleak_coords[2][j];
 		}
 		//Define temporary dataset dimension
 		dim[0] = 3;
-		dim[1] = efficiencies->images->i_leak;
+		dim[1] = efficiencies->images->i_extleak;
 		if (!polycap_h5_write_dataset(file, 2, dim, "/ExternalLeaks/Coordinates", data_temp,"[cm,cm,cm]", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
 			//write direction
 		//Copy direction data to temporary array for straightforward HDF5 writing
-		data_temp = malloc(sizeof(double)*efficiencies->images->i_leak*2);
+		data_temp = malloc(sizeof(double)*efficiencies->images->i_extleak*2);
 		if(data_temp == NULL){
 			polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 			return false;
 		}
-		for(j=0;j<efficiencies->images->i_leak;j++){
-			data_temp[j] = efficiencies->images->leak_dir[0][j];
-			data_temp[j+efficiencies->images->i_leak] = efficiencies->images->leak_dir[1][j];
+		for(j=0;j<efficiencies->images->i_extleak;j++){
+			data_temp[j] = efficiencies->images->extleak_dir[0][j];
+			data_temp[j+efficiencies->images->i_extleak] = efficiencies->images->extleak_dir[1][j];
 		}
 		//Define temporary dataset dimension
 		dim[0] = 2;
-		dim[1] = efficiencies->images->i_leak;
+		dim[1] = efficiencies->images->i_extleak;
 		if (!polycap_h5_write_dataset(file, 2, dim, "/ExternalLeaks/Direction", data_temp,"[cm,cm]", error))
 			return false;
 		//Free data_temp
@@ -548,15 +548,15 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 			//Write leaked photon weights
 		//Define temporary dataset dimension
 		dim[1] = efficiencies->n_energies;
-		dim[0] = efficiencies->images->i_leak;
-		if (!polycap_h5_write_dataset(file, 2, dim, "/ExternalLeaks/Weights", efficiencies->images->leak_coord_weights,"[keV,a.u.]", error))
+		dim[0] = efficiencies->images->i_extleak;
+		if (!polycap_h5_write_dataset(file, 2, dim, "/ExternalLeaks/Weights", efficiencies->images->extleak_coord_weights,"[keV,a.u.]", error))
 			return false;
 		//Save weight average as function of energy
 		data_temp = malloc(sizeof(double)*efficiencies->n_energies);
 		for(j=0; j<efficiencies->n_energies; j++){
 			data_temp[j] = 0.0;
-			for(k=0; k<efficiencies->images->i_leak; k++){
-				data_temp[j] += efficiencies->images->leak_coord_weights[k*efficiencies->n_energies+j];
+			for(k=0; k<efficiencies->images->i_extleak; k++){
+				data_temp[j] += efficiencies->images->extleak_coord_weights[k*efficiencies->n_energies+j];
 			}
 			data_temp[j] = data_temp[j] / (double)efficiencies->images->i_start;
 		}
@@ -566,14 +566,14 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 		//Free data_temp
 		free(data_temp);
 		//Write n_reflections for each leaked photon
-		n_energies_temp = efficiencies->images->i_leak;
+		n_energies_temp = efficiencies->images->i_extleak;
 		data_temp = malloc(sizeof(double)*n_energies_temp);
 		if(data_temp == NULL){
 			polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 			return false;
 		}
 		for(j=0; j<n_energies_temp; j++)
-			data_temp[j] = (double)efficiencies->images->leak_n_refl[j];
+			data_temp[j] = (double)efficiencies->images->extleak_n_refl[j];
 		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/ExternalLeaks/N_Reflections", data_temp,"a.u.", error))
 			return false;
 		//Free data_temp
@@ -583,76 +583,76 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 			set_exception(error);
 	}
 
-	//Write recap photons data
+	//Write intleak photons data
 	//Make Recap group
-	if(efficiencies->images->i_recap > 0){
+	if(efficiencies->images->i_intleak > 0){
 		Recap_id = H5Gcreate2(file, "/InternalLeaks", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 			//write coordinates
 		//Copy coordinate data to temporary array for straightforward HDF5 writing
-		data_temp = malloc(sizeof(double)*efficiencies->images->i_recap*3);
+		data_temp = malloc(sizeof(double)*efficiencies->images->i_intleak*3);
 		if(data_temp == NULL){
 			polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 			return false;
 		}
-		for(j=0;j<efficiencies->images->i_recap;j++){
-			data_temp[j] = efficiencies->images->recap_coords[0][j];
-			data_temp[j+efficiencies->images->i_recap] = efficiencies->images->recap_coords[1][j];
-			data_temp[j+efficiencies->images->i_recap*2] = efficiencies->images->recap_coords[2][j];
+		for(j=0;j<efficiencies->images->i_intleak;j++){
+			data_temp[j] = efficiencies->images->intleak_coords[0][j];
+			data_temp[j+efficiencies->images->i_intleak] = efficiencies->images->intleak_coords[1][j];
+			data_temp[j+efficiencies->images->i_intleak*2] = efficiencies->images->intleak_coords[2][j];
 		}
 		//Define temporary dataset dimension
 		dim[0] = 3;
-		dim[1] = efficiencies->images->i_recap;
+		dim[1] = efficiencies->images->i_intleak;
 		if (!polycap_h5_write_dataset(file, 2, dim, "/InternalLeaks/Coordinates", data_temp,"[cm,cm,cm]", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
 			//write direction
 		//Copy direction data to temporary array for straightforward HDF5 writing
-		data_temp = malloc(sizeof(double)*efficiencies->images->i_recap*2);
+		data_temp = malloc(sizeof(double)*efficiencies->images->i_intleak*2);
 		if(data_temp == NULL){
 			polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 			return false;
 		}
-		for(j=0;j<efficiencies->images->i_recap;j++){
-			data_temp[j] = efficiencies->images->recap_dir[0][j];
-			data_temp[j+efficiencies->images->i_recap] = efficiencies->images->recap_dir[1][j];
+		for(j=0;j<efficiencies->images->i_intleak;j++){
+			data_temp[j] = efficiencies->images->intleak_dir[0][j];
+			data_temp[j+efficiencies->images->i_intleak] = efficiencies->images->intleak_dir[1][j];
 		}
 		//Define temporary dataset dimension
 		dim[0] = 2;
-		dim[1] = efficiencies->images->i_recap;
+		dim[1] = efficiencies->images->i_intleak;
 		if (!polycap_h5_write_dataset(file, 2, dim, "/InternalLeaks/Direction", data_temp,"[cm,cm]", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
-		//Write recap electric vectors
-		data_temp = malloc(sizeof(double)*efficiencies->images->i_recap*2);
+		//Write intleak electric vectors
+		data_temp = malloc(sizeof(double)*efficiencies->images->i_intleak*2);
 		if(data_temp == NULL){
 			polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 			return false;
 		}
-		for(j=0;j<efficiencies->images->i_recap;j++){
-			data_temp[j] = efficiencies->images->recap_elecv[0][j];
-			data_temp[j+efficiencies->images->i_recap] = efficiencies->images->recap_elecv[1][j];
+		for(j=0;j<efficiencies->images->i_intleak;j++){
+			data_temp[j] = efficiencies->images->intleak_elecv[0][j];
+			data_temp[j+efficiencies->images->i_intleak] = efficiencies->images->intleak_elecv[1][j];
 		}
 		//Define temporary dataset dimension
 		dim[0] = 2;
-		dim[1] = efficiencies->images->i_recap;
+		dim[1] = efficiencies->images->i_intleak;
 		if (!polycap_h5_write_dataset(file, 2, dim, "/InternalLeaks/Electric_Vector", data_temp,"[cm,cm]", error))
 			return false;
 		//Free data_temp
 		free(data_temp);
-		//Write recap photon weights
+		//Write intleak photon weights
 		//Define temporary dataset dimension
 		dim[1] = efficiencies->n_energies;
-		dim[0] = efficiencies->images->i_recap;
-		if (!polycap_h5_write_dataset(file, 2, dim, "/InternalLeaks/Weights", efficiencies->images->recap_coord_weights,"[keV,a.u.]", error))
+		dim[0] = efficiencies->images->i_intleak;
+		if (!polycap_h5_write_dataset(file, 2, dim, "/InternalLeaks/Weights", efficiencies->images->intleak_coord_weights,"[keV,a.u.]", error))
 			return false;
 		//Save weight average as function of energy
 		data_temp = malloc(sizeof(double)*efficiencies->n_energies);
 		for(j=0; j<efficiencies->n_energies; j++){
 			data_temp[j] = 0.0;
-			for(k=0; k<efficiencies->images->i_recap; k++){
-				data_temp[j] += efficiencies->images->recap_coord_weights[k*efficiencies->n_energies+j];
+			for(k=0; k<efficiencies->images->i_intleak; k++){
+				data_temp[j] += efficiencies->images->intleak_coord_weights[k*efficiencies->n_energies+j];
 			}
 			data_temp[j] = data_temp[j] / (double)efficiencies->images->i_start;
 		}
@@ -661,15 +661,15 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 			return false;
 		//Free data_temp
 		free(data_temp);
-		//Write	n_reflections for each recap photon
-		n_energies_temp = efficiencies->images->i_recap;
+		//Write	n_reflections for each intleak photon
+		n_energies_temp = efficiencies->images->i_intleak;
 		data_temp = malloc(sizeof(double)*n_energies_temp);
 		if(data_temp == NULL){
 			polycap_set_error_literal(error, POLYCAP_ERROR_MEMORY, strerror(errno));
 			return false;
 		}
 		for(j=0; j<n_energies_temp; j++)
-			data_temp[j] = (double)efficiencies->images->recap_n_refl[j];
+			data_temp[j] = (double)efficiencies->images->intleak_n_refl[j];
 		if (!polycap_h5_write_dataset(file, 1, &n_energies_temp, "/InternalLeaks/N_Reflections", data_temp,"a.u.", error))
 			return false;
 		//Free data_temp
@@ -813,38 +813,38 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 			free(efficiencies->images->pc_exit_dtravel);
 		if (efficiencies->images->exit_coord_weights)
 			free(efficiencies->images->exit_coord_weights);
-		if (efficiencies->images->leak_coords[0])
-			free(efficiencies->images->leak_coords[0]);
-		if (efficiencies->images->leak_coords[1])
-			free(efficiencies->images->leak_coords[1]);
-		if (efficiencies->images->leak_coords[2])
-			free(efficiencies->images->leak_coords[2]);
-		if (efficiencies->images->leak_dir[0])
-			free(efficiencies->images->leak_dir[0]);
-		if (efficiencies->images->leak_dir[1])
-			free(efficiencies->images->leak_dir[1]);
-		if (efficiencies->images->leak_coord_weights)
-			free(efficiencies->images->leak_coord_weights);
-		if (efficiencies->images->leak_n_refl)
-			free(efficiencies->images->leak_n_refl);
-		if (efficiencies->images->recap_coords[0])
-			free(efficiencies->images->recap_coords[0]);
-		if (efficiencies->images->recap_coords[1])
-			free(efficiencies->images->recap_coords[1]);
-		if (efficiencies->images->recap_coords[2])
-			free(efficiencies->images->recap_coords[2]);
-		if (efficiencies->images->recap_dir[0])
-			free(efficiencies->images->recap_dir[0]);
-		if (efficiencies->images->recap_dir[1])
-			free(efficiencies->images->recap_dir[1]);
-		if (efficiencies->images->recap_elecv[0])
-			free(efficiencies->images->recap_elecv[0]);
-		if (efficiencies->images->recap_elecv[1])
-			free(efficiencies->images->recap_elecv[1]);
-		if (efficiencies->images->recap_coord_weights)
-			free(efficiencies->images->recap_coord_weights);
-		if (efficiencies->images->recap_n_refl)
-			free(efficiencies->images->recap_n_refl);
+		if (efficiencies->images->extleak_coords[0])
+			free(efficiencies->images->extleak_coords[0]);
+		if (efficiencies->images->extleak_coords[1])
+			free(efficiencies->images->extleak_coords[1]);
+		if (efficiencies->images->extleak_coords[2])
+			free(efficiencies->images->extleak_coords[2]);
+		if (efficiencies->images->extleak_dir[0])
+			free(efficiencies->images->extleak_dir[0]);
+		if (efficiencies->images->extleak_dir[1])
+			free(efficiencies->images->extleak_dir[1]);
+		if (efficiencies->images->extleak_coord_weights)
+			free(efficiencies->images->extleak_coord_weights);
+		if (efficiencies->images->extleak_n_refl)
+			free(efficiencies->images->extleak_n_refl);
+		if (efficiencies->images->intleak_coords[0])
+			free(efficiencies->images->intleak_coords[0]);
+		if (efficiencies->images->intleak_coords[1])
+			free(efficiencies->images->intleak_coords[1]);
+		if (efficiencies->images->intleak_coords[2])
+			free(efficiencies->images->intleak_coords[2]);
+		if (efficiencies->images->intleak_dir[0])
+			free(efficiencies->images->intleak_dir[0]);
+		if (efficiencies->images->intleak_dir[1])
+			free(efficiencies->images->intleak_dir[1]);
+		if (efficiencies->images->intleak_elecv[0])
+			free(efficiencies->images->intleak_elecv[0]);
+		if (efficiencies->images->intleak_elecv[1])
+			free(efficiencies->images->intleak_elecv[1]);
+		if (efficiencies->images->intleak_coord_weights)
+			free(efficiencies->images->intleak_coord_weights);
+		if (efficiencies->images->intleak_n_refl)
+			free(efficiencies->images->intleak_n_refl);
 		free(efficiencies->images);
 	}
 	free(efficiencies);

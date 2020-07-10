@@ -155,8 +155,8 @@ void test_polycap_capil_leak() {
 	photon->energies[0] = 20; //set 20keV photon
 	photon->weight[0] = 1.; //weight == 100%
 	photon->i_refl = 0; //set reflections to 0
-	photon->n_leaks = 0; //set leaks to 0
-	photon->n_recap = 0; //set recap photons to 0
+	photon->n_extleak = 0; //set extleak to 0
+	photon->n_intleak = 0; //set intleak photons to 0
 	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
 
@@ -171,17 +171,17 @@ void test_polycap_capil_leak() {
 	polycap_norm(&photon->exit_direction);
 	test = polycap_capil_reflect(photon, central_axis, true, &error);
 	assert(test == 0); //almost no fraction would reflect, it's all transmitted
-	assert(photon->n_recap == 0);
-	assert(photon->n_leaks == 1);
+	assert(photon->n_intleak == 0);
+	assert(photon->n_extleak == 1);
 
 
 	//re-prepare photon struct
-	polycap_leak_free(photon->leaks, photon->n_leaks);
-	photon->leaks = NULL;
+	polycap_leak_free(photon->extleak, photon->n_extleak);
+	photon->extleak = NULL;
 	photon->weight[0] = 1.; //weight == 100%
 	photon->i_refl = 0; //set reflections to 0
-	photon->n_leaks = 0; //set leaks to 0
-	photon->n_recap = 0; //set recap photons to 0
+	photon->n_extleak = 0; //set extleak to 0
+	photon->n_intleak = 0; //set intleak photons to 0
 	photon->start_coords.x = 0.;
 	photon->start_coords.y = 0.;
 	photon->start_coords.z = 8.5;
@@ -195,7 +195,7 @@ void test_polycap_capil_leak() {
 	photon->exit_direction.y = photon->start_direction.y;
 	photon->exit_direction.z = photon->start_direction.z;
 	// photon potentially going through wall straight to exit
- 	//	photon should have 1 recap event (polycap_capil_trace_wall() returned 2)
+ 	//	photon should have 1 intleak event (polycap_capil_trace_wall() returned 2)
 	polycap_clear_error(&error);
 	//	determine axis coordinates of this capillary
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5); //258
@@ -246,7 +246,7 @@ void test_polycap_capil_leak() {
 		}
 	}
 	assert(test == 1);
-	//finally do polycap_capil_reflect(), that should only generate 1 recap event (no leak)
+	//finally do polycap_capil_reflect(), that should only generate 1 intleak event (no leak)
 	polycap_clear_error(&error);
 	photon->exit_direction.x = photon->start_direction.x;
 	photon->exit_direction.y = photon->start_direction.y;
@@ -257,8 +257,8 @@ void test_polycap_capil_leak() {
 	alfa = M_PI_2 - alfa;
 	test = polycap_capil_reflect(photon, surface_norm, true, &error);
 	assert(test == 1);
-	assert(photon->n_recap == 1);
-	assert(photon->n_leaks == 0);
+	assert(photon->n_intleak == 1);
+	assert(photon->n_extleak == 0);
 
 	polycap_free(cap_x);
 	cap_x = NULL;
@@ -280,8 +280,8 @@ void test_polycap_capil_leak() {
 	photon->energies[0] = 40; //set 40keV photon
 	photon->weight[0] = 1.; //weight == 100%
 	photon->i_refl = 0; //set reflections to 0
-	photon->n_leaks = 0; //set leaks to 0
-	photon->n_recap = 0; //set recap photons to 0
+	photon->n_extleak = 0; //set extleak to 0
+	photon->n_intleak = 0; //set intleak photons to 0
 	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.2051; //photon hits within second outer shell
@@ -297,7 +297,7 @@ void test_polycap_capil_leak() {
 	photon->exit_coords.x = photon->start_coords.x;
 	photon->exit_coords.y = photon->start_coords.y;
 	photon->exit_coords.z = photon->start_coords.z;
-	//	photon should have multiple leak and/or recap events (polycap_capil_trace_wall() returned 1)
+	//	photon should have multiple leak and/or intleak events (polycap_capil_trace_wall() returned 1)
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5); //258
 	z = description->profile->ext[0]/(2.*cos(M_PI/6.)*(n_shells+1));
 	r_i = photon->start_coords.y * (2./3) / z;
@@ -357,10 +357,10 @@ void test_polycap_capil_leak() {
 	alfa = M_PI_2 - alfa;
 	test = polycap_capil_reflect(photon, surface_norm, true, &error);
 	assert(test == 1);
-	assert(photon->n_leaks == 2);
-	assert(photon->n_recap == 0);
-	assert(fabs(photon->leaks[0].weight[0]-0.884621) < 0.0000005);
-	assert(fabs(photon->leaks[1].weight[0]-0.000603) < 0.0000005);
+	assert(photon->n_extleak == 2);
+	assert(photon->n_intleak == 0);
+	assert(fabs(photon->extleak[0].weight[0]-0.884621) < 0.0000005);
+	assert(fabs(photon->extleak[1].weight[0]-0.000603) < 0.0000005);
 	assert(fabs(photon->weight[0]-0.010727) < 0.0000005);
 
 	polycap_free(cap_x);
@@ -371,7 +371,7 @@ void test_polycap_capil_leak() {
 	photon = NULL;
 
 	//photon transmitting through 1 capillary wall to next capillary, not yet at exit window
-	//	creates succesful transmitted event, leak event, as well as recap events
+	//	creates succesful transmitted event, leak event, as well as intleak events
 	//re-prepare photon struct
 	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
@@ -383,8 +383,8 @@ void test_polycap_capil_leak() {
 	photon->energies[0] = 40; //set 40keV photon
 	photon->weight[0] = 1.; //weight == 100%
 	photon->i_refl = 0; //set reflections to 0
-        photon->n_leaks = 0; //set leaks to 0
-        photon->n_recap = 0; //set recap photons to 0
+        photon->n_extleak = 0; //set extleak to 0
+        photon->n_intleak = 0; //set intleak photons to 0
 	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.0585;
@@ -400,7 +400,7 @@ void test_polycap_capil_leak() {
 	photon->exit_coords.x = photon->start_coords.x;
 	photon->exit_coords.y = photon->start_coords.y;
 	photon->exit_coords.z = photon->start_coords.z;
-	//	photon should have multiple leak and/or recap events (polycap_capil_trace_wall() returned 1)
+	//	photon should have multiple leak and/or intleak events (polycap_capil_trace_wall() returned 1)
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5); //258
 	z = description->profile->ext[0]/(2.*cos(M_PI/6.)*(n_shells+1));
 	r_i = photon->start_coords.y * (2./3) / z;
@@ -460,30 +460,30 @@ void test_polycap_capil_leak() {
 	alfa = M_PI_2 - alfa;
 	test = polycap_capil_reflect(photon, surface_norm, true, &error);
 	assert(test == 1);
-	assert(photon->n_leaks == 1);
-	assert(photon->n_recap == 2);
+	assert(photon->n_extleak == 1);
+	assert(photon->n_intleak == 2);
 	assert(fabs(photon->weight[0]-0.032340) < 0.0000005);
-	assert(fabs(photon->leaks[0].weight[0]-0.043311) < 0.0000005);
-	assert(fabs(photon->recap[0].weight[0]-0.000143) < 0.0000005);
-	assert(fabs(photon->recap[1].weight[0]-0.000352) < 0.0000005);
-	assert(photon->leaks[0].coords.x - 0.067410 < 0.0000005);
-	assert(photon->leaks[0].coords.y - 0.0 < 0.0000005);
-	assert(photon->leaks[0].coords.z - 8.910243 < 0.0000005);
-	assert(photon->leaks[0].direction.x - 0.001 < 0.0000005);
-	assert(photon->leaks[0].direction.y - 0.0 < 0.0000005);
-	assert(photon->leaks[0].direction.z - 1.0 < 0.0000005);
-	assert(photon->recap[0].coords.x - 0.048778 < 0.0000005);
-	assert(photon->recap[0].coords.y - 0.0 < 0.0000005);
-	assert(photon->recap[0].coords.z - 8.999072 < 0.0000005);
-	assert(photon->recap[0].direction.x + 0.001078 < 0.0000005);
-	assert(photon->recap[0].direction.y - 0.0 < 0.0000005);
-	assert(photon->recap[0].direction.z - 0.999999 < 0.0000005);
-	assert(photon->recap[1].coords.x - 0.053113 < 0.0000005);
-	assert(photon->recap[1].coords.y - 0.0 < 0.0000005);
-	assert(photon->recap[1].coords.z - 8.998747 < 0.0000005);
-	assert(photon->recap[1].direction.x + 0.000511 < 0.0000005);
-	assert(photon->recap[1].direction.y - 0.0 < 0.0000005);
-	assert(photon->recap[1].direction.z - 1.0 < 0.0000005);
+	assert(fabs(photon->extleak[0].weight[0]-0.043311) < 0.0000005);
+	assert(fabs(photon->intleak[0].weight[0]-0.000143) < 0.0000005);
+	assert(fabs(photon->intleak[1].weight[0]-0.000352) < 0.0000005);
+	assert(photon->extleak[0].coords.x - 0.067410 < 0.0000005);
+	assert(photon->extleak[0].coords.y - 0.0 < 0.0000005);
+	assert(photon->extleak[0].coords.z - 8.910243 < 0.0000005);
+	assert(photon->extleak[0].direction.x - 0.001 < 0.0000005);
+	assert(photon->extleak[0].direction.y - 0.0 < 0.0000005);
+	assert(photon->extleak[0].direction.z - 1.0 < 0.0000005);
+	assert(photon->intleak[0].coords.x - 0.048778 < 0.0000005);
+	assert(photon->intleak[0].coords.y - 0.0 < 0.0000005);
+	assert(photon->intleak[0].coords.z - 8.999072 < 0.0000005);
+	assert(photon->intleak[0].direction.x + 0.001078 < 0.0000005);
+	assert(photon->intleak[0].direction.y - 0.0 < 0.0000005);
+	assert(photon->intleak[0].direction.z - 0.999999 < 0.0000005);
+	assert(photon->intleak[1].coords.x - 0.053113 < 0.0000005);
+	assert(photon->intleak[1].coords.y - 0.0 < 0.0000005);
+	assert(photon->intleak[1].coords.z - 8.998747 < 0.0000005);
+	assert(photon->intleak[1].direction.x + 0.000511 < 0.0000005);
+	assert(photon->intleak[1].direction.y - 0.0 < 0.0000005);
+	assert(photon->intleak[1].direction.z - 1.0 < 0.0000005);
 
 	polycap_free(cap_x);
 	cap_x = NULL;
@@ -512,12 +512,12 @@ void test_polycap_capil_leak() {
 	photon->energies[0] = 10;
 	photon->weight[0] = 1.; //weight == 100%
 	photon->i_refl = 0; //set reflections to 0
-        photon->n_leaks = 0; //set leaks to 0
-        photon->n_recap = 0; //set recap photons to 0
+        photon->n_extleak = 0; //set extleak to 0
+        photon->n_intleak = 0; //set intleak photons to 0
 	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
 	polycap_norm(&photon->start_direction);
-	//	photon should have multiple leak and/or recap events (polycap_capil_trace_wall() returned 1)
+	//	photon should have multiple leak and/or intleak events (polycap_capil_trace_wall() returned 1)
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5); //258
 	z = description->profile->ext[0]/(2.*cos(M_PI/6.)*(n_shells+1));
 	r_i = photon->start_coords.y * (2./3) / z;
@@ -558,8 +558,8 @@ void test_polycap_capil_leak() {
 	//assert iesc and weights
 	assert(iesc == 0); //iesc should be 0 as photon should be absorbed in capillary (not counting leakage events)
 	assert(photon->weight[0] < 1e-5);
-	assert(photon->n_leaks == 0);
-	assert(photon->n_recap == 0);
+	assert(photon->n_extleak == 0);
+	assert(photon->n_intleak == 0);
 
 	polycap_free(cap_x);
 	cap_x = NULL;
@@ -846,14 +846,14 @@ void test_polycap_photon_leak() {
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
 	assert(photon != NULL);
 	assert(test == 2);
-	assert(photon->n_leaks == 1);
-	assert(photon->leaks[0].weight[0] < 1.);
-	assert(photon->leaks[0].weight[0] > 0.);
-	assert(photon->n_recap < 1);
+	assert(photon->n_extleak == 1);
+	assert(photon->extleak[0].weight[0] < 1.);
+	assert(photon->extleak[0].weight[0] > 0.);
+	assert(photon->n_intleak < 1);
 	polycap_free(weights);
 	weights = NULL;
 
-	//Single photon that should cause recap event
+	//Single photon that should cause intleak event
 	polycap_clear_error(&error);
 	polycap_photon_free(photon);
 	photon = NULL;
@@ -869,30 +869,30 @@ void test_polycap_photon_leak() {
 
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
 /*printf("================\n");
-printf("test: %i, n_recap: %li, n_leaks: %li, w: %lf\n",test, photon->n_recap, photon->n_leaks, weights[0]);
-printf("	rw0: %lf\n", photon->recap[0].weight[0]);
-printf("	coord.x: %lf, y: %lf, z: %lf\n", photon->recap[0].coords.x, photon->recap[0].coords.y, photon->recap[0].coords.z);
-printf("	dir.x: %lf, y: %lf, z: %lf\n", photon->recap[0].direction.x, photon->recap[0].direction.y, photon->recap[0].direction.z);
+printf("test: %i, n_intleak: %li, n_extleak: %li, w: %lf\n",test, photon->n_intleak, photon->n_extleak, weights[0]);
+printf("	rw0: %lf\n", photon->intleak[0].weight[0]);
+printf("	coord.x: %lf, y: %lf, z: %lf\n", photon->intleak[0].coords.x, photon->intleak[0].coords.y, photon->intleak[0].coords.z);
+printf("	dir.x: %lf, y: %lf, z: %lf\n", photon->intleak[0].direction.x, photon->intleak[0].direction.y, photon->intleak[0].direction.z);
 printf("--------------\n");*/
 	assert(photon != NULL);
 	assert(test == 0);
-	assert(photon->n_leaks == 0);
-	assert(photon->n_recap == 1);
-	assert(fabs(photon->recap[0].weight[0]-0.280971) < 0.0000005);
+	assert(photon->n_extleak == 0);
+	assert(photon->n_intleak == 1);
+	assert(fabs(photon->intleak[0].weight[0]-0.280971) < 0.0000005);
 	assert(fabs(weights[0]-0.000001) < 0.0000005);
-	assert(photon->recap[0].coords.x - 0.0575 < 0.0000005);
-	assert(photon->recap[0].coords.y - 0.0 < 0.0000005);
-	assert(photon->recap[0].coords.z - 8.999983 < 0.0000005);
-	assert(photon->recap[0].direction.x - 0.001 < 0.0000005);
-	assert(photon->recap[0].direction.y - 0.0 < 0.0000005);
-	assert(photon->recap[0].direction.z - 1.0 < 0.0000005);
+	assert(photon->intleak[0].coords.x - 0.0575 < 0.0000005);
+	assert(photon->intleak[0].coords.y - 0.0 < 0.0000005);
+	assert(photon->intleak[0].coords.z - 8.999983 < 0.0000005);
+	assert(photon->intleak[0].direction.x - 0.001 < 0.0000005);
+	assert(photon->intleak[0].direction.y - 0.0 < 0.0000005);
+	assert(photon->intleak[0].direction.z - 1.0 < 0.0000005);
 
 	polycap_clear_error(&error);
 	polycap_free(weights);
 	weights = NULL;
 
 
-	//Make sure output of photon_launch is constant with or without leaks option as far as non-leak events are concerned
+	//Make sure output of photon_launch is constant with or without extleak option as far as non-leak events are concerned
 	//	The following tests are also performed in tests/photon.c but with leak_calc == false
 	energy = 10.;
 	start_coords.x = 0.21;
@@ -925,8 +925,8 @@ printf("--------------\n");*/
 	assert(photon->scatf == NULL);
 	assert(photon->n_energies == 1);
 	assert(test == 0);
-	assert(photon->n_leaks == 0);
-	assert(photon->n_recap == 0);
+	assert(photon->n_extleak == 0);
+	assert(photon->n_intleak == 0);
 	polycap_free(weights);
 	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...
 
@@ -943,8 +943,8 @@ printf("--------------\n");*/
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(test == 1);
-	assert(photon->n_leaks == 0);
-	assert(photon->n_recap == 0);
+	assert(photon->n_extleak == 0);
+	assert(photon->n_intleak == 0);
 	polycap_free(weights);
 
 	//Another photon, outside of optic shells, but just within optic exterior (so should leak if enabled)
@@ -958,8 +958,8 @@ printf("--------------\n");*/
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
 	assert(test == 2);
 	assert(photon->n_energies == 1);
-	assert(photon->n_leaks == 0);
-	assert(photon->n_recap == 0);
+	assert(photon->n_extleak == 0);
+	assert(photon->n_intleak == 0);
 	polycap_free(weights);
 
 	//Another photon
@@ -973,8 +973,8 @@ printf("--------------\n");*/
 	test = polycap_photon_launch(photon, 1., &energy, &weights, false, &error);
 	assert(test == 0);
 	assert(photon->n_energies == 1);
-	assert(photon->n_leaks == 0);
-	assert(photon->n_recap == 0);
+	assert(photon->n_extleak == 0);
+	assert(photon->n_intleak == 0);
 	polycap_free(weights);
 
 
@@ -1076,8 +1076,8 @@ void test_polycap_source_leak() {
 	efficiencies = polycap_source_get_transmission_efficiencies(source, -1, n_photons, true, NULL, &error);
 	assert(efficiencies != NULL);
 	assert(efficiencies->images->i_exit == n_photons);
-	assert(efficiencies->images->i_leak > 0);
-	assert(efficiencies->images->i_recap > 0);
+	assert(efficiencies->images->i_extleak > 0);
+	assert(efficiencies->images->i_intleak > 0);
 	assert(fabs(efficiencies->efficiencies[0] - 0.424) <= 0.05); //1 keV
 	assert(fabs(efficiencies->efficiencies[1] - 0.349) <= 0.05); //5 keV
 	assert(fabs(efficiencies->efficiencies[2] - 0.135) <= 0.05); //10 keV
@@ -1086,15 +1086,15 @@ void test_polycap_source_leak() {
 	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.05); //25 keV
 	assert(fabs(efficiencies->efficiencies[6] - 0.006) <= 0.05); //30 keV
 
-	//Now redo test without leaks, to check for differences in non-leak event transmission efficiency
+	//Now redo test without extleak, to check for differences in non-leak event transmission efficiency
 	polycap_clear_error(&error);
 	efficiencies2 = polycap_source_get_transmission_efficiencies(source, -1, n_photons, false, NULL, &error);
 	assert(efficiencies2 != NULL);
-	printf("with leaks: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies->efficiencies[0], efficiencies->efficiencies[1], efficiencies->efficiencies[2], efficiencies->efficiencies[3], efficiencies->efficiencies[4], efficiencies->efficiencies[5], efficiencies->efficiencies[6]);
-	printf("no leaks: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies2->efficiencies[0], efficiencies2->efficiencies[1], efficiencies2->efficiencies[2], efficiencies2->efficiencies[3], efficiencies2->efficiencies[4], efficiencies2->efficiencies[5], efficiencies2->efficiencies[6]);
+	printf("with leak: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies->efficiencies[0], efficiencies->efficiencies[1], efficiencies->efficiencies[2], efficiencies->efficiencies[3], efficiencies->efficiencies[4], efficiencies->efficiencies[5], efficiencies->efficiencies[6]);
+	printf("no leak: 0: %lf, 1: %lf, 2: %lf, 3: %lf, 4: %lf, 5: %lf, 6: %lf \n", efficiencies2->efficiencies[0], efficiencies2->efficiencies[1], efficiencies2->efficiencies[2], efficiencies2->efficiencies[3], efficiencies2->efficiencies[4], efficiencies2->efficiencies[5], efficiencies2->efficiencies[6]);
 	/*
-	printf("**i_exit: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_exit, efficiencies2->images->i_exit);
-	printf("**i_start: withleaks: %" PRId64 " noleaks: %" PRId64 "\n", efficiencies->images->i_start, efficiencies2->images->i_start);
+	printf("**i_exit: withleak: %" PRId64 " noleak: %" PRId64 "\n", efficiencies->images->i_exit, efficiencies2->images->i_exit);
+	printf("**i_start: withleak: %" PRId64 " noleak: %" PRId64 "\n", efficiencies->images->i_start, efficiencies2->images->i_start);
 	*/
 	assert(efficiencies2->images->i_exit == n_photons);
 	assert(fabs(efficiencies2->efficiencies[0] - efficiencies->efficiencies[0]) <= 0.05); //1 keV

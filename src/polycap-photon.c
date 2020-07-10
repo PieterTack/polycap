@@ -418,22 +418,22 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		return -1;
 	}
 
-	//free photon->leaks and recap here in case polycap_photon_launch would be called twice on same photon (without intermittant photon freeing)
-	if (photon->leaks){
-		for(i=0; i<photon->n_leaks; i++){
-			if (photon->leaks[i].weight)
-				free(photon->leaks[i].weight);
+	//free photon->extleak and intleak here in case polycap_photon_launch would be called twice on same photon (without intermittant photon freeing)
+	if (photon->extleak){
+		for(i=0; i<photon->n_extleak; i++){
+			if (photon->extleak[i].weight)
+				free(photon->extleak[i].weight);
 		}
-		free(photon->leaks);
-		photon->leaks = NULL;
+		free(photon->extleak);
+		photon->extleak = NULL;
 	}
-	if (photon->recap){
-		for(i=0; i<photon->n_recap; i++){
-			if (photon->recap[i].weight)
-				free(photon->recap[i].weight);
+	if (photon->intleak){
+		for(i=0; i<photon->n_intleak; i++){
+			if (photon->intleak[i].weight)
+				free(photon->intleak[i].weight);
 		}
-		free(photon->recap);
-		photon->recap = NULL;
+		free(photon->intleak);
+		photon->intleak = NULL;
 	}
 
 	polycap_description *description = photon->description;
@@ -462,8 +462,8 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		photon->weight[i] = 1.;
 	}
 	photon->i_refl = 0; //set reflections to 0
-	photon->n_leaks = 0; //set leaks to 0
-	photon->n_recap = 0; //set recap photons to 0
+	photon->n_extleak = 0; //set extleak to 0
+	photon->n_intleak = 0; //set intleak photons to 0
 
 	//calculate amount of shells in polycapillary
 	//NOTE: with description->n_cap <7 only a mono-capillary will be simulated.
@@ -567,7 +567,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	}
 	d_ph_capcen = sqrt( (photon->start_coords.x-current_cap_x)*(photon->start_coords.x-current_cap_x) + (photon->start_coords.y-current_cap_y)*(photon->start_coords.y-current_cap_y) );
 	if(d_ph_capcen > current_cap_rad){
-		//Check whether photon is transmitted through wall (i.e. generates leak or recap events)
+		//Check whether photon is transmitted through wall (i.e. generates leak or intleak events)
 		if(leak_calc && photon->start_coords.z == 0){ //photon hits capillary wall on entrance
 			// set central_axis to surface norm of glass wall at PC entrance
 			central_axis.x = 0;
@@ -591,30 +591,30 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 				photon->exit_coords.z = photon->exit_coords.z +
 					(d_travel / sqrt(polycap_scalar(photon->exit_direction,photon->exit_direction))) * photon->exit_direction.z;
 				if(wall_trace == 3){ //photon leaves optic through side wall
-					photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * ++photon->n_leaks);
-					if(photon->leaks == NULL){
-						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->leaks -> %s", strerror(errno));
+					photon->extleak = realloc(photon->extleak, sizeof(polycap_leak) * ++photon->n_extleak);
+					if(photon->extleak == NULL){
+						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->extleak -> %s", strerror(errno));
 						return -1;
 					}
-					photon->leaks[photon->n_leaks-1].coords = photon->exit_coords;
-					photon->leaks[photon->n_leaks-1].direction = photon->exit_direction;
-					photon->leaks[photon->n_leaks-1].elecv = photon->exit_electric_vector;
-					photon->leaks[photon->n_leaks-1].n_refl = photon->i_refl;
-					photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
-					memcpy(photon->leaks[photon->n_leaks-1].weight, photon->weight, sizeof(double)*photon->n_energies);
+					photon->extleak[photon->n_extleak-1].coords = photon->exit_coords;
+					photon->extleak[photon->n_extleak-1].direction = photon->exit_direction;
+					photon->extleak[photon->n_extleak-1].elecv = photon->exit_electric_vector;
+					photon->extleak[photon->n_extleak-1].n_refl = photon->i_refl;
+					photon->extleak[photon->n_extleak-1].weight = malloc(sizeof(double) * photon->n_energies);
+					memcpy(photon->extleak[photon->n_extleak-1].weight, photon->weight, sizeof(double)*photon->n_energies);
 				}
 				if(wall_trace == 2){ //photon propagates in wall to exit window
-					photon->recap = realloc(photon->recap, sizeof(polycap_leak) * ++photon->n_recap);
-					if(photon->recap == NULL){
-						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->recap -> %s", strerror(errno));
+					photon->intleak = realloc(photon->intleak, sizeof(polycap_leak) * ++photon->n_intleak);
+					if(photon->intleak == NULL){
+						polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->intleak -> %s", strerror(errno));
 						return -1;
 					}
-					photon->recap[photon->n_recap-1].coords = photon->exit_coords;
-					photon->recap[photon->n_recap-1].direction = photon->exit_direction;
-					photon->recap[photon->n_recap-1].elecv = photon->exit_electric_vector;
-					photon->recap[photon->n_recap-1].n_refl = photon->i_refl;
-					photon->recap[photon->n_recap-1].weight = malloc(sizeof(double) * photon->n_energies);
-					memcpy(photon->recap[photon->n_recap-1].weight, photon->weight, sizeof(double)*photon->n_energies);
+					photon->intleak[photon->n_intleak-1].coords = photon->exit_coords;
+					photon->intleak[photon->n_intleak-1].direction = photon->exit_direction;
+					photon->intleak[photon->n_intleak-1].elecv = photon->exit_electric_vector;
+					photon->intleak[photon->n_intleak-1].n_refl = photon->i_refl;
+					photon->intleak[photon->n_intleak-1].weight = malloc(sizeof(double) * photon->n_energies);
+					memcpy(photon->intleak[photon->n_intleak-1].weight, photon->weight, sizeof(double)*photon->n_energies);
 				}
 				if(wall_trace == 1){ //photon entered new capillary
 					photon->d_travel = photon->d_travel + d_travel;
@@ -643,34 +643,34 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 						photon->exit_coords.z = photon->exit_coords.z + photon->exit_direction.z * ((photon->description->profile->z[photon->description->profile->nmax]-photon->exit_coords.z)/photon->exit_direction.z);
 						iesc = polycap_photon_within_pc_boundary(photon->description->profile->ext[photon->description->profile->nmax], photon->exit_coords, error);
 						if(iesc == 0){ //it's a leak event
-							photon->leaks = realloc(photon->leaks, sizeof(polycap_leak) * ++photon->n_leaks);
-							if(photon->leaks == NULL){
-								polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->leaks -> %s", strerror(errno));
+							photon->extleak = realloc(photon->extleak, sizeof(polycap_leak) * ++photon->n_extleak);
+							if(photon->extleak == NULL){
+								polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->extleak -> %s", strerror(errno));
 								return -1;
 							}
-							photon->leaks[photon->n_leaks-1].coords = photon->exit_coords;
-							photon->leaks[photon->n_leaks-1].direction = photon->exit_direction;
-							photon->leaks[photon->n_leaks-1].elecv = photon->exit_electric_vector;
-							photon->leaks[photon->n_leaks-1].n_refl = photon->i_refl;
-							photon->leaks[photon->n_leaks-1].weight = malloc(sizeof(double) * photon->n_energies);
-							memcpy(photon->leaks[photon->n_leaks-1].weight, photon->weight, sizeof(double)*photon->n_energies);
-						} else if(iesc == 1){ //it's a recap event
-							photon->recap = realloc(photon->recap, sizeof(polycap_leak) * ++photon->n_recap);
-							if(photon->recap == NULL){
-								polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->recap -> %s", strerror(errno));
+							photon->extleak[photon->n_extleak-1].coords = photon->exit_coords;
+							photon->extleak[photon->n_extleak-1].direction = photon->exit_direction;
+							photon->extleak[photon->n_extleak-1].elecv = photon->exit_electric_vector;
+							photon->extleak[photon->n_extleak-1].n_refl = photon->i_refl;
+							photon->extleak[photon->n_extleak-1].weight = malloc(sizeof(double) * photon->n_energies);
+							memcpy(photon->extleak[photon->n_extleak-1].weight, photon->weight, sizeof(double)*photon->n_energies);
+						} else if(iesc == 1){ //it's a intleak event
+							photon->intleak = realloc(photon->intleak, sizeof(polycap_leak) * ++photon->n_intleak);
+							if(photon->intleak == NULL){
+								polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_launch: could not allocate memory for photon->intleak -> %s", strerror(errno));
 								return -1;
 							}
-							photon->recap[photon->n_recap-1].coords = photon->exit_coords;
-							photon->recap[photon->n_recap-1].direction = photon->exit_direction;
-							photon->recap[photon->n_recap-1].elecv = photon->exit_electric_vector;
-							photon->recap[photon->n_recap-1].n_refl = photon->i_refl;
-							photon->recap[photon->n_recap-1].weight = malloc(sizeof(double) * photon->n_energies);
-							memcpy(photon->recap[photon->n_recap-1].weight, photon->weight, sizeof(double)*photon->n_energies);				
+							photon->intleak[photon->n_intleak-1].coords = photon->exit_coords;
+							photon->intleak[photon->n_intleak-1].direction = photon->exit_direction;
+							photon->intleak[photon->n_intleak-1].elecv = photon->exit_electric_vector;
+							photon->intleak[photon->n_intleak-1].n_refl = photon->i_refl;
+							photon->intleak[photon->n_intleak-1].weight = malloc(sizeof(double) * photon->n_energies);
+							memcpy(photon->intleak[photon->n_intleak-1].weight, photon->weight, sizeof(double)*photon->n_energies);				
 						}
 					}
 				} //if(wall_trace == 1)
-				// all leak and recap events are stored in photon->leaks and photon->recap, so clear current photon weights and return
-				// 	will return 1 as original photon was absorbed. In order to cooperate with polycap_source_get_transmission_efficiencies() we'll also set exit_coords to outside exit window, so that it does not count to open area, but does store leak and recap events
+				// all leak and intleak events are stored in photon->extleak and photon->intleak, so clear current photon weights and return
+				// 	will return 1 as original photon was absorbed. In order to cooperate with polycap_source_get_transmission_efficiencies() we'll also set exit_coords to outside exit window, so that it does not count to open area, but does store leak and intleak events
 				for(i=0; i < photon->n_energies; i++)
 					photon->weight[i] = 0.;
 				photon->exit_coords.x = photon->description->profile->ext[photon->description->profile->nmax]+1.; //+1 for sure outside
@@ -688,7 +688,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 
 	//polycap_capil_trace should be ran description->profile->nmax at most,
 	//	which means it essentially reflected once every known capillary coordinate
-	//Photon will also contain all info on potential leak and recap events ( if(leak_calc) )
+	//Photon will also contain all info on potential leak and intleak events ( if(leak_calc) )
 	for(i=0; i<=description->profile->nmax; i++){
 		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, leak_calc, error);
 		if(iesc != 1){ //as long as iesc = 1 photon is still reflecting in capillary
@@ -757,13 +757,13 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 
 //===========================================
 // free a polycap_leak structure
-void polycap_leak_free(polycap_leak *leak, int64_t n_leaks)
+void polycap_leak_free(polycap_leak *leak, int64_t n_leak)
 {
 	int i;
 	
 	if (leak == NULL)
 		return;
-	for(i = 0; i < n_leaks; i++){
+	for(i = 0; i < n_leak; i++){
 		if (leak[i].weight)
 			free(leak[i].weight);
 	}
@@ -783,10 +783,10 @@ void polycap_photon_free(polycap_photon *photon)
 		free(photon->amu);
 	if (photon->scatf)
 		free(photon->scatf);
-	if (photon->leaks)
-		polycap_leak_free(photon->leaks, photon->n_leaks);
-	if (photon->recap)
-		polycap_leak_free(photon->recap, photon->n_recap);
+	if (photon->extleak)
+		polycap_leak_free(photon->extleak, photon->n_extleak);
+	if (photon->intleak)
+		polycap_leak_free(photon->intleak, photon->n_intleak);
 	free(photon);
 }
 
