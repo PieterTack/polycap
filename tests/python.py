@@ -192,9 +192,9 @@ class TestPolycapSource(unittest.TestCase):
                     phot_transm += 1
                 phot_ini += 1
             except ValueError:
-                None
+                pass
             except AttributeError:
-                None
+                pass
         weights = weights[:]/phot_ini # normalize for total initiated photons, including simulated open area (due to photons that interacted with capllary walls at start)
         data = efficiencies.data
         for i in range(10):
