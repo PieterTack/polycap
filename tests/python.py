@@ -175,11 +175,11 @@ class TestPolycapSource(unittest.TestCase):
             data[0] = 6
 
     def test_source_get_transmission_efficiencies_vs_multiple_photon_launch(self):
-        n_photons = 1000
+        n_photons = 10000
         source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, np.linspace(1, 25.0, 10))
         efficiencies = source.get_transmission_efficiencies(-1, n_photons, leak_calc=False)
 
-        weights = np.zeros((10,1))
+        weights = np.zeros(10)
         phot_ini = 0
         phot_transm = 0
         myrng = TestPolycapSource.rng
@@ -187,18 +187,18 @@ class TestPolycapSource(unittest.TestCase):
             photon = source.get_photon(myrng)
             try:
                 myweights = photon.launch(np.linspace(1, 25.0, 10), leak_calc=False)
-                if type(myweights) == type(None):
-                    phot_ini += 1
-                else:
+                if myweights is not None:
                     weights += myweights
                     phot_transm += 1
+                phot_ini += 1
             except ValueError:
-               print("ValueError")
+                None
             except AttributeError:
-               print("AttributeError")
+                None
         weights = weights[:]/phot_ini # normalize for total initiated photons, including simulated open area (due to photons that interacted with capllary walls at start)
+        data = efficiencies.data
         for i in range(10):
-            self.assertAlmostEqual(weights[i], efficiencies[i], delta=0.0075)
+            self.assertAlmostEqual(weights[i], data[1][i], delta=0.0075)
 
         del(efficiencies)
 
