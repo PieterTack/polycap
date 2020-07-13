@@ -185,20 +185,15 @@ class TestPolycapSource(unittest.TestCase):
         myrng = TestPolycapSource.rng
         while phot_transm < n_photons:
             photon = source.get_photon(myrng)
-            try:
-                myweights = photon.launch(np.linspace(1, 25.0, 10), leak_calc=False)
-                if myweights is not None:
-                    weights += myweights
-                    phot_transm += 1
-                phot_ini += 1
-            except ValueError:
-                pass
-            except AttributeError:
-                pass
+            myweights = photon.launch(np.linspace(1, 25.0, 10), leak_calc=False)
+            if myweights is not None:
+                weights += myweights
+                phot_transm += 1
+            phot_ini += 1
         weights = weights[:]/phot_ini # normalize for total initiated photons, including simulated open area (due to photons that interacted with capllary walls at start)
         data = efficiencies.data
         for i in range(10):
-            self.assertAlmostEqual(weights[i], data[1][i], delta=0.0075)
+            self.assertAlmostEqual(weights[i], data[1][i], delta=0.01)
 
         del(efficiencies)
 
