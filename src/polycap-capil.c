@@ -589,7 +589,6 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_vector3 surface_norm, 
 		return -1;
 	}
 	polycap_description *description = photon->description;
-	
 	if (description == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: description must not be NULL");
 		return -1;
