@@ -451,7 +451,7 @@ cdef class Photon:
            
         rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, leak_calc, &error)
         polycap_set_exception(error)
-        if rv == 2 or rv == -2 or rv == -1:
+        if rv == 2:
             return None
 
         # copy weights to numpy array, free and return
