@@ -175,7 +175,7 @@ class TestPolycapSource(unittest.TestCase):
             data[0] = 6
 
     def test_source_get_transmission_efficiencies_vs_multiple_photon_launch(self):
-        n_photons = 10000
+        n_photons = 30000
         source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, np.linspace(1, 25.0, 10))
         efficiencies = source.get_transmission_efficiencies(-1, n_photons, leak_calc=False)
 
