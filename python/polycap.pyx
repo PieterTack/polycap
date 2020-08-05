@@ -80,11 +80,12 @@ def __send_google_analytics_launch_event():
                 try:
                     _uuid = winreg.QueryValueEx(_key, 'uuid')[0]
                     if not __valid_uuid(_uuid):
-                        raise Exception()
-                except:
+                        raise Exception("Invalid UUID")
+                except Exception as e:
                     # lots of things can go wrong here I guess
+                    print("Exception message: {}".format(str(e)))
                     _uuid = str(uuid.uuid4())
-                    winreg.SetValue(_key, 'uuid', winreg.REG_SZ, _uuid)
+                    winreg.SetValueEx(_key, 'uuid', 0, winreg.REG_SZ, _uuid)
         else:
             f = Path('~', '.config', 'polycap', 'ga.conf').expanduser()
             f.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
