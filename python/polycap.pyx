@@ -66,7 +66,7 @@ def __send_google_analytics_launch_event():
 	    av=GOOGLE_ANALYTICS_APPLICATION_VERSION, # app version
     )
 
-    if 'CI' not in os.environ:
+    if 'CI' in os.environ:
         # we are running in CI mode!
         payload['cid'] = '60220817-0a15-49ce-b581-9cab2b225e7d' # our default UUID for CI
         payload['ec'] = 'CI'
