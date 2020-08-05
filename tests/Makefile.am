@@ -6,7 +6,8 @@ if ENABLE_PYTHON
 check_SCRIPTS += python.sh
 endif
 
-TESTS = $(check_PROGRAMS) $(check_SCRIPTS)
+#TESTS = $(check_PROGRAMS) $(check_SCRIPTS)
+TESTS = $(check_SCRIPTS)
 
 version_SOURCES = version.c
 version_LDADD = ../src/libpolycap-check.la

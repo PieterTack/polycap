@@ -10,8 +10,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
-
 cdef extern from "config.h":
     char *version "VERSION"
 
@@ -31,10 +29,91 @@ from cpython cimport Py_DECREF
 cimport numpy as np
 import numpy as np
 import sys
+import os
+from pathlib import Path
 
 __version__ = version
 
 np.import_array()
+
+import urllib
+import http.client
+import uuid
+from uuid import UUID
+import platform
+
+def __valid_uuid(_uuid):
+    try:
+        a = UUID(_uuid)
+    except ValueError:
+        return False
+    return True
+
+def __send_google_analytics_launch_event():
+    GOOGLE_ANALYTICS_ENDPOINT = "https://www.google-analytics.com/collect"
+    GOOGLE_ANALYTICS_TRACKING_ID = "UA-42595764-4"
+    GOOGLE_ANALYTICS_APPLICATION_NAME = "polycap"
+    GOOGLE_ANALYTICS_APPLICATION_VERSION = version
+    GOOGLE_ANALYTICS_HIT_TYPE = "event"
+
+    payload = dict(
+        v=1, # protocol version
+	    tid=GOOGLE_ANALYTICS_TRACKING_ID, # tracking id
+	    # g_hash_table_replace(hash, "cid", tracker->uuid); // client id
+	    t=GOOGLE_ANALYTICS_HIT_TYPE, # hit type
+	    an=GOOGLE_ANALYTICS_APPLICATION_NAME, # app name
+	    av=GOOGLE_ANALYTICS_APPLICATION_VERSION, # app version
+    )
+
+    if 'CI' in os.environ:
+        print('Using CI mode')
+        # we are running in CI mode!
+        payload['cid'] = '60220817-0a15-49ce-b581-9cab2b225e7d' # our default UUID for CI
+        payload['ec'] = 'CI'
+        payload['ea'] = 'test-import'
+    else:
+        # When on Windows -> use the registry to store/fetch the UUID
+        # On Linux/macOS -> use file in ~/.config/polycap
+        if os.name == 'nt':
+            import winreg
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r'Software\polycap\python') as _key:
+                try:
+                    _uuid = winreg.QueryValueEx(_key, 'uuid')[0]
+                    if not __valid_uuid(_uuid):
+                        raise Exception()
+                except:
+                    # lots of things can go wrong here I guess
+                    _uuid = str(uuid.uuid4())
+                    winreg.SetValue(_key, 'uuid', winreg.REG_SZ, _uuid)
+        else:
+            f = Path('~', '.config', 'polycap', 'ga.conf').expanduser()
+            f.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            if f.exists():
+                if f.is_file():
+                    _uuid = f.read_text().strip()
+                    if not __valid_uuid(_uuid):
+                        _uuid = str(uuid.uuid4())
+                        f.write_text(_uuid)
+                else:
+                    print('{} exists but is not a regular file!'.format(str(f)))
+                    return
+            else:
+                _uuid = str(uuid.uuid4())
+                f.write_text(_uuid)
+
+        print(f'UUID: {_uuid}')
+        payload['cid'] = _uuid
+        payload['ec'] = 'python'
+        payload['ea'] = 'import'
+        payload['el'] = '{}-{}'.format(platform.python_version(), platform.platform())
+
+    data = urllib.parse.urlencode(payload).encode()
+    connection = http.client.HTTPSConnection('www.google-analytics.com')
+    connection.request('POST', '/collect', data)
+    response = connection.getresponse()
+
+# this should be called in a thread!!!
+__send_google_analytics_launch_event()
 
 cdef extern from "Python.h":
     ctypedef void PyObject
