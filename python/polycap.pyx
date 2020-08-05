@@ -31,8 +31,9 @@ import numpy as np
 import sys
 import os
 from pathlib import Path
+import threading
 
-__version__ = version
+__version__ = version.decode("utf-8")
 
 np.import_array()
 
@@ -53,7 +54,7 @@ def __send_google_analytics_launch_event():
     GOOGLE_ANALYTICS_ENDPOINT = "https://www.google-analytics.com/collect"
     GOOGLE_ANALYTICS_TRACKING_ID = "UA-42595764-4"
     GOOGLE_ANALYTICS_APPLICATION_NAME = "polycap"
-    GOOGLE_ANALYTICS_APPLICATION_VERSION = version
+    GOOGLE_ANALYTICS_APPLICATION_VERSION = __version__
     GOOGLE_ANALYTICS_HIT_TYPE = "event"
 
     payload = dict(
@@ -66,7 +67,6 @@ def __send_google_analytics_launch_event():
     )
 
     if 'CI' in os.environ:
-        print('Using CI mode')
         # we are running in CI mode!
         payload['cid'] = '60220817-0a15-49ce-b581-9cab2b225e7d' # our default UUID for CI
         payload['ec'] = 'CI'
@@ -83,7 +83,6 @@ def __send_google_analytics_launch_event():
                         raise Exception("Invalid UUID")
                 except Exception as e:
                     # lots of things can go wrong here I guess
-                    print("Exception message: {}".format(str(e)))
                     _uuid = str(uuid.uuid4())
                     winreg.SetValueEx(_key, 'uuid', 0, winreg.REG_SZ, _uuid)
         else:
@@ -102,19 +101,21 @@ def __send_google_analytics_launch_event():
                 _uuid = str(uuid.uuid4())
                 f.write_text(_uuid)
 
-        print(f'UUID: {_uuid}')
         payload['cid'] = _uuid
         payload['ec'] = 'python'
         payload['ea'] = 'import'
-        payload['el'] = '{}-{}'.format(platform.python_version(), platform.platform())
+        payload['el'] = 'Polycap-{}-Python-{}-{}'.format(__version__, platform.python_version(), platform.platform())
 
-    data = urllib.parse.urlencode(payload).encode()
-    connection = http.client.HTTPSConnection('www.google-analytics.com')
-    connection.request('POST', '/collect', data)
-    response = connection.getresponse()
+    try:
+        data = urllib.parse.urlencode(payload).encode()
+        connection = http.client.HTTPSConnection('www.google-analytics.com')
+        connection.request('POST', '/collect', data)
+        response = connection.getresponse()
+    except:
+        # No need to care about exceptions here, if they happen, nothing we can do about it anyway.
+        pass
 
-# this should be called in a thread!!!
-__send_google_analytics_launch_event()
+threading.Thread(target=__send_google_analytics_launch_event).start()
 
 cdef extern from "Python.h":
     ctypedef void PyObject
