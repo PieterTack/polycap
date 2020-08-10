@@ -195,6 +195,7 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         set -ex
+        brew uninstall -f bazel bazelisk
         brew update
         brew upgrade
         brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl python@3.8 numpy meson ninja
