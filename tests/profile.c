@@ -86,10 +86,73 @@ void test_profile_new_from_file() {
 	polycap_clear_error(&error);
 }
 
+void test_profile_new_from_array_and_get() {
+	polycap_profile *profile;
+	int i;
+	size_t nid;
+	polycap_error *error = NULL;
+	double *ext;
+	double *cap;
+	double *z;
+	bool test;
+
+	double rad_ext_upstream = 2E-5;
+	double rad_ext_downstream = 2E-4;
+	double rad_int_upstream = 1E-5;
+	double rad_int_downstream = 1E-4;
+	double focal_dist_upstream = 1.0;
+	double focal_dist_downstream = 1.0;
+
+	// This works, we know from previous tests
+	profile = polycap_profile_new(POLYCAP_PROFILE_CONICAL, 6., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
+	assert(profile != NULL); //profile should not be NULL
+
+	// let's test the get functions
+	test = polycap_profile_get_ext(NULL, NULL, &ext);
+	assert(test == false);
+	test = polycap_profile_get_cap(NULL, NULL, &cap);
+	assert(test == false);
+	test = polycap_profile_get_z(NULL, NULL, &z);
+	assert(test == false);
+	test = polycap_profile_get_ext(profile, &nid, &ext);
+	assert(test == true);
+	test = polycap_profile_get_cap(profile, &nid, &cap);
+	assert(test == true);
+	test = polycap_profile_get_z(profile, &nid, &z);
+	assert(test == true);
+	assert(nid == profile->nmax);
+	for(i=0; i<=profile->nmax; i++){
+		assert(ext[i] == profile->ext[i]);
+		assert(cap[i] == profile->cap[i]);
+		assert(z[i] == profile->z[i]);
+	}
+
+	// test polycap_profile_new_from_array
+	polycap_profile_free(profile);
+	profile = NULL;
+	polycap_clear_error(&error);
+	profile = polycap_profile_new_from_array(nid, ext, cap, z, &error);
+	assert(profile != NULL);
+	assert(nid == profile->nmax);
+	for(i=0; i<=profile->nmax; i++){
+		assert(ext[i] == profile->ext[i]);
+		assert(cap[i] == profile->cap[i]);
+		assert(z[i] == profile->z[i]);
+	}
+	
+	// free memory
+	polycap_clear_error(&error);
+	polycap_profile_free(profile);
+	polycap_free(ext);
+	polycap_free(cap);
+	polycap_free(z);
+}
+
 int main(int argc, char *argv[]) {
 
 	test_profile_new();
 	test_profile_new_from_file();
+	test_profile_new_from_array_and_get();
 
 	return 0;
 }

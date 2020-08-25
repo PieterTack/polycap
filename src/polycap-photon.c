@@ -567,7 +567,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	}
 	d_ph_capcen = sqrt( (photon->start_coords.x-current_cap_x)*(photon->start_coords.x-current_cap_x) + (photon->start_coords.y-current_cap_y)*(photon->start_coords.y-current_cap_y) );
 	if(d_ph_capcen > current_cap_rad){
-		//Check whether photon is transmitted through wall (i.e. generates leak or intleak events)
+		//Check whether photon is transmitted through wall (i.e. generates extleak or intleak events)
 		if(leak_calc && photon->start_coords.z == 0){ //photon hits capillary wall on entrance
 			// set central_axis to surface norm of glass wall at PC entrance
 			central_axis.x = 0;
@@ -693,7 +693,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		iesc = polycap_capil_trace(ix, photon, description, cap_x, cap_y, leak_calc, error);
 		if(iesc != 1){ //as long as iesc = 1 photon is still reflecting in capillary
 		//iesc == 0, which means this photon has reached its final point (weight[*] <1e-4)
-		//alternatively, iesc can be -2 or -3due to not finding intersection point, as the photon reached the end of the capillary
+		//alternatively, iesc can be -2 or -3 due to not finding intersection point, as the photon reached the end of the capillary
 			break;
 		}
 	}

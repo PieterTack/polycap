@@ -424,15 +424,34 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 }
 //===========================================
 // set exterior profile
-void polycap_profile_set_profile(polycap_profile *profile, int nid, double *ext, double *cap, double *z, polycap_error **error)
+polycap_profile *polycap_profile_new_from_array(int nid, double *ext, double *cap, double *z, polycap_error **error)
 {
-	// first free current profile shape
-	free(profile->ext);
-	profile->ext = NULL;
-	free(profile->cap);
-	profile->cap = NULL;
-	free(profile->z);
-	profile->z = NULL;
+	polycap_profile *profile;
+
+	//argument sanity check
+	if(ext == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_array: ext cannot be NULL");
+		return NULL;
+	}
+	if(cap == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_array: cap cannot be NULL");
+		return NULL;
+	}
+	if(z == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_array: z cannot be NULL");
+		return NULL;
+	}
+	if(nid <= 1){
+		polycap_set_error(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_array: nid must be greater than 1");
+		return NULL;
+	}
+
+	// first define profile
+	profile = malloc(sizeof(polycap_profile));
+	if(profile == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new_from_array: could not allocate memory for profile -> %s", strerror(errno));
+		return NULL;
+	}
 
 	// alloc new array memory
 	profile->nmax = nid;
@@ -451,12 +470,16 @@ void polycap_profile_set_profile(polycap_profile *profile, int nid, double *ext,
 	memcpy(profile->ext, ext, sizeof(double) * nid+1);
 	memcpy(profile->cap, cap, sizeof(double) * nid+1);
 	memcpy(profile->z, z, sizeof(double) * nid+1);
+
+	return profile;
 }
 //===========================================
 // return exterior profile
 bool polycap_profile_get_ext(polycap_profile *profile, size_t *nid, double **ext)
 {
 	if(profile == NULL)
+		return false;
+	if(nid == NULL)
 		return false;
 
 	*nid = profile->nmax;
@@ -471,6 +494,8 @@ bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap
 {
 	if(profile == NULL)
 		return false;
+	if(nid == NULL)
+		return false;
 
 	*nid = profile->nmax;
         *cap = malloc(sizeof(double) * profile->nmax+1);
@@ -483,6 +508,8 @@ bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap
 bool polycap_profile_get_z(polycap_profile *profile, size_t *nid, double **z)
 {
 	if(profile == NULL)
+		return false;
+	if(nid == NULL)
 		return false;
 
 	*nid = profile->nmax;

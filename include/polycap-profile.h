@@ -109,14 +109,14 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 
 /* Allows the user to set a profile shape given the appropriate shape parameter arrays
  *
- * \param profile a polycap_profile
  * \param nid amount of elements in the provided array. It is suggested to have at least 1000 elements.
  * \param ext external polycapillary shape profile radii [cm].
  * \param cap central capillary shape profile radii [cm].
  * \param z Z-coordinates running from 0 to polycapillary length [cm].
+ * \returns a polycap_profile
  */ 
 POLYCAP_EXTERN
-void polycap_profile_set_profile(polycap_profile *profile, int nid, double *ext, double *cap, double *z, polycap_error **error);
+polycap_profile *polycap_profile_new_from_array(int nid, double *ext, double *cap, double *z, polycap_error **error);
 
 /** Retrieve exit electric field vector from a polycap_photon
  * 
