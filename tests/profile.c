@@ -14,6 +14,7 @@
 
 #include "config.h"
 #include <polycap.h>
+#include "polycap-private.h"
 #ifdef NDEBUG
   #undef NDEBUG
 #endif
@@ -121,6 +122,7 @@ void test_profile_new_from_array_and_get() {
 	test = polycap_profile_get_z(profile, &nid, &z);
 	assert(test == true);
 	assert(nid == profile->nmax);
+	printf("ext[955]: %lf, prof->ext[955]: %lf\n", ext[955], profile->ext[955]);
 	for(i=0; i<=profile->nmax; i++){
 		assert(ext[i] == profile->ext[i]);
 		assert(cap[i] == profile->cap[i]);

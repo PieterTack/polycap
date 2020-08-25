@@ -455,21 +455,21 @@ polycap_profile *polycap_profile_new_from_array(int nid, double *ext, double *ca
 
 	// alloc new array memory
 	profile->nmax = nid;
-	profile->ext = malloc(sizeof(double)*nid+1);
+	profile->ext = malloc(sizeof(double)*(nid+1));
 	if(profile->ext == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_set_profile: could not allocate memory for profile->ext -> %s", strerror(errno));
 	}
-	profile->cap = malloc(sizeof(double)*nid+1);
+	profile->cap = malloc(sizeof(double)*(nid+1));
 	if(profile->cap == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_set_profile: could not allocate memory for profile->cap -> %s", strerror(errno));
 	}
-	profile->z = malloc(sizeof(double)*nid+1);
+	profile->z = malloc(sizeof(double)*(nid+1));
 	if(profile->z == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_set_profile: could not allocate memory for profile->z -> %s", strerror(errno));
 	}
-	memcpy(profile->ext, ext, sizeof(double) * nid+1);
-	memcpy(profile->cap, cap, sizeof(double) * nid+1);
-	memcpy(profile->z, z, sizeof(double) * nid+1);
+	memcpy(profile->ext, ext, sizeof(double) * (nid+1));
+	memcpy(profile->cap, cap, sizeof(double) * (nid+1));
+	memcpy(profile->z, z, sizeof(double) * (nid+1));
 
 	return profile;
 }
@@ -483,8 +483,8 @@ bool polycap_profile_get_ext(polycap_profile *profile, size_t *nid, double **ext
 		return false;
 
 	*nid = profile->nmax;
-        *ext = malloc(sizeof(double) * profile->nmax+1);
-        memcpy(*ext, profile->ext, sizeof(double) * profile->nmax+1);
+        *ext = malloc(sizeof(double) * (profile->nmax+1));
+        memcpy(*ext, profile->ext, sizeof(double) * (profile->nmax+1));
 
 	return true;
 }
@@ -498,8 +498,8 @@ bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap
 		return false;
 
 	*nid = profile->nmax;
-        *cap = malloc(sizeof(double) * profile->nmax+1);
-        memcpy(*cap, profile->cap, sizeof(double) * profile->nmax+1);
+        *cap = malloc(sizeof(double) * (profile->nmax+1));
+        memcpy(*cap, profile->cap, sizeof(double) * (profile->nmax+1));
 
 	return true;
 }
@@ -513,8 +513,8 @@ bool polycap_profile_get_z(polycap_profile *profile, size_t *nid, double **z)
 		return false;
 
 	*nid = profile->nmax;
-        *z = malloc(sizeof(double) * profile->nmax+1);
-        memcpy(*z, profile->z, sizeof(double) * profile->nmax+1);
+        *z = malloc(sizeof(double) * (profile->nmax+1));
+        memcpy(*z, profile->z, sizeof(double) * (profile->nmax+1));
 
 	return true;
 }
