@@ -57,6 +57,10 @@ class TestPolycapProfile(unittest.TestCase):
         profile = polycap.Profile(polycap.Profile.PARABOLOIDAL, 6., TestPolycapProfile.rad_ext_upstream, TestPolycapProfile.rad_ext_downstream, TestPolycapProfile.rad_int_upstream, TestPolycapProfile.rad_int_downstream, TestPolycapProfile.focal_dist_upstream, TestPolycapProfile.focal_dist_downstream)
         self.assertIsInstance(profile, polycap.Profile)
 
+    def test_profile_good_from_array(self):
+        profile = polycap.Profile.set_profile(self, np.linspace(TestPolycapProfile.rad_ext_upstream, TestPolycapProfile.rad_ext_downstream, 1000), np.linspace(TestPolycapProfile.rad_int_upstream, TestPolycapProfile.rad_int_downstream, 1000), np.linspace(0,6,1000))
+        self.assertIsInstance(profile, polycap.Profile)
+
 class TestPolycapDescription(unittest.TestCase):
     rad_ext_upstream = 0.2065
     rad_ext_downstream = 0.0585

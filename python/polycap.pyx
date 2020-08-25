@@ -263,15 +263,17 @@ cdef class Profile:
         z = np.asarray(z, dtype=np.double)
         z = np.atleast_1d(z)
 
-        polycap_profile_set_profile(self.profile, z.size-1, <double*> np.PyArray_DATA(ext), <double*> np.PyArray_DATA(cap), <double*> np.PyArray_DATA(z), &error)
+        self.profile = polycap_profile_new_from_array(z.size-1, <double*> np.PyArray_DATA(ext), <double*> np.PyArray_DATA(cap), <double*> np.PyArray_DATA(z), &error)
         polycap_set_exception(error)
 
     def get_ext(self):
         '''Retrieve exterior profile from a :ref:``Profile`` class'''
         cdef size_t nid = 0
         cdef double *ext = NULL
+        cdef polycap_error *error = NULL
         
-        polycap_profile_get_ext(self.profile, &nid, &ext)
+        polycap_profile_get_ext(self.profile, &nid, &ext, &error)
+        polycap_set_exception(error)
         cdef np.npy_intp dims[1]
         dims[0] = nid+1 
 
@@ -285,8 +287,10 @@ cdef class Profile:
         '''Retrieve capillary profile from a :ref:``Profile`` class'''
         cdef size_t nid = 0
         cdef double *cap = NULL
+        cdef polycap_error *error = NULL
         
-        polycap_profile_get_cap(self.profile, &nid, &cap)
+        polycap_profile_get_cap(self.profile, &nid, &cap, &error)
+        polycap_set_exception(error)
         cdef np.npy_intp dims[1]
         dims[0] = nid+1 
 
@@ -300,8 +304,10 @@ cdef class Profile:
         '''Retrieve length profile from a :ref:``Profile`` class'''
         cdef size_t nid = 0
         cdef double *z = NULL
+        cdef polycap_error *error = NULL
         
-        polycap_profile_get_z(self.profile, &nid, &z)
+        polycap_profile_get_z(self.profile, &nid, &z, &error)
+        polycap_set_exception(error)
         cdef np.npy_intp dims[1]
         dims[0] = nid+1 
 

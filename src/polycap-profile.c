@@ -475,7 +475,7 @@ polycap_profile *polycap_profile_new_from_array(int nid, double *ext, double *ca
 }
 //===========================================
 // return exterior profile
-bool polycap_profile_get_ext(polycap_profile *profile, size_t *nid, double **ext)
+bool polycap_profile_get_ext(polycap_profile *profile, size_t *nid, double **ext, polycap_error **error)
 {
 	if(profile == NULL)
 		return false;
@@ -490,7 +490,7 @@ bool polycap_profile_get_ext(polycap_profile *profile, size_t *nid, double **ext
 }
 //===========================================
 // return capillary profile
-bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap)
+bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap, polycap_error **error)
 {
 	if(profile == NULL)
 		return false;
@@ -505,7 +505,7 @@ bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap
 }
 //===========================================
 // return z profile
-bool polycap_profile_get_z(polycap_profile *profile, size_t *nid, double **z)
+bool polycap_profile_get_z(polycap_profile *profile, size_t *nid, double **z, polycap_error **error)
 {
 	if(profile == NULL)
 		return false;

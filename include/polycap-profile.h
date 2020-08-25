@@ -113,40 +113,44 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
  * \param ext external polycapillary shape profile radii [cm].
  * \param cap central capillary shape profile radii [cm].
  * \param z Z-coordinates running from 0 to polycapillary length [cm].
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns a polycap_profile
  */ 
 POLYCAP_EXTERN
 polycap_profile *polycap_profile_new_from_array(int nid, double *ext, double *cap, double *z, polycap_error **error);
 
-/** Retrieve exit electric field vector from a polycap_photon
+/** Retrieve external polycapillary radius profile from a polycap_profile
  * 
  * \param profile a polycap_profile
  * \param nid amount of elements in the array.
  * \param ext external polycapillary shape profile radii [cm].
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns true on success, otherwise fail.
  */
 POLYCAP_EXTERN
-bool polycap_profile_get_ext(polycap_profile *profile, size_t *nid, double **ext);
+bool polycap_profile_get_ext(polycap_profile *profile, size_t *nid, double **ext, polycap_error **error);
 
-/** Retrieve exit electric field vector from a polycap_photon
+/** Retrieve central capillary radius profile from a polycap_profile
  * 
  * \param profile a polycap_profile
  * \param nid amount of elements in the array.
  * \param cap central capillary shape profile radii [cm].
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns true on success, otherwise fail.
  */
 POLYCAP_EXTERN
-bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap);
+bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap, polycap_error **error);
 
 /** Retrieve z array from a polycap_profile
  * 
  * \param profile a polycap_profile
  * \param nid amount of elements in the array.
  * \param z Z-coordinates running from 0 to polycapillary length [cm] 
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
  * \returns true on success, otherwise fail.
  */
 POLYCAP_EXTERN
-bool polycap_profile_get_z(polycap_profile *profile, size_t *nid, double **z);
+bool polycap_profile_get_z(polycap_profile *profile, size_t *nid, double **z, polycap_error **error);
 
 /** Free the polycap_profile structure and its associated data
  *

@@ -107,19 +107,22 @@ void test_profile_new_from_array_and_get() {
 	// This works, we know from previous tests
 	profile = polycap_profile_new(POLYCAP_PROFILE_CONICAL, 6., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
 	assert(profile != NULL); //profile should not be NULL
+	polycap_clear_error(&error);
 
 	// let's test the get functions
-	test = polycap_profile_get_ext(NULL, NULL, &ext);
+	test = polycap_profile_get_ext(NULL, NULL, &ext, NULL);
 	assert(test == false);
-	test = polycap_profile_get_cap(NULL, NULL, &cap);
+	test = polycap_profile_get_cap(NULL, NULL, &cap, NULL);
 	assert(test == false);
-	test = polycap_profile_get_z(NULL, NULL, &z);
+	test = polycap_profile_get_z(NULL, NULL, &z, NULL);
 	assert(test == false);
-	test = polycap_profile_get_ext(profile, &nid, &ext);
+	test = polycap_profile_get_ext(profile, &nid, &ext, &error);
 	assert(test == true);
-	test = polycap_profile_get_cap(profile, &nid, &cap);
+	polycap_clear_error(&error);
+	test = polycap_profile_get_cap(profile, &nid, &cap, &error);
 	assert(test == true);
-	test = polycap_profile_get_z(profile, &nid, &z);
+	polycap_clear_error(&error);
+	test = polycap_profile_get_z(profile, &nid, &z, &error);
 	assert(test == true);
 	assert(nid == profile->nmax);
 	printf("ext[955]: %lf, prof->ext[955]: %lf\n", ext[955], profile->ext[955]);
