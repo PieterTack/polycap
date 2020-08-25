@@ -230,6 +230,8 @@ cdef class Profile:
         :type focal_dist_upstream: double
         :param focal_dist_downstream: focal distance downstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
         :type focal_dist_downstream: double
+        :param ignore: if set to True, a \c NULL Profile will be generated
+        :type ignore: bool
         :return: a new :ref:``Profile``, or \c NULL if an error occurred
         '''
         if ignore is True:
@@ -269,7 +271,9 @@ cdef class Profile:
         z = np.asarray(z, dtype=np.double)
         z = np.atleast_1d(z)
 
-        # TODO: check array length consistency
+        # check array length consistency
+        if(ext.size != z.size or ext.size != cap.size):
+            raise ValueError("arrays must be of identical size.")
 
         cdef polycap_profile *profile = polycap_profile_new_from_arrays(z.size-1, <double*> np.PyArray_DATA(ext), <double*> np.PyArray_DATA(cap), <double*> np.PyArray_DATA(z), &error)
         polycap_set_exception(error)
