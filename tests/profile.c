@@ -132,11 +132,11 @@ void test_profile_new_from_array_and_get() {
 		assert(z[i] == profile->z[i]);
 	}
 
-	// test polycap_profile_new_from_array
+	// test polycap_profile_new_from_arrays
 	polycap_profile_free(profile);
 	profile = NULL;
 	polycap_clear_error(&error);
-	profile = polycap_profile_new_from_array(nid, ext, cap, z, &error);
+	profile = polycap_profile_new_from_arrays(nid, ext, cap, z, &error);
 	assert(profile != NULL);
 	assert(nid == profile->nmax);
 	for(i=0; i<=profile->nmax; i++){

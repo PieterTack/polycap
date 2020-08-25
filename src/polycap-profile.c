@@ -424,7 +424,7 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 }
 //===========================================
 // set exterior profile
-polycap_profile *polycap_profile_new_from_array(int nid, double *ext, double *cap, double *z, polycap_error **error)
+polycap_profile *polycap_profile_new_from_arrays(int nid, double *ext, double *cap, double *z, polycap_error **error)
 {
 	polycap_profile *profile;
 

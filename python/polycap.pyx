@@ -249,7 +249,7 @@ cdef class Profile:
         if self.profile is not NULL:
             polycap_profile_free(self.profile)
 
-    def set_profile(self,
+    def new_from_arrays(self,
             object ext not None,
             object cap not None,
             object z not None):
@@ -263,8 +263,13 @@ cdef class Profile:
         z = np.asarray(z, dtype=np.double)
         z = np.atleast_1d(z)
 
-        self.profile = polycap_profile_new_from_array(z.size-1, <double*> np.PyArray_DATA(ext), <double*> np.PyArray_DATA(cap), <double*> np.PyArray_DATA(z), &error)
+        cdef polycap_profile *profile = polycap_profile_new_from_arrays(z.size-1, <double*> np.PyArray_DATA(ext), <double*> np.PyArray_DATA(cap), <double*> np.PyArray_DATA(z), &error)
         polycap_set_exception(error)
+
+        rv = Profile(Profile.CONICAL, 1, 1, 0.5, 0.5, 1, 1)
+        rv.profile = profile
+
+        return rv
 
     def get_ext(self):
         '''Retrieve exterior profile from a :ref:``Profile`` class'''
