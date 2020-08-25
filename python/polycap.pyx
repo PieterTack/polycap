@@ -249,6 +249,68 @@ cdef class Profile:
         if self.profile is not NULL:
             polycap_profile_free(self.profile)
 
+    def set_profile(self,
+            object ext not None,
+            object cap not None,
+            object z not None):
+        '''Set profile shape using user defined arrays'''
+        cdef polycap_error *error = NULL
+
+        ext = np.asarray(ext, dtype=np.double)
+        ext = np.atleast_1d(ext)
+        cap = np.asarray(cap, dtype=np.double)
+        cap = np.atleast_1d(cap)
+        z = np.asarray(z, dtype=np.double)
+        z = np.atleast_1d(z)
+
+        polycap_profile_set_profile(self.profile, z.size-1, <double*> np.PyArray_DATA(ext), <double*> np.PyArray_DATA(cap), <double*> np.PyArray_DATA(z), &error)
+        polycap_set_exception(error)
+
+    def get_ext(self):
+        '''Retrieve exterior profile from a :ref:``Profile`` class'''
+        cdef size_t nid = 0
+        cdef double *ext = NULL
+        
+        polycap_profile_get_ext(self.profile, &nid, &ext)
+        cdef np.npy_intp dims[1]
+        dims[0] = nid+1 
+
+        rv = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        memcpy(np.PyArray_DATA(rv), ext, sizeof(double) * nid+1)
+        polycap_free(ext)
+
+        return rv
+
+    def get_cap(self):
+        '''Retrieve capillary profile from a :ref:``Profile`` class'''
+        cdef size_t nid = 0
+        cdef double *cap = NULL
+        
+        polycap_profile_get_cap(self.profile, &nid, &cap)
+        cdef np.npy_intp dims[1]
+        dims[0] = nid+1 
+
+        rv = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        memcpy(np.PyArray_DATA(rv), cap, sizeof(double) * nid+1)
+        polycap_free(cap)
+
+        return rv
+
+    def get_z(self):
+        '''Retrieve length profile from a :ref:``Profile`` class'''
+        cdef size_t nid = 0
+        cdef double *z = NULL
+        
+        polycap_profile_get_z(self.profile, &nid, &z)
+        cdef np.npy_intp dims[1]
+        dims[0] = nid+1 
+
+        rv = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        memcpy(np.PyArray_DATA(rv), z, sizeof(double) * nid+1)
+        polycap_free(z)
+
+        return rv
+
 '''Class containing a random number generator
 
 The :ref:``Rng`` class is  mapped to either gsl_rng or easy_rng.``.

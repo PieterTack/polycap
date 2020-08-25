@@ -423,6 +423,75 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 	return 1;
 }
 //===========================================
+// set exterior profile
+void polycap_profile_set_profile(polycap_profile *profile, int nid, double *ext, double *cap, double *z, polycap_error **error)
+{
+	// first free current profile shape
+	free(profile->ext);
+	profile->ext = NULL;
+	free(profile->cap);
+	profile->cap = NULL;
+	free(profile->z);
+	profile->z = NULL;
+
+	// alloc new array memory
+	profile->nmax = nid;
+	profile->ext = malloc(sizeof(double)*nid+1);
+	if(profile->ext == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_set_profile: could not allocate memory for profile->ext -> %s", strerror(errno));
+	}
+	profile->cap = malloc(sizeof(double)*nid+1);
+	if(profile->cap == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_set_profile: could not allocate memory for profile->cap -> %s", strerror(errno));
+	}
+	profile->z = malloc(sizeof(double)*nid+1);
+	if(profile->z == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_set_profile: could not allocate memory for profile->z -> %s", strerror(errno));
+	}
+	memcpy(profile->ext, ext, sizeof(double) * nid+1);
+	memcpy(profile->cap, cap, sizeof(double) * nid+1);
+	memcpy(profile->z, z, sizeof(double) * nid+1);
+}
+//===========================================
+// return exterior profile
+bool polycap_profile_get_ext(polycap_profile *profile, size_t *nid, double **ext)
+{
+	if(profile == NULL)
+		return false;
+
+	*nid = profile->nmax;
+        *ext = malloc(sizeof(double) * profile->nmax+1);
+        memcpy(*ext, profile->ext, sizeof(double) * profile->nmax+1);
+
+	return true;
+}
+//===========================================
+// return capillary profile
+bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap)
+{
+	if(profile == NULL)
+		return false;
+
+	*nid = profile->nmax;
+        *cap = malloc(sizeof(double) * profile->nmax+1);
+        memcpy(*cap, profile->cap, sizeof(double) * profile->nmax+1);
+
+	return true;
+}
+//===========================================
+// return z profile
+bool polycap_profile_get_z(polycap_profile *profile, size_t *nid, double **z)
+{
+	if(profile == NULL)
+		return false;
+
+	*nid = profile->nmax;
+        *z = malloc(sizeof(double) * profile->nmax+1);
+        memcpy(*z, profile->z, sizeof(double) * profile->nmax+1);
+
+	return true;
+}
+//===========================================
 // free the polycap_profile structure and its associated data
 void polycap_profile_free(polycap_profile *profile)
 {

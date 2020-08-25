@@ -253,6 +253,44 @@
  *	- **PARABOLOIDAL:** a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
  *	- **ELLIPSOIDAL:** an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
  *
+ * \subsection profileset set_profile
+ * Set profile shape using user defined arrays.
+ * 
+ * Syntax:
+ * \code{.py}
+ * Profile.set_profile(object ext, object cap, object z)
+ * \endcode
+ *       - **ext:** a double array containing the polycapillary exterior profile shape radii [cm]
+ *       - **cap:** a double array containing the polycapillary central capillary profile shape radii [cm]
+ *       - **z:** a double array containing the polycapillary length profile running from 0 to polycapillary length [cm]
+ *
+ * \subsection extget get_ext
+ * Get exterior profile shape from a `Profile` class.
+ * 
+ * Syntax:
+ * \code{.py}
+ * ext = Profile.get_ext()
+ * \endcode
+ *       - **returns:** a double array containing the polycapillary exterior profile shape radii [cm]
+ *
+ * \subsection capget get_cap
+ * Get central capillary profile shape from a `Profile` class.
+ * 
+ * Syntax:
+ * \code{.py}
+ * cap = Profile.get_cap()
+ * \endcode
+ *       - **returns:** a double array containing the polycapillary central capillary profile shape radii [cm]
+ *
+ * \subsection zget get_z
+ * Get length profile from a `Profile` class.
+ * 
+ * Syntax:
+ * \code{.py}
+ * z = Profile.get_z()
+ * \endcode
+ *       - **returns:** a double array containing the polycapillary length profile running from 0 to polycapillary length [cm]
+ *
  * \section rng Rng
  * 
  * Class containing a random number generator
