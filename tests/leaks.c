@@ -483,13 +483,13 @@ printf("x: %lf, y: %lf, z: %lf \n", photon->intleak[0]->coords.x, photon->intlea
 	assert(photon->extleak[0]->direction.z - 1.0 < 0.0000005);
 	assert(photon->intleak[0]->coords.x - 0.048778 < 0.0000005);
 	assert(photon->intleak[0]->coords.y - 0.0 < 0.0000005);
-	assert(photon->intleak[0]->coords.z - 8.999072 < 0.0000005);
+	assert(photon->intleak[0]->coords.z - 9.0 < 0.0000005);
 	assert(photon->intleak[0]->direction.x + 0.001078 < 0.0000005);
 	assert(photon->intleak[0]->direction.y - 0.0 < 0.0000005);
 	assert(photon->intleak[0]->direction.z - 0.999999 < 0.0000005);
 	assert(photon->intleak[1]->coords.x - 0.053113 < 0.0000005);
 	assert(photon->intleak[1]->coords.y - 0.0 < 0.0000005);
-	assert(photon->intleak[1]->coords.z - 8.998747 < 0.0000005);
+	assert(photon->intleak[1]->coords.z - 9.0 < 0.0000005);
 	assert(photon->intleak[1]->direction.x + 0.000511 < 0.0000005);
 	assert(photon->intleak[1]->direction.y - 0.0 < 0.0000005);
 	assert(photon->intleak[1]->direction.z - 1.0 < 0.0000005);
@@ -894,7 +894,7 @@ printf("--------------\n");*/
 	assert(fabs(weights[0]-0.000001) < 0.0000005);
 	assert(photon->intleak[0]->coords.x - 0.0575 < 0.0000005);
 	assert(photon->intleak[0]->coords.y - 0.0 < 0.0000005);
-	assert(photon->intleak[0]->coords.z - 8.999983 < 0.0000005);
+	assert(photon->intleak[0]->coords.z - 9.0 < 0.0000005);
 	assert(photon->intleak[0]->direction.x - 0.001 < 0.0000005);
 	assert(photon->intleak[0]->direction.y - 0.0 < 0.0000005);
 	assert(photon->intleak[0]->direction.z - 1.0 < 0.0000005);
