@@ -807,9 +807,8 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_vector3 surface_norm, 
 
 			//	Store these 'additional' photons as leaked photons... 
 			// 	A single simulated photon can result in many leaks along the way
-			photon->n_extleak += phot_temp->n_extleak;
-			photon->n_intleak += phot_temp->n_intleak;
 			if(phot_temp->n_extleak > 0){
+				photon->n_extleak += phot_temp->n_extleak;
 				photon->extleak = realloc(photon->extleak, sizeof(polycap_leak*) * photon->n_extleak);
 				if(photon->extleak == NULL){
 					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for photon->extleak -> %s", strerror(errno));
@@ -825,6 +824,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_vector3 surface_norm, 
 				}
 			}
 			if(phot_temp->n_intleak > 0){
+				photon->n_intleak += phot_temp->n_intleak;
 				photon->intleak = realloc(photon->intleak, sizeof(polycap_leak*) * photon->n_intleak);
 				if(photon->intleak == NULL){
 					polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: *could not allocate memory for photon->intleak -> %s", strerror(errno));

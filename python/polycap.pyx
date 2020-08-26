@@ -537,6 +537,7 @@ cdef class Leak:
     cdef object elecv
     cdef object weight
     cdef int64_t n_refl
+    cdef size_t n_energies
 
     def __cinit__(self):
         self.coords = None
@@ -544,6 +545,7 @@ cdef class Leak:
         self.elecv = None
         self.weight = None
         self.n_refl = 0
+        self.n_energies = 0
 
     @staticmethod
     cdef create(polycap_leak *leak):
@@ -556,12 +558,13 @@ cdef class Leak:
         rv.elecv = vector2tuple(leak.elecv)
 
         cdef np.npy_intp dims[1]
-        dims[0] = leak.n_refl # is this correct??
+        dims[0] = leak.n_energies # is this correct??
         rv.weight = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
         rv.weight.flags.writeable = False
 
-        memcpy(np.PyArray_DATA(rv.weight), leak.weight, sizeof(double) * leak.n_refl)
+        memcpy(np.PyArray_DATA(rv.weight), leak.weight, sizeof(double) * leak.n_energies)
         rv.n_refl = leak.n_refl
+        rv.n_energies = leak.n_energies
 
         # DO NOT FREE leak!
 
@@ -710,8 +713,6 @@ cdef class Photon:
         cdef polycap_leak **leaks = NULL
         cdef int64_t n_leaks = 0
         cdef polycap_error *error = NULL
-        cdef np.npy_intp dims[1]
-        dims[0] = self.n_energies
         
         polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error)
         polycap_set_exception(error)
@@ -723,6 +724,7 @@ cdef class Photon:
             rv.append(leak)
             polycap_leak_free(leaks[i])
             polycap_free(leaks)
+
         return rv
 
         # TODO: cache leaks, request it just once

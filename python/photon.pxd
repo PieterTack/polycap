@@ -27,6 +27,7 @@ cdef extern from "polycap-photon.h" nogil:
         polycap_vector3 coords
         polycap_vector3 direction
         polycap_vector3 elecv
+        size_t n_energies;
         double *weight
         int64_t n_refl
 

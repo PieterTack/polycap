@@ -28,6 +28,9 @@ void test_polycap_capil_segment() {
 	polycap_vector3 cap_coord0, cap_coord1, photon_dir, photon_coord, surface_norm, phot_coord0, phot_coord1;
 	double cap_rad0=0.005, cap_rad1=0.005;//, alfa;
 
+	photon_coord.x = 0.;
+	photon_coord.y = 0.;
+	photon_coord.z = 0.;
 	cap_coord0.x = 0.;
 	cap_coord0.y = 0.;
 	cap_coord0.z = 0.;

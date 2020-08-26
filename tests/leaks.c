@@ -57,7 +57,6 @@ void test_polycap_capil_trace_wall_leak() {
 	polycap_clear_error(&error);
 	description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
-	polycap_profile_free(profile);
 	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
@@ -96,6 +95,7 @@ void test_polycap_capil_trace_wall_leak() {
 	assert(r_i == 0);
 	assert(q_i == 259);
 
+	polycap_profile_free(profile);
 	polycap_description_free(description);
 	polycap_photon_free(photon);
 }
@@ -144,7 +144,6 @@ void test_polycap_capil_leak() {
 	polycap_clear_error(&error);
 	description = polycap_description_new(profile, 0.0, 200000, 2, iz, wi, 2.23, &error);
 	assert(description != NULL);
-	polycap_profile_free(profile);
 	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error);
@@ -173,16 +172,18 @@ void test_polycap_capil_leak() {
 	assert(test == 0); //almost no fraction would reflect, it's all transmitted
 	assert(photon->n_intleak == 0);
 	assert(photon->n_extleak == 1);
-
+	polycap_photon_free(photon);
+	photon = NULL;
 
 	//re-prepare photon struct
-	if(photon->extleak){
-		for(i = 0; i < photon->n_extleak; i++){
-			polycap_leak_free(photon->extleak[i]);
-		}
-		free(photon->extleak);
-	}
-	photon->extleak = NULL;
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
+	assert(photon != NULL);
+	polycap_clear_error(&error);
+	//re-prepare photon struct
+	photon->n_energies = 1;
+	photon->energies = malloc(sizeof(double)*photon->n_energies);
+	photon->weight = malloc(sizeof(double)*photon->n_energies);
+	photon->energies[0] = 20; //set 20keV photon
 	photon->weight[0] = 1.; //weight == 100%
 	photon->i_refl = 0; //set reflections to 0
 	photon->n_extleak = 0; //set extleak to 0
@@ -199,9 +200,10 @@ void test_polycap_capil_leak() {
 	photon->exit_direction.x = photon->start_direction.x;
 	photon->exit_direction.y = photon->start_direction.y;
 	photon->exit_direction.z = photon->start_direction.z;
+	polycap_photon_scatf(photon, &error);
+	polycap_clear_error(&error);
 	// photon potentially going through wall straight to exit
  	//	photon should have 1 intleak event (polycap_capil_trace_wall() returned 2)
-	polycap_clear_error(&error);
 	//	determine axis coordinates of this capillary
 	n_shells = round(sqrt(12. * description->n_cap - 3.)/6.-0.5); //258
 	z = description->profile->ext[0]/(2.*cos(M_PI/6.)*(n_shells+1));
@@ -375,8 +377,8 @@ void test_polycap_capil_leak() {
 	polycap_photon_free(photon);
 	photon = NULL;
 
-	//photon transmitting through 1 capillary wall to next capillary, not yet at exit window
-	//	creates succesful transmitted event, leak event, as well as intleak events
+	//photon transmitting through several capillary wall to next capillary, not yet at exit window
+	//	generates succesful transmitted event, as well as leak events
 	//re-prepare photon struct
 	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
@@ -388,8 +390,8 @@ void test_polycap_capil_leak() {
 	photon->energies[0] = 40; //set 40keV photon
 	photon->weight[0] = 1.; //weight == 100%
 	photon->i_refl = 0; //set reflections to 0
-        photon->n_extleak = 0; //set extleak to 0
-        photon->n_intleak = 0; //set intleak photons to 0
+	photon->n_extleak = 0; //set extleak to 0
+	photon->n_intleak = 0; //set intleak photons to 0
 	polycap_photon_scatf(photon, &error);
 	polycap_clear_error(&error);
 	photon->start_coords.x = 0.0585;
@@ -463,7 +465,9 @@ void test_polycap_capil_leak() {
 	photon->exit_coords.y = photon->start_coords.y;
 	photon->exit_coords.z = photon->start_coords.z;
 	alfa = M_PI_2 - alfa;
+printf("------\n");
 	test = polycap_capil_reflect(photon, surface_norm, true, &error);
+printf("x: %lf, y: %lf, z: %lf \n", photon->intleak[0]->coords.x, photon->intleak[0]->coords.y, photon->intleak[0]->coords.z);
 	assert(test == 1);
 	assert(photon->n_extleak == 1);
 	assert(photon->n_intleak == 2);
@@ -494,6 +498,8 @@ void test_polycap_capil_leak() {
 	cap_x = NULL;
 	polycap_free(cap_y);
 	cap_y = NULL;
+	polycap_photon_free(photon);
+	photon = NULL;
 
 	//another case that should work, simulates a photon_launch event where photon (not leak events) should be absorbed
 	polycap_clear_error(&error);
@@ -571,6 +577,7 @@ void test_polycap_capil_leak() {
 	polycap_free(cap_y);
 	cap_y = NULL;
 
+	polycap_profile_free(profile);
 	polycap_description_free(description);
 	polycap_photon_free(photon);
 }

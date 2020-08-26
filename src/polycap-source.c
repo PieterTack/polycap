@@ -195,12 +195,7 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source->energies -> %s", strerror(errno));
 		return NULL;
 	}
-	source->rng = malloc(sizeof(polycap_rng));
-	if(source->rng == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source->rng -> %s", strerror(errno));
-		return NULL;
-	}
-	
+
 	source->d_source = d_source;
 	source->src_x = src_x;
 	source->src_y = src_y;
@@ -248,12 +243,6 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	description = calloc(1, sizeof(polycap_description));
 	if(description == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new_from_file: could not allocate memory for description -> %s", strerror(errno));
-		return NULL;
-	}
-
-	rng = calloc(1, sizeof(polycap_rng));
-	if(rng == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new_from_file: could not allocate memory for rng -> %s", strerror(errno));
 		return NULL;
 	}
 	
