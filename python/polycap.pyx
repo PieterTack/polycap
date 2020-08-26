@@ -693,7 +693,7 @@ cdef class Photon:
         if self.photon is NULL:
             return None
 
-        cdef polycap_leak *leaks = NULL
+        cdef polycap_leak **leaks = NULL
         cdef int64_t n_leaks = 0
         cdef polycap_error *error = NULL
         cdef np.npy_intp dims[1]
@@ -715,7 +715,7 @@ cdef class Photon:
             # make read-only
             rv[i].weight.flags.writeable = False
             memcpy(np.PyArray_DATA(rv[i].weight), leaks[i].weight, sizeof(double) * self.n_energies)
-            polycap_leak_free(&leaks[i])
+            polycap_leak_free(leaks[i])
         return rv
 
     def get_exit_coords(self):

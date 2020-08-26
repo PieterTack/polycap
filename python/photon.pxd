@@ -51,7 +51,7 @@ cdef extern from "polycap-photon.h" nogil:
 
     polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 
-    void polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak **leaks, int64_t *n_leaks, polycap_error **error)
+    void polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak ***leaks, int64_t *n_leaks, polycap_error **error)
 
     void polycap_photon_free(polycap_photon *photon)
 

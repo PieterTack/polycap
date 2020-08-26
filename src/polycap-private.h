@@ -130,8 +130,8 @@ typedef struct _polycap_leak 	polycap_leak;
 struct _polycap_photon
   {
   polycap_description *description;
-  polycap_leak *extleak;
-  polycap_leak *intleak;
+  polycap_leak **extleak;
+  polycap_leak **intleak;
   int64_t n_extleak;
   int64_t n_intleak;
   polycap_vector3 start_coords;
@@ -195,6 +195,7 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *capx
 char *polycap_read_input_line(FILE *fptr, polycap_error **error);
 void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error);
 void polycap_photon_scatf(polycap_photon *photon, polycap_error **error);
+polycap_leak* polycap_leak_new(polycap_vector3 leak_coords, polycap_vector3 leak_dir, polycap_vector3 leak_elecv, int64_t n_refl, size_t n_energies, double *weights, polycap_error **error);
 
 #endif
 
