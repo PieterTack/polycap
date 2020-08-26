@@ -139,7 +139,7 @@ POLYCAP_EXTERN
 polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
 
 POLYCAP_EXTERN
-void polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak **leaks, int64_t *n_leaks, polycap_error **error);
+bool polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak **leaks, int64_t *n_leaks, polycap_error **error);
 
 /** Free a polycap_photon
  * 
@@ -147,6 +147,13 @@ void polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak **leak
  */
 POLYCAP_EXTERN
 void polycap_photon_free(polycap_photon *photon);
+
+/** Free a polycap_leak
+ * 
+ * \param photon a polycap_leak
+ */
+POLYCAP_EXTERN
+void polycap_leak_free(polycap_leak *leak);
 
 #ifdef __cplusplus
 }

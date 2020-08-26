@@ -195,7 +195,6 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *capx
 char *polycap_read_input_line(FILE *fptr, polycap_error **error);
 void polycap_description_check_weight(size_t nelem, double wi[], polycap_error **error);
 void polycap_photon_scatf(polycap_photon *photon, polycap_error **error);
-void polycap_leak_free(polycap_leak *leak, int64_t n_leak);
 
 #endif
 

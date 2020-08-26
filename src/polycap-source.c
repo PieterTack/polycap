@@ -862,7 +862,10 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 
 						//free the temp intleak and leak structs
 						if(extleak_temp){
-							polycap_leak_free(extleak_temp, n_extleak_temp);
+							for(k = 0; k < n_extleak_temp; k++){
+								polycap_leak_free(&extleak_temp[k]);
+							}
+							free(extleak_temp);
 							extleak_temp = NULL;
 						}
 						//and set their memory counters to 0
@@ -883,7 +886,10 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 
 						//free the temp intleak and leak structs
 						if(intleak_temp){
-							polycap_leak_free(intleak_temp, n_intleak_temp);
+							for(k = 0; k < n_extleak_temp; k++){
+								polycap_leak_free(&intleak_temp[k]);
+							}
+							free(intleak_temp);
 							intleak_temp = NULL;
 						}
 						//and set their memory counters to 0

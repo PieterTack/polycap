@@ -23,7 +23,12 @@ cdef extern from "polycap-photon.h" nogil:
 
     ctypedef struct polycap_photon
 
-    ctypedef struct polycap_leak
+    ctypedef struct polycap_leak:
+        polycap_vector3 coords
+        polycap_vector3 direction
+        polycap_vector3 elecv
+        double *weight
+        int64_t n_refl
 
     polycap_photon* polycap_photon_new(
         polycap_description *description,
@@ -50,4 +55,4 @@ cdef extern from "polycap-photon.h" nogil:
 
     void polycap_photon_free(polycap_photon *photon)
 
-    void polycap_leak_free(polycap_leak *leak, int64_t n_leak)
+    void polycap_leak_free(polycap_leak *leak)

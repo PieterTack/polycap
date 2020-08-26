@@ -777,43 +777,45 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 }
 
 //===========================================
-void polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak **leaks, int64_t *n_leaks, polycap_error **error)
+bool polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak **leaks, int64_t *n_leaks, polycap_error **error)
 {
 	int i;
 
 	if (photon == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_get_extleak_data: photon cannot be NULL");
-		return;
+		return false;
 	}
 
 	*n_leaks = photon->n_extleak;
 	*leaks = malloc(sizeof(polycap_leak) * photon->n_extleak);
 	if (*leaks == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_get_extleak_data: could not allocate memory for leaks -> %s", strerror(errno));
-		return;
+		return false;
 	}
 	for(i = 0; i < photon->n_extleak; i++)
 		*leaks[i] = photon->extleak[i];
+
+	return true;
 }
 
 //===========================================
 // free a polycap_leak structure
-void polycap_leak_free(polycap_leak *leak, int64_t n_leak)
+void polycap_leak_free(polycap_leak *leak)
 {
 	int i;
 	
 	if (leak == NULL)
 		return;
-	for(i = 0; i < n_leak; i++){
-		if (leak[i].weight)
-			free(leak[i].weight);
-	}
+	if (leak->weight)
+		free(leak->weight);
 	free(leak);
 }
 //===========================================
 // free a polycap_photon
 void polycap_photon_free(polycap_photon *photon)
 {
+	int64_t i;
+
 	if (photon == NULL)
 		return;
 	if (photon->energies)
@@ -825,9 +827,11 @@ void polycap_photon_free(polycap_photon *photon)
 	if (photon->scatf)
 		free(photon->scatf);
 	if (photon->extleak)
-		polycap_leak_free(photon->extleak, photon->n_extleak);
+		for(i = 0; i < photon->n_extleak; i++)
+			polycap_leak_free(&photon->extleak[i]);
 	if (photon->intleak)
-		polycap_leak_free(photon->intleak, photon->n_intleak);
+		for(i = 0; i < photon->n_intleak; i++)
+			polycap_leak_free(&photon->intleak[i]);
 	free(photon);
 }
 

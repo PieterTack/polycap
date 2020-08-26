@@ -550,7 +550,7 @@ cdef class Leak:
     def __dealloc__(self):
         '''Free a :ref:``Leak`` class and all associated data'''
         if self.leak is not NULL:
-            polycap_leak_free(self.leak, self.size) #TODO: tricky discrepency between C and python Leak struct?
+            polycap_leak_free(self.leak)
 
     @property
     def coords(self):
@@ -696,6 +696,8 @@ cdef class Photon:
         cdef polycap_leak *leaks = NULL
         cdef int64_t n_leaks = 0
         cdef polycap_error *error = NULL
+        cdef np.npy_intp dims[1]
+        dims[0] = self.n_energies
         
         polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error)
         polycap_set_exception(error)
@@ -707,8 +709,13 @@ cdef class Photon:
             rv[i].coords = leaks[i].coords
             rv[i].direction = leaks[i].direction
             rv[i].elecv = leaks[i].elecv
-            rv[i].weight = leaks[i].weight
             rv[i].n_refl = leaks[i].n_refl
+
+            rv[i].weight = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+            # make read-only
+            rv[i].weight.flags.writeable = False
+            memcpy(np.PyArray_DATA(rv[i].weight), leaks[i].weight, sizeof(double) * self.n_energies)
+            polycap_leak_free(&leaks[i])
         return rv
 
     def get_exit_coords(self):
