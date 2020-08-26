@@ -809,8 +809,6 @@ bool polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak ***lea
 // free a polycap_leak structure
 void polycap_leak_free(polycap_leak *leak)
 {
-	int i;
-	
 	if (leak == NULL)
 		return;
 	if (leak->weight)
