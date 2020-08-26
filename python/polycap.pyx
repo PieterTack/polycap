@@ -527,7 +527,65 @@ cdef polycap_vector3 np2vector(np.ndarray[double, ndim=1] arr):
     return rv
 
 cdef tuple vector2tuple(polycap_vector3 vec):
-    return (vec.x, vec.y, vec.z)
+    return (vec.x, vec.y, vec.z) #TODO: make it return named tuple instead
+
+'''Class containing information about the simulated leak events such as position and direction, energy and transmission weights.
+'''
+cdef class Leak:
+    cdef polycap_leak *leak
+    cdef object coords
+    cdef object direction
+    cdef object elecv
+    cdef object weight
+    cdef int64_t n_refl
+
+    def __cinit__(self):
+        self.leak = NULL
+        self.coords = None
+        self.direction = None
+        self.elecv = None
+        self.weight = None
+        self.n_refl = 0
+
+    def __dealloc__(self):
+        '''Free a :ref:``Leak`` class and all associated data'''
+        if self.leak is not NULL:
+            polycap_leak_free(self.leak, self.size) #TODO: tricky discrepency between C and python Leak struct?
+
+    @property
+    def coords(self):
+        '''Extract coords data from a polycap_leak struct. returned arrays should be freed by the user with polycap_free() or free().
+        return : tuple of self.coords
+        '''
+        return self.coords
+
+    @property
+    def direction(self):
+        '''Extract direction data from a polycap_leak struct. returned arrays should be freed by the user with polycap_free() or free().
+        return : tuple of self.direction
+        '''
+        return self.direction
+
+    @property
+    def elecv(self):
+        '''Extract electric vector data from a polycap_leak struct. returned arrays should be freed by the user with polycap_free() or free().
+        return : tuple of self.elecv
+        '''
+        return self.elecv
+
+    @property
+    def weight(self):
+        '''Extract weight data from a polycap_leak struct. returned arrays should be freed by the user with polycap_free() or free().
+        return : tuple of self.weight
+        '''
+        return self.weight
+
+    @property
+    def n_refl(self):
+        '''Extract amount of reflection data from a polycap_leak struct. returned arrays should be freed by the user with polycap_free() or free().
+        return : tuple of self.n_refl
+        '''
+        return self.n_refl
 
 '''Class containing information about the simulated photon such as position and direction, energy and transmission weights.
 '''
@@ -628,6 +686,30 @@ cdef class Photon:
         polycap_free(weights)
 
         return weights_np
+
+    @property
+    def extleak(self):
+        '''Retrieve exterior :ref:``Leak`` class array from a :ref:``Photon`` class '''
+        if self.photon is NULL:
+            return None
+
+        cdef polycap_leak *leaks = NULL
+        cdef int64_t n_leaks = 0
+        cdef polycap_error *error = NULL
+        
+        polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error)
+        polycap_set_exception(error)
+
+        rv = Leak() * n_leaks #TODO: not sure if this works to make tuple of Leaks
+
+        for i in range(0, n_leaks):
+            rv[i].leak = leaks[i]
+            rv[i].coords = leaks[i].coords
+            rv[i].direction = leaks[i].direction
+            rv[i].elecv = leaks[i].elecv
+            rv[i].weight = leaks[i].weight
+            rv[i].n_refl = leaks[i].n_refl
+        return rv
 
     def get_exit_coords(self):
         '''Retrieve exit coordinates from a :ref:``Photon`` class'''

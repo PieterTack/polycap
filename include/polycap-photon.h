@@ -45,6 +45,13 @@ struct _polycap_photon;
  */
 typedef struct _polycap_photon                      polycap_photon;
 
+struct _polycap_leak;
+/** Struct containing information about the simulated photon leak events such as position and direction, energy and transmission weights.
+ *
+ * When this struct is no longer required, it is the user's responsability to free the memory using polycap_leak_free().
+ */
+typedef struct _polycap_leak                      polycap_leak;
+
 /** Creates a new polycap_photon with its initial position, direction and electric field vector.
  *
  * \param description a polycap_description
@@ -83,6 +90,30 @@ int polycap_photon_launch(
 	bool leak_calc,
 	polycap_error **error);
 
+/** Retrieve start coordinates from a polycap_photon
+ * 
+ * \param photon a polycap_photon
+ * \returns start coordinates
+ */
+POLYCAP_EXTERN
+polycap_vector3 polycap_photon_get_start_coords(polycap_photon *photon);
+
+/** Retrieve start direction vector from a polycap_photon
+ * 
+ * \param photon a polycap_photon
+ * \returns start direction vector
+ */
+POLYCAP_EXTERN
+polycap_vector3 polycap_photon_get_start_direction(polycap_photon *photon);
+
+/** Retrieve start electric field vector from a polycap_photon
+ * 
+ * \param photon a polycap_photon
+ * \returns start electric field vector
+ */
+POLYCAP_EXTERN
+polycap_vector3 polycap_photon_get_start_electric_vector(polycap_photon *photon);
+
 /** Retrieve exit coordinates from a polycap_photon
  * 
  * \param photon a polycap_photon
@@ -106,6 +137,9 @@ polycap_vector3 polycap_photon_get_exit_direction(polycap_photon *photon);
  */
 POLYCAP_EXTERN
 polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
+
+POLYCAP_EXTERN
+void polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak **leaks, int64_t *n_leaks, polycap_error **error);
 
 /** Free a polycap_photon
  * 

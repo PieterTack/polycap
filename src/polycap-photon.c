@@ -735,6 +735,27 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 }
 
 //===========================================
+// get start coordinates
+polycap_vector3 polycap_photon_get_start_coords(polycap_photon *photon)
+{
+	return photon->start_coords;
+}
+
+//===========================================
+// get start direction
+polycap_vector3 polycap_photon_get_start_direction(polycap_photon *photon)
+{
+	return photon->start_direction;
+}
+
+//===========================================
+// get start electric vector
+polycap_vector3 polycap_photon_get_start_electric_vector(polycap_photon *photon)
+{
+	return photon->start_electric_vector;
+}
+
+//===========================================
 // get exit coordinates
 polycap_vector3 polycap_photon_get_exit_coords(polycap_photon *photon)
 {
@@ -753,6 +774,26 @@ polycap_vector3 polycap_photon_get_exit_direction(polycap_photon *photon)
 polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 {
 	return photon->exit_electric_vector;
+}
+
+//===========================================
+void polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak **leaks, int64_t *n_leaks, polycap_error **error)
+{
+	int i;
+
+	if (photon == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_get_extleak_data: photon cannot be NULL");
+		return;
+	}
+
+	*n_leaks = photon->n_extleak;
+	*leaks = malloc(sizeof(polycap_leak) * photon->n_extleak);
+	if (*leaks == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_get_extleak_data: could not allocate memory for leaks -> %s", strerror(errno));
+		return;
+	}
+	for(i = 0; i < photon->n_extleak; i++)
+		*leaks[i] = photon->extleak[i];
 }
 
 //===========================================
