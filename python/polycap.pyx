@@ -212,7 +212,8 @@ cdef class Profile:
 	double rad_int_upstream,
 	double rad_int_downstream,
 	double focal_dist_upstream,
-	double focal_dist_downstream):
+	double focal_dist_downstream,
+        bool ignore=False):
         '''Create a new profile for a given profile type with supplied polycapillary properties
         :param type: an integer or type that indicates the profile type
         :param length: the polycapillary length, as measured along the central axis [cm]
@@ -231,6 +232,10 @@ cdef class Profile:
         :type focal_dist_downstream: double
         :return: a new :ref:``Profile``, or \c NULL if an error occurred
         '''
+        if ignore is True:
+            self.profile = NULL
+            return
+
         cdef polycap_error *error = NULL
         self.profile = polycap_profile_new(
 	    type,
@@ -249,7 +254,8 @@ cdef class Profile:
         if self.profile is not NULL:
             polycap_profile_free(self.profile)
 
-    def new_from_arrays(self,
+    @classmethod
+    def new_from_arrays(cls,
             object ext not None,
             object cap not None,
             object z not None):
@@ -263,10 +269,12 @@ cdef class Profile:
         z = np.asarray(z, dtype=np.double)
         z = np.atleast_1d(z)
 
+        # TODO: check array length consistency
+
         cdef polycap_profile *profile = polycap_profile_new_from_arrays(z.size-1, <double*> np.PyArray_DATA(ext), <double*> np.PyArray_DATA(cap), <double*> np.PyArray_DATA(z), &error)
         polycap_set_exception(error)
 
-        rv = Profile(Profile.CONICAL, 1, 1, 0.5, 0.5, 1, 1)
+        rv = Profile(Profile.CONICAL, 0, 0, 0, 0, 0, 0, 0, ignore=True)
         rv.profile = profile
 
         return rv
