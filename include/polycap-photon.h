@@ -45,12 +45,17 @@ struct _polycap_photon;
  */
 typedef struct _polycap_photon                      polycap_photon;
 
-struct _polycap_leak;
 /** Struct containing information about the simulated photon leak events such as position and direction, energy and transmission weights.
  *
  * When this struct is no longer required, it is the user's responsability to free the memory using polycap_leak_free().
  */
-typedef struct _polycap_leak                      polycap_leak;
+typedef struct {
+	polycap_vector3 coords;
+  	polycap_vector3 direction;
+  	polycap_vector3 elecv;
+  	double *weight;
+  	int64_t n_refl;
+} polycap_leak;
 
 /** Creates a new polycap_photon with its initial position, direction and electric field vector.
  *

@@ -532,7 +532,6 @@ cdef tuple vector2tuple(polycap_vector3 vec):
 '''Class containing information about the simulated leak events such as position and direction, energy and transmission weights.
 '''
 cdef class Leak:
-    cdef polycap_leak *leak
     cdef object coords
     cdef object direction
     cdef object elecv
@@ -540,17 +539,32 @@ cdef class Leak:
     cdef int64_t n_refl
 
     def __cinit__(self):
-        self.leak = NULL
         self.coords = None
         self.direction = None
         self.elecv = None
         self.weight = None
         self.n_refl = 0
 
-    def __dealloc__(self):
-        '''Free a :ref:``Leak`` class and all associated data'''
-        if self.leak is not NULL:
-            polycap_leak_free(self.leak)
+    @staticmethod
+    cdef create(polycap_leak *leak):
+        if leak == NULL:
+            return None
+        rv = Leak()
+
+        rv.coords = vector2tuple(leak.coords)
+        rv.direction = vector2tuple(leak.direction)
+        rv.elecv = vector2tuple(leak.elecv)
+
+        cdef np.npy_intp dims[1]
+        dims[0] = leak.n_refl # is this correct??
+        rv.weight = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        rv.weight.flags.writeable = False
+
+        memcpy(np.PyArray_DATA(rv.weight), leak.weight, sizeof(double) * leak.n_refl)
+        rv.n_refl = leak.n_refl
+
+        # DO NOT FREE leak!
+
 
     @property
     def coords(self):
@@ -702,21 +716,17 @@ cdef class Photon:
         polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error)
         polycap_set_exception(error)
 
-        rv = Leak() * n_leaks #TODO: not sure if this works to make tuple of Leaks
+        rv = list()
 
-        for i in range(0, n_leaks):
-            rv[i].leak = leaks[i]
-            rv[i].coords = leaks[i].coords
-            rv[i].direction = leaks[i].direction
-            rv[i].elecv = leaks[i].elecv
-            rv[i].n_refl = leaks[i].n_refl
-
-            rv[i].weight = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
-            # make read-only
-            rv[i].weight.flags.writeable = False
-            memcpy(np.PyArray_DATA(rv[i].weight), leaks[i].weight, sizeof(double) * self.n_energies)
+        for i in range(n_leaks):
+            leak = Leak.create(leaks[i])
+            rv.append(leak)
             polycap_leak_free(leaks[i])
+            polycap_free(leaks)
         return rv
+
+        # TODO: cache leaks, request it just once
+        # TODO: turn into a generator function that returns an iterator
 
     def get_exit_coords(self):
         '''Retrieve exit coordinates from a :ref:``Photon`` class'''

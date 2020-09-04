@@ -117,16 +117,6 @@ struct _polycap_source
   double *energies;
   };
 
-struct _polycap_leak
-  {
-  polycap_vector3 coords;
-  polycap_vector3 direction;
-  polycap_vector3 elecv;
-  double *weight;
-  int64_t n_refl;
-  };
-typedef struct _polycap_leak 	polycap_leak;
-
 struct _polycap_photon
   {
   polycap_description *description;
