@@ -156,25 +156,25 @@ jobs:
             compiler: clang
             cc: /usr/local/opt/llvm/bin/clang
             extra: tschoonj/tap/easyrng
-            python: /usr/local/opt/python@3.8/bin/python3
+            python: /usr/local/bin/python3
             libs: -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib
           - os: macos-latest
             rng: easyRNG
             compiler: gcc
             cc: /usr/local/bin/gcc-10
             extra: tschoonj/tap/easyrng
-            python: /usr/local/opt/python@3.8/bin/python3
+            python: /usr/local/bin/python3
           - os: macos-latest
             rng: gsl
             compiler: clang
             cc: /usr/local/opt/llvm/bin/clang
-            python: /usr/local/opt/python@3.8/bin/python3
+            python: /usr/local/bin/python3
             libs: -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib
           - os: macos-latest
             rng: gsl
             compiler: gcc
             cc: /usr/local/bin/gcc-10
-            python: /usr/local/opt/python@3.8/bin/python3
+            python: /usr/local/bin/python3
 
     runs-on: ${{ matrix.os }}
 
@@ -200,7 +200,7 @@ jobs:
         brew upgrade
         brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl python@3.8 numpy meson ninja
         brew install ${{ matrix.extra }} tschoonj/tap/xraylib
-        /usr/local/opt/python@3.8/bin/pip3 install Cython
+        /usr/local/bin/pip3 install Cython
         set +ex
       env:
         HOMEBREW_CURL_RETRIES: 5
