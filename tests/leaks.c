@@ -465,9 +465,7 @@ void test_polycap_capil_leak() {
 	photon->exit_coords.y = photon->start_coords.y;
 	photon->exit_coords.z = photon->start_coords.z;
 	alfa = M_PI_2 - alfa;
-printf("------\n");
 	test = polycap_capil_reflect(photon, surface_norm, true, &error);
-printf("x: %lf, y: %lf, z: %lf \n", photon->intleak[0]->coords.x, photon->intleak[0]->coords.y, photon->intleak[0]->coords.z);
 	assert(test == 1);
 	assert(photon->n_extleak == 1);
 	assert(photon->n_intleak == 2);

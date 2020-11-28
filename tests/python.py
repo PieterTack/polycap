@@ -15,6 +15,7 @@ import polycap
 import numpy as np
 import os
 import sys
+from collections import namedtuple
 #import matplotlib.pyplot as plt
 
 class TestPolycapRng(unittest.TestCase):
@@ -118,15 +119,31 @@ class TestPolycapPhoton(unittest.TestCase):
         self.assertIsNone(photon.launch(10.0))
 
     def test_photon_good_coords(self):
+        VectorTuple = namedtuple('VectorTuple', 'x y z')
         start_coords = (0., 0. , 0.)
         start_direction = (0, 0, 1.0)
         start_electric_vector = (0.5, 0.5, 0.)
         photon = polycap.Photon(TestPolycapPhoton.description, start_coords, start_direction, start_electric_vector)
         weights = photon.launch(10.0, leak_calc=False)
         self.assertIsInstance(weights, np.ndarray)
-        self.assertIsInstance(photon.get_exit_coords(), tuple)
-        self.assertIsInstance(photon.get_exit_direction(), tuple)
-        self.assertIsInstance(photon.get_exit_electric_vector(), tuple)
+        self.assertIsInstance(photon.get_exit_coords(), VectorTuple)
+        self.assertIsInstance(photon.get_exit_direction(), VectorTuple)
+        self.assertIsInstance(photon.get_exit_electric_vector(), VectorTuple)
+
+    def test_photon_good_coords_leaks(self):
+        VectorTuple = namedtuple('VectorTuple', 'x y z')
+        start_coords = (0.0585, 0. , 0.)
+        start_direction = (0.001, 0, 1.0)
+        start_electric_vector = (0.5, 0.5, 0.)
+        photon = polycap.Photon(TestPolycapPhoton.description, start_coords, start_direction, start_electric_vector)
+        weights = photon.launch(40.0, leak_calc=True)
+        #print('----------')
+        #print(photon.extleak) #causes segmentation fault
+        #print('----------')
+        self.assertIsInstance(weights, np.ndarray)
+        self.assertIsInstance(photon.get_exit_coords(), VectorTuple)
+        self.assertIsInstance(photon.get_exit_direction(), VectorTuple)
+        self.assertIsInstance(photon.get_exit_electric_vector(), VectorTuple)
 
 class TestPolycapSource(unittest.TestCase):
     rng = polycap.Rng()

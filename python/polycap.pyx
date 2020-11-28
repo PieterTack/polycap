@@ -26,6 +26,7 @@ from source cimport *
 from libc.string cimport memcpy
 from libc.stdlib cimport free
 from cpython cimport Py_DECREF
+from collections import namedtuple
 cimport numpy as np
 import numpy as np
 import sys
@@ -526,8 +527,9 @@ cdef polycap_vector3 np2vector(np.ndarray[double, ndim=1] arr):
     rv.z = arr[2]
     return rv
 
-cdef tuple vector2tuple(polycap_vector3 vec):
-    return (vec.x, vec.y, vec.z) #TODO: make it return named tuple instead
+cdef vector2tuple(polycap_vector3 vec):
+    VectorTuple = namedtuple('VectorTuple','x y z')
+    return VectorTuple(vec.x, vec.y, vec.z)
 
 '''Class containing information about the simulated leak events such as position and direction, energy and transmission weights.
 '''
@@ -558,7 +560,7 @@ cdef class Leak:
         rv.elecv = vector2tuple(leak.elecv)
 
         cdef np.npy_intp dims[1]
-        dims[0] = leak.n_energies # is this correct??
+        dims[0] = leak.n_energies
         rv.weight = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
         rv.weight.flags.writeable = False
 
@@ -566,6 +568,7 @@ cdef class Leak:
         rv.n_refl = leak.n_refl
         rv.n_energies = leak.n_energies
 
+        return rv
         # DO NOT FREE leak!
 
 
@@ -722,8 +725,8 @@ cdef class Photon:
         for i in range(n_leaks):
             leak = Leak.create(leaks[i])
             rv.append(leak)
-            polycap_leak_free(leaks[i])
-            polycap_free(leaks)
+            polycap_leak_free(leaks[i]) #Probably not allowed to free leaks?
+        polycap_free(leaks)
 
         return rv
 
