@@ -492,12 +492,26 @@ void test_polycap_capil_leak() {
 	assert(photon->intleak[1]->direction.y - 0.0 < 0.0000005);
 	assert(photon->intleak[1]->direction.z - 1.0 < 0.0000005);
 
+	//test polycap_photon_get_extleak_data()
+	polycap_leak **leaks = NULL;
+        int64_t n_leaks = 0;
+	polycap_clear_error(&error);
+	assert(polycap_photon_get_extleak_data(photon, &leaks, &n_leaks, &error) == true);
+	assert(n_leaks == 1);
+	assert(leaks[0]->coords.x - 0.067410 < 0.0000005);
+	assert(leaks[0]->coords.y - 0.0 < 0.0000005);
+	assert(leaks[0]->coords.z - 8.910243 < 0.0000005);
+	assert(leaks[0]->direction.x - 0.001 < 0.0000005);
+	assert(leaks[0]->direction.y - 0.0 < 0.0000005);
+	assert(leaks[0]->direction.z - 1.0 < 0.0000005);
+
 	polycap_free(cap_x);
 	cap_x = NULL;
 	polycap_free(cap_y);
 	cap_y = NULL;
 	polycap_photon_free(photon);
 	photon = NULL;
+	polycap_free(leaks);
 
 	//another case that should work, simulates a photon_launch event where photon (not leak events) should be absorbed
 	polycap_clear_error(&error);

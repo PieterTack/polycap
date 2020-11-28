@@ -137,9 +137,9 @@ class TestPolycapPhoton(unittest.TestCase):
         start_electric_vector = (0.5, 0.5, 0.)
         photon = polycap.Photon(TestPolycapPhoton.description, start_coords, start_direction, start_electric_vector)
         weights = photon.launch(40.0, leak_calc=True)
-        #print('----------')
-        #print(photon.extleak) #causes segmentation fault
-        #print('----------')
+        print('----------')
+        print(photon.extleak) #causes segmentation fault
+        print('----------')
         self.assertIsInstance(weights, np.ndarray)
         self.assertIsInstance(photon.get_exit_coords(), VectorTuple)
         self.assertIsInstance(photon.get_exit_direction(), VectorTuple)

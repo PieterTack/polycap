@@ -555,7 +555,9 @@ cdef class Leak:
             return None
         rv = Leak()
 
+        print(leak.coords)
         rv.coords = vector2tuple(leak.coords)
+        print(rv.coords)
         rv.direction = vector2tuple(leak.direction)
         rv.elecv = vector2tuple(leak.elecv)
 
@@ -720,15 +722,18 @@ cdef class Photon:
         polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error)
         polycap_set_exception(error)
 
+        print(n_leaks)
         rv = list()
 
-        for i in range(n_leaks):
-            leak = Leak.create(leaks[i])
-            rv.append(leak)
-            polycap_leak_free(leaks[i]) #Probably not allowed to free leaks?
-        polycap_free(leaks)
-
-        return rv
+        if n_leaks > 0:
+            for i in range(n_leaks):
+                leak = Leak.create(leaks[i])
+                rv.append(leak)
+                polycap_leak_free(leaks[i]) #Probably not allowed to free leaks?
+            polycap_free(leaks)
+            return rv
+        else:
+            return None
 
         # TODO: cache leaks, request it just once
         # TODO: turn into a generator function that returns an iterator
