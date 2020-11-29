@@ -722,7 +722,6 @@ cdef class Photon:
         polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error)
         polycap_set_exception(error)
 
-        print(n_leaks)
         rv = list()
 
         if n_leaks > 0:

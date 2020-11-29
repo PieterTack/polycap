@@ -1020,7 +1020,7 @@ bool polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak ***lea
 
 	*n_leaks = photon->n_extleak;
 	if (photon->n_extleak == 0){
-		*leaks == NULL;
+		*leaks = NULL;
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_get_extleak_data: no extleak events in photon");
 		return false;
 	}
