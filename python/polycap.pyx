@@ -44,6 +44,9 @@ import uuid
 from uuid import UUID
 import platform
 
+import logging
+logger = logging.getLogger(__name__)
+
 def __valid_uuid(_uuid):
     try:
         a = UUID(_uuid)
@@ -96,7 +99,7 @@ def __send_google_analytics_launch_event():
                         _uuid = str(uuid.uuid4())
                         f.write_text(_uuid)
                 else:
-                    print('{} exists but is not a regular file!'.format(str(f)))
+                    logger.warning('{} exists but is not a regular file!'.format(str(f)))
                     return
             else:
                 _uuid = str(uuid.uuid4())
@@ -527,8 +530,9 @@ cdef polycap_vector3 np2vector(np.ndarray[double, ndim=1] arr):
     rv.z = arr[2]
     return rv
 
+VectorTuple = namedtuple('VectorTuple','x y z')
+
 cdef vector2tuple(polycap_vector3 vec):
-    VectorTuple = namedtuple('VectorTuple','x y z')
     return VectorTuple(vec.x, vec.y, vec.z)
 
 '''Class containing information about the simulated leak events such as position and direction, energy and transmission weights.
@@ -718,9 +722,11 @@ cdef class Photon:
         cdef polycap_leak **leaks = NULL
         cdef int64_t n_leaks = 0
         cdef polycap_error *error = NULL
-        
+
+        logger.debug('Before calling C') 
         polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error)
         polycap_set_exception(error)
+        logger.debug('After calling C') 
 
         rv = list()
 
