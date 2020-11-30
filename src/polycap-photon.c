@@ -1056,12 +1056,18 @@ void polycap_photon_free(polycap_photon *photon)
 		free(photon->amu);
 	if (photon->scatf)
 		free(photon->scatf);
-	if (photon->extleak)
-		for(i = 0; i < photon->n_extleak; i++)
+	if (photon->extleak) {
+		for(i = 0; i < photon->n_extleak; i++) {
 			polycap_leak_free(photon->extleak[i]);
-	if (photon->intleak)
-		for(i = 0; i < photon->n_intleak; i++)
+		}
+		free(photon->extleak);
+	}
+	if (photon->intleak) {
+		for(i = 0; i < photon->n_intleak; i++) {
 			polycap_leak_free(photon->intleak[i]);
+		}
+		free(photon->intleak);
+	}
 	free(photon);
 }
 
