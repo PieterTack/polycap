@@ -559,9 +559,7 @@ cdef class Leak:
             return None
         rv = Leak()
 
-        print(leak.coords)
         rv.coords = vector2tuple(leak.coords)
-        print(rv.coords)
         rv.direction = vector2tuple(leak.direction)
         rv.elecv = vector2tuple(leak.elecv)
 
@@ -723,10 +721,10 @@ cdef class Photon:
         cdef int64_t n_leaks = 0
         cdef polycap_error *error = NULL
 
-        logger.debug('Before calling C') 
+        #logger.debug('Before calling C') 
         polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error)
         polycap_set_exception(error)
-        logger.debug('After calling C') 
+        #logger.debug('After calling C') 
 
         rv = list()
 

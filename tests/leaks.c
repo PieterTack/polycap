@@ -1086,10 +1086,10 @@ printf("--------------\n");*/
 	assert(leaks[0]->direction.y - 0.0 < 0.0000005);
 	assert(leaks[0]->direction.z - 1.0 < 0.0000005);
 	assert(fabs(leaks[0]->weight[0]-0.043311) < 0.0000005);
-	assert(fabs(leaks[0]->coords.x - 0.058850) < 0.0000005);
+	assert(fabs(leaks[1]->coords.x - 0.058850) < 0.0000005);
 	assert(fabs(leaks[1]->coords.y - 0.) < 0.0000005);
 	assert(fabs(leaks[1]->coords.z - 8.995983) < 0.0000005);
-	assert(leaks[0]->direction.x - 0.001 < 0.0000005);
+	assert(leaks[1]->direction.x - 0.001 < 0.0000005);
 	assert(leaks[1]->direction.y - 0. < 0.0000005);
 	assert(leaks[1]->direction.z - 1. < 0.0000005);
 	assert(fabs(leaks[1]->weight[0] - 0.001800) < 0.0000005);
