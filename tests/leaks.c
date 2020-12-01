@@ -1017,6 +1017,7 @@ printf("--------------\n");*/
 	assert(photon->n_energies == 1);
 	assert(photon->n_extleak == 3);
 	assert(photon->n_intleak == 0);
+	printf("extleak0.x: %lf , y: %lf, z: %lf, w: %lf\n", photon->extleak[0]->coords.x, photon->extleak[0]->coords.y, photon->extleak[0]->coords.z, photon->extleak[0]->weight[0]);
 	assert(fabs(photon->extleak[0]->coords.x + 0.089664) < 0.0000005);
 	assert(fabs(photon->extleak[0]->coords.y + 0.010724) < 0.0000005);
 	assert(fabs(photon->extleak[0]->coords.z - 8.455188) < 0.0000005);
