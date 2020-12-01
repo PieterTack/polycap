@@ -1018,24 +1018,40 @@ bool polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak ***lea
 		return false;
 	}
 
-	fprintf(stderr, "C: n_extleak: %lld\n", photon->n_extleak);
 
 	*n_leaks = photon->n_extleak;
+	fprintf(stderr, "C: n_extleak: %lld\n", photon->n_extleak);
+	fprintf(stderr, "C: n_energies: %lld\n", photon->extleak[0]->n_energies);
 	if (photon->n_extleak == 0){
 		*leaks = NULL;
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_get_extleak_data: no extleak events in photon");
 		return false;
 	}
+
 	*leaks = malloc(sizeof(polycap_leak*) * photon->n_extleak);
 	if (*leaks == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_get_extleak_data: could not allocate memory for leaks -> %s", strerror(errno));
 		return false;
 	}
+
+	fprintf(stderr, "here\n");
 	for(i = 0; i < photon->n_extleak; i++) {
+		fprintf(stderr, "here?1\n");
 		*leaks[i] = malloc(sizeof(polycap_leak));
+		if (*leaks[i] == NULL){
+			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_get_extleak_data: could not allocate memory for *leaks[i] -> %s", strerror(errno));
+			return false;
+		}
+		fprintf(stderr, "here?2\n");
 		memcpy(*leaks[i], photon->extleak[i], sizeof(polycap_leak));
 		(*leaks[i])->weight = malloc(sizeof(double) * photon->extleak[i]->n_energies);
+		if ( (*leaks[i])->weight == NULL){
+			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_photon_get_extleak_data: could not allocate memory for (*leaks[i])->weight -> %s", strerror(errno));
+			return false;
+		}
+		fprintf(stderr, "here?3\n");
 		memcpy((*leaks[i])->weight, photon->extleak[i]->weight, sizeof(double) * photon->extleak[i]->n_energies);
+		fprintf(stderr, "here?4\n");
 	}
 
 	return true;

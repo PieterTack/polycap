@@ -14,6 +14,9 @@ from error cimport polycap_error
 from description cimport polycap_description
 from libc.stdint cimport int64_t
 
+cdef extern from "stdbool.h" nogil:
+    ctypedef bint bool
+
 cdef extern from "polycap-photon.h" nogil:
 
     ctypedef struct polycap_vector3:
@@ -52,7 +55,7 @@ cdef extern from "polycap-photon.h" nogil:
 
     polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon)
 
-    void polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak ***leaks, int64_t *n_leaks, polycap_error **error)
+    bool polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak ***leaks, int64_t *n_leaks, polycap_error **error)
 
     void polycap_photon_free(polycap_photon *photon)
 
