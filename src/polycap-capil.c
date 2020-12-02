@@ -593,6 +593,8 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_vector3 surface_norm, 
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: description must not be NULL");
 		return -1;
 	}
+	polycap_norm(&surface_norm);
+	polycap_norm(&photon->exit_direction);
 	alfa = polycap_scalar(photon->exit_direction, surface_norm); 
 	if (alfa < 0.){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_reflect: alfa must be greater than 0");
@@ -604,14 +606,12 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_vector3 surface_norm, 
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_capil_reflect: could not allocate memory for w_leak -> %s", strerror(errno));
 		return -1;
 	}
-	polycap_norm(&surface_norm);
-	polycap_norm(&photon->exit_direction);
 
 	//for halo effect one calculates here the distance traveled through the capillary wall d_travel
 	//	if leak_calc is false wall_trace will remain 0 and the whole leak calculation will be skipped
 	if(leak_calc){
 		wall_trace = polycap_capil_trace_wall(photon, &d_travel, &r_cntr, &q_cntr, error);
-//printf("Here wal_trace == %i, q: %i r: %i, phot.exit.x: %lf, y: %lf, z: %lf, d_travel: %lf\n", wall_trace, q_cntr, r_cntr, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, d_travel);
+fprintf(stderr,"Here wal_trace == %i, q: %i r: %i, phot.exit.x: %lf, y: %lf, z: %lf, d_travel: %lf\n", wall_trace, q_cntr, r_cntr, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, d_travel);
 		if(wall_trace <= 0){
 			free(w_leak);
 			return -1;
@@ -1010,13 +1010,13 @@ printf("	trace wall: phot not in cap wall, q: %lf r: %lf\n",q_i, r_i);
 			//looking for intersection of photon from outside to inside of capillary
 			iesc = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, phot_coord0, phot_coord1, photon->exit_direction, &interact_coords, &surface_norm, error);
 			z_id++;
-		} while(iesc != 1 && z_id < photon->description->profile->nmax-1); //if iesc == 0 next intersection was found
+		} while(iesc != 1 && z_id < photon->description->profile->nmax-1); //if iesc == 1 next intersection was found
 
 	} else {    // proper polycapillary case
 next_hexagon:
-		// find next hexagon coordinate q,r by propagating the photon over 1um steps
+		// find next hexagon coordinate q,r by propagating the photon in small steps
 		do{
-			dist += photon->description->profile->cap[z_id]/2.;
+			dist += photon->description->profile->cap[z_id]/10.;
 			phot_coord0.x = photon->exit_coords.x + dist*photon->exit_direction.x;
 			phot_coord0.y = photon->exit_coords.y + dist*photon->exit_direction.y;
 			phot_coord0.z = photon->exit_coords.z + dist*photon->exit_direction.z;
@@ -1061,7 +1061,9 @@ next_hexagon:
 					*r_cntr = r_i;
 					*q_cntr = q_i;
 					return 1;
-				} else *d_travel = 0.;
+				} else {
+					*d_travel = 0.;
+				}
 			}
 		} while(q_new == q_i && r_new == r_i && phot_coord0.z<=photon->description->profile->z[photon->description->profile->nmax]); //when exiting do loop we found new hexagon area: look for capillary intersection. However, it is possible that we should still move to new neighbouring hexagon area to find this...
 
@@ -1090,6 +1092,7 @@ next_hexagon:
 					free(phot_inter);
 					phot_inter = NULL;
 				}
+
 				*d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));
 				return 3;
 			} else { //photon was in walls at most outer shell, but reached exit window still
@@ -1127,7 +1130,7 @@ next_hexagon:
 //printf("*Segmenting for wall_trace\n");
 			iesc = polycap_capil_segment(cap_coord0,cap_coord1, rad0, rad1, phot_coord0, phot_coord1, photon->exit_direction, &interact_coords, &surface_norm, error);
 			z_id++;
-		} while(iesc != 1 && z_id < photon->description->profile->nmax-1); //if iesc == 0 next intersection was found
+		} while(iesc != 1 && z_id < photon->description->profile->nmax-1); //if iesc == 1 next intersection was found
 		if(z_id >= photon->description->profile->nmax && iesc != 0){ //no intersection was found in this capillary, try looking for different one
 //printf("			**was I here?, z_id: %i, q_i: %lf, r_i: %lf, q_new: %lf, r_new: %lf\n", z_id, q_i, r_i, q_new, r_new);
 			q_i = q_new;
@@ -1155,12 +1158,14 @@ next_hexagon:
 			if(phot_inter == NULL){ // if no interaction was found, just use last known coordinate. Less precise, but should be sufficient in most cases
 				photon_coord_rel.x = temp_phot.x - photon->exit_coords.x;
 				photon_coord_rel.y = temp_phot.y - photon->exit_coords.y;
+			fprintf(stderr, "Here1\n");
 				photon_coord_rel.z = temp_phot.z - photon->exit_coords.z;
 			} else {
 				photon_coord_rel.x = phot_inter->x - photon->exit_coords.x;
 				photon_coord_rel.y = phot_inter->y - photon->exit_coords.y;
 				photon_coord_rel.z = phot_inter->z - photon->exit_coords.z;
 				free(phot_inter);
+			fprintf(stderr, "Here2\n");
 				phot_inter = NULL;
 			}
 			*d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));

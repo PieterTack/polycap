@@ -202,6 +202,7 @@ polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyc
 	phot_dir.x = -1.*photon_direction.x;
 	phot_dir.y = -1.*photon_direction.y;
 	phot_dir.z = -1.*photon_direction.z;
+	polycap_norm(&phot_dir);
 
 	//find segment along z where intersection should occur
 	for(i=0; i< profile->nmax; i++){
@@ -209,6 +210,11 @@ polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyc
 			z_id = i;
 	}
 	current_polycap_ext = (profile->ext[z_id+1]-profile->ext[z_id])/(profile->z[z_id+1]-profile->z[z_id]) * (photon_coord.z - profile->z[z_id]) + profile->ext[z_id];
+	if(polycap_photon_within_pc_boundary(current_polycap_ext, photon_coord, NULL) == 1){
+		fprintf(stderr, "polycap_photon_pc_intersect: photon_coord not outside of optic");
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_photon_pc_intersect: photon_coord not outside of optic");
+		return NULL;
+	}
 	if(phot_dir.z < 0.){
 		z_id = z_id+1;
 		dir = -1;
@@ -294,7 +300,10 @@ polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyc
 		} else if (z3 >= profile->z[z_id] && z3 <= profile->z[z_id-dir]){ // only z3 is viable
 			z_fin = z3;
 		} else {
-			return NULL; //none of the solutions is viable (not within the found segment!
+			//none of the solutions is viable (not within the found segment!
+			polycap_vector3 *rv = malloc(sizeof(polycap_vector3));
+			*rv = phot_end;
+			return rv;
 		}
 	} else {
 		//profile->z[z_id-dir] < profile->z[z_id]
@@ -333,7 +342,10 @@ polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyc
 		} else if (z3 <= profile->z[z_id] && z3 >= profile->z[z_id-dir]){ // only z3 is viable
 			z_fin = z3;
 		} else {
-			return NULL; //none of the solutions is viable (not within the found segment!
+			//none of the solutions is viable (not within the found segment!
+			polycap_vector3 *rv = malloc(sizeof(polycap_vector3));
+			*rv = phot_end;
+			return rv;
 		}
 	}
 
