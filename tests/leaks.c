@@ -1142,20 +1142,20 @@ void test_polycap_photon_leak() {
 	fprintf(stderr,"--No issue till here--\n");
 	assert(polycap_photon_get_extleak_data(photon, &leaks, &n_leaks, &error) == true);
 	assert(n_leaks == 2);
-	assert(leaks[0]->coords.x - 0.067410 < 0.0000005);
+	assert(leaks[0]->coords.x - 0.067419 < 0.0000005);
 	assert(leaks[0]->coords.y - 0.0 < 0.0000005);
-	assert(leaks[0]->coords.z - 8.910243 < 0.0000005);
+	assert(leaks[0]->coords.z - 8.918919 < 0.0000005);
 	assert(leaks[0]->direction.x - 0.001 < 0.0000005);
 	assert(leaks[0]->direction.y - 0.0 < 0.0000005);
 	assert(leaks[0]->direction.z - 1.0 < 0.0000005);
-	assert(fabs(leaks[0]->weight[0]-0.043311) < 0.0000005);
-	assert(fabs(leaks[1]->coords.x - 0.058850) < 0.0000005);
+	assert(fabs(leaks[0]->weight[0] - 0.042922) < 0.0000005);
+	assert(fabs(leaks[1]->coords.x - 0.058851) < 0.0000005);
 	assert(fabs(leaks[1]->coords.y - 0.) < 0.0000005);
-	assert(fabs(leaks[1]->coords.z - 8.995983) < 0.0000005);
-	assert(leaks[1]->direction.x - 0.001 < 0.0000005);
+	assert(fabs(leaks[1]->coords.z - 9.) < 0.0000005);
+	assert(leaks[1]->direction.x - 0.000146 < 0.0000005);
 	assert(leaks[1]->direction.y - 0. < 0.0000005);
 	assert(leaks[1]->direction.z - 1. < 0.0000005);
-	assert(fabs(leaks[1]->weight[0] - 0.001800) < 0.0000005);
+	assert(fabs(leaks[1]->weight[0] - 0.001793) < 0.0000005);
 	polycap_free(weights);
 
 
