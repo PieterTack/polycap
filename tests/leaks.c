@@ -917,7 +917,7 @@ void test_polycap_photon_leak() {
 
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
 	/*fprintf(stderr,"================\n");
-	fprintf(stderr,"test: %i, n_intleak: %li, n_extleak: %li, w: %lf\n",test, photon->n_intleak, photon->n_extleak, weights[0]);
+	fprintf(stderr,"test: %i, n_intleak: %lli, n_extleak: %lli, w: %lf\n",test, photon->n_intleak, photon->n_extleak, weights[0]);
 	fprintf(stderr,"	rw0: %lf\n", photon->intleak[0]->weight[0]);
 	fprintf(stderr,"	coord.x: %lf, y: %lf, z: %lf\n", photon->intleak[0]->coords.x, photon->intleak[0]->coords.y, photon->intleak[0]->coords.z);
 	fprintf(stderr,"	dir.x: %lf, y: %lf, z: %lf\n", photon->intleak[0]->direction.x, photon->intleak[0]->direction.y, photon->intleak[0]->direction.z);
@@ -1037,7 +1037,7 @@ void test_polycap_photon_leak() {
 	polycap_clear_error(&error); 
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
 	fprintf(stderr, "-----Case2\n");
-	fprintf(stderr, "n_ext: %lld, n_int %lld \n", photon->n_extleak, photon->n_intleak);
+	fprintf(stderr, "n_ext: %lli, n_int %lli \n", photon->n_extleak, photon->n_intleak);
 	int i;
 	for(i=0; i<photon->n_extleak; i++){
 		fprintf(stderr,"extleak.x: %lf , y: %lf, z: %lf, dirx: %lf, diry: %lf, dirz: %lf, w: %lf\n", photon->extleak[i]->coords.x, photon->extleak[i]->coords.y, photon->extleak[i]->coords.z, photon->extleak[i]->direction.x, photon->extleak[i]->direction.y, photon->extleak[i]->direction.z ,photon->extleak[i]->weight[0]);
@@ -1100,7 +1100,7 @@ void test_polycap_photon_leak() {
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
 	assert(test == 0);
 	fprintf(stderr, "------Case3\n");
-	fprintf(stderr, "n_extleak: %li, n_intleak: %li\n", photon->n_extleak, photon->n_intleak);
+	fprintf(stderr, "n_extleak: %lli, n_intleak: %lli\n", photon->n_extleak, photon->n_intleak);
 	for(i=0; i<photon->n_extleak; i++){
 		fprintf(stderr,"extleak.x: %lf , y: %lf, z: %lf, dirx: %lf, diry: %lf, dirz: %lf, w: %lf\n", photon->extleak[i]->coords.x, photon->extleak[i]->coords.y, photon->extleak[i]->coords.z, photon->extleak[i]->direction.x, photon->extleak[i]->direction.y, photon->extleak[i]->direction.z ,photon->extleak[i]->weight[0]);
 	}
