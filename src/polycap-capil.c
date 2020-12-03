@@ -1158,14 +1158,12 @@ next_hexagon:
 			if(phot_inter == NULL){ // if no interaction was found, just use last known coordinate. Less precise, but should be sufficient in most cases
 				photon_coord_rel.x = temp_phot.x - photon->exit_coords.x;
 				photon_coord_rel.y = temp_phot.y - photon->exit_coords.y;
-			fprintf(stderr, "Here1\n");
 				photon_coord_rel.z = temp_phot.z - photon->exit_coords.z;
 			} else {
 				photon_coord_rel.x = phot_inter->x - photon->exit_coords.x;
 				photon_coord_rel.y = phot_inter->y - photon->exit_coords.y;
 				photon_coord_rel.z = phot_inter->z - photon->exit_coords.z;
 				free(phot_inter);
-			fprintf(stderr, "Here2\n");
 				phot_inter = NULL;
 			}
 			*d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));
