@@ -33,6 +33,10 @@
 #define M_PI_4         0.78539816339744830962  /* pi/4 */
 #endif
 
+#ifndef COSPI_6
+#define COSPI_6		0.86602540378443864676 /* cos(M_PI/6.) */
+#endif
+
 #ifdef TEST_BUILD
   #define STATIC 
   // additional prototypes for the tests

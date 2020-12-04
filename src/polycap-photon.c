@@ -150,10 +150,10 @@ int polycap_photon_within_pc_boundary(double polycap_radius, polycap_vector3 pho
 
 	hex_edge_norm1[0] = 0; //vertical hexagon edge x vector
 	hex_edge_norm1[1] = 1; //vertical hexagon edge y vector
-	hex_edge_norm2[0] = cos(M_PI/6); //upper right and lower left hexagon edge x vector
-	hex_edge_norm2[1] = sin(M_PI/6); //upper right and lower left hexagon edge y vector
-	hex_edge_norm3[0] = cos(-1.*M_PI/6); //upper left and lower right hexagon edge x vector
-	hex_edge_norm3[1] = sin(-1.*M_PI/6); //upper left and lower right hexagon edge y vector
+	hex_edge_norm2[0] = COSPI_6; //upper right and lower left hexagon edge x vector
+	hex_edge_norm2[1] = 0.5; //sin(pi/6) upper right and lower left hexagon edge y vector
+	hex_edge_norm3[0] = COSPI_6; //upper left and lower right hexagon edge x vector
+	hex_edge_norm3[1] = -0.5; //sin(-pi/6) upper left and lower right hexagon edge y vector
 
 	d_cen2hexedge = sqrt( (polycap_radius * polycap_radius) - ((polycap_radius/2.) * (polycap_radius/2.)) );
 
@@ -193,10 +193,10 @@ polycap_vector3 *polycap_photon_pc_intersect(polycap_vector3 photon_coord, polyc
 
 	hex_edge_norm1[0] = 0; //vertical hexagon edge x vector
 	hex_edge_norm1[1] = 1; //vertical hexagon edge y vector
-	hex_edge_norm2[0] = cos(M_PI/6); //upper right and lower left hexagon edge x vector
-	hex_edge_norm2[1] = sin(M_PI/6); //upper right and lower left hexagon edge y vector
-	hex_edge_norm3[0] = cos(-1.*M_PI/6); //upper left and lower right hexagon edge x vector
-	hex_edge_norm3[1] = sin(-1.*M_PI/6); //upper left and lower right hexagon edge y vector
+	hex_edge_norm2[0] = COSPI_6; //upper right and lower left hexagon edge x vector
+	hex_edge_norm2[1] = 0.5; //sin(pi/6) upper right and lower left hexagon edge y vector
+	hex_edge_norm3[0] = COSPI_6; //upper left and lower right hexagon edge x vector
+	hex_edge_norm3[1] = -0.5; //sin(-pi/6) upper left and lower right hexagon edge y vector
 
 	//inverse direction of propagation
 	phot_dir.x = -1.*photon_direction.x;
@@ -537,9 +537,9 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		}
 	} else {    // proper polycapillary case
 		//obtain selected capillary indices	
-		z = current_polycap_ext/(2.*cos(M_PI/6.)*(n_shells+1));
+		z = current_polycap_ext/(2.*COSPI_6*(n_shells+1));
 		r_i = photon->start_coords.y * (2./3) / z;
-		q_i = (photon->start_coords.x/(2.*cos(M_PI/6.)) - photon->start_coords.y/3) / z;
+		q_i = (photon->start_coords.x/(2.*COSPI_6) - photon->start_coords.y/3) / z;
 		if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
 			q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
 			r_i = round(r_i);
@@ -620,9 +620,9 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 	}
 
 	for(i=0; i<=description->profile->nmax; i++){
-		z = photon->description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+		z = photon->description->profile->ext[i]/(2.*COSPI_6*(n_shells+1));
 		cap_y[i] = r_i * (3./2) * z;
-		cap_x[i] = (2.* q_i+r_i) * cos(M_PI/6.) * z;
+		cap_x[i] = (2.* q_i+r_i) * COSPI_6 * z;
 		if(description->profile->z[i] <= photon->start_coords.z) *ix = i; //set ix to current photon segment id
 	}
 	//Check whether photon start coordinate is within capillary (within capillary center at distance < capillary radius)
@@ -759,9 +759,9 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 				if(wall_trace == 1){ //photon entered new capillary
 					photon->d_travel = photon->d_travel + d_travel;
 					for(i=0; i<=description->profile->nmax; i++){
-						z = photon->description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+						z = photon->description->profile->ext[i]/(2.*COSPI_6*(n_shells+1));
 						cap_y[i] = r_cntr * (3./2) * z;
-						cap_x[i] = (2.* q_cntr+r_cntr) * cos(M_PI/6.) * z;
+						cap_x[i] = (2.* q_cntr+r_cntr) * COSPI_6 * z;
 						if(description->profile->z[i] <= photon->exit_coords.z) *ix = i; //set ix to current photon segment id
 					}
 					for(i=0; i<=description->profile->nmax; i++){

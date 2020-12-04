@@ -773,9 +773,9 @@ fprintf(stderr,"Here wal_trace == %i, q: %i r: %i, phot.exit.x: %lf, y: %lf, z: 
 					capx_temp[i] = 0.;
 					capy_temp[i] = 0.;
 				} else {
-					z = description->profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+					z = description->profile->ext[i]/(2.*COSPI_6*(n_shells+1));
 					capy_temp[i] = (3./2) * r_cntr * z;
-					capx_temp[i] = (2.* q_cntr + r_cntr) * cos(M_PI/6.) * z;
+					capx_temp[i] = (2.* q_cntr + r_cntr) * COSPI_6 * z;
 				}
 			}
 			//polycap_capil_trace should be ran description->profile->nmax at most,
@@ -958,9 +958,9 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cn
 	}
 
 	// obtain the capillary indices of the capillary region the photon is currently in
-	z = current_polycap_ext/(2.*cos(M_PI/6.)*(n_shells+1));
+	z = current_polycap_ext/(2.*COSPI_6*(n_shells+1));
 	r_i = photon->exit_coords.y * (2./3) / z;
-	q_i = (photon->exit_coords.x/(2.*cos(M_PI/6.)) - photon->exit_coords.y/3) / z;
+	q_i = (photon->exit_coords.x/(2.*COSPI_6) - photon->exit_coords.y/3) / z;
 	if (fabs(q_i - round(q_i)) > fabs(r_i - round(r_i)) && fabs(q_i - round(q_i)) > fabs(-1.*q_i-r_i - round(-1.*q_i-r_i)) ){
 		q_i = -1.*round(r_i) - round(-1.*q_i-r_i);
 		r_i = round(r_i);
@@ -977,9 +977,9 @@ int polycap_capil_trace_wall(polycap_photon *photon, double *d_travel, int *r_cn
 	rad0 = ((photon->description->profile->cap[z_id+1] - photon->description->profile->cap[z_id])/
 		(photon->description->profile->z[z_id+1] - photon->description->profile->z[z_id])) * 
 		(photon->exit_coords.z - photon->description->profile->z[z_id]) + photon->description->profile->cap[z_id];
-	z = current_polycap_ext/(2.*cos(M_PI/6.)*(n_shells+1));
+	z = current_polycap_ext/(2.*COSPI_6*(n_shells+1));
 	cap_coord0.y = r_i * (3./2) * z;
-	cap_coord0.x = (2.* q_i+r_i) * cos(M_PI/6.) * z;
+	cap_coord0.x = (2.* q_i+r_i) * COSPI_6 * z;
 	d_phot0 = sqrt((photon->exit_coords.x-cap_coord0.x)*(photon->exit_coords.x-cap_coord0.x)+(photon->exit_coords.y-cap_coord0.y)*(photon->exit_coords.y-cap_coord0.y));
 	if(d_phot0 <= rad0 || fabs(q_i) > n_shells || fabs(r_i) > n_shells || fabs(-1.*q_i-r_i) > n_shells){ //photon is not within wall to begin with!
 printf("	trace wall: phot not in cap wall, q: %lf r: %lf\n",q_i, r_i);
@@ -1032,9 +1032,9 @@ next_hexagon:
 				(photon->description->profile->z[z_id+1] - photon->description->profile->z[z_id])) * 
 				(phot_coord0.z - photon->description->profile->z[z_id]) + photon->description->profile->cap[z_id];
 			// obtain the capillary indices of the projected photon
-			z = current_polycap_ext/(2.*cos(M_PI/6.)*(n_shells+1));
+			z = current_polycap_ext/(2.*COSPI_6*(n_shells+1));
 			r_new = phot_coord0.y * (2./3) / z;
-			q_new = (phot_coord0.x/(2.*cos(M_PI/6.)) - phot_coord0.y/3) / z;
+			q_new = (phot_coord0.x/(2.*COSPI_6) - phot_coord0.y/3) / z;
 			if (fabs(q_new - round(q_new)) > fabs(r_new - round(r_new)) && fabs(q_new - round(q_new)) > fabs(-1.*q_new-r_new - round(-1.*q_new-r_new)) ){
 				q_new = -1.*round(r_new) - round(-1.*q_new-r_new);
 				r_new = round(r_new);
@@ -1046,9 +1046,9 @@ next_hexagon:
 				r_new = round(r_new);
 			}
 			// check if photon happens to be inside initial capillary. Could have started in q_i,r_i just next to capillary
-			z = current_polycap_ext/(2.*cos(M_PI/6.)*(n_shells+1));
+			z = current_polycap_ext/(2.*COSPI_6*(n_shells+1));
 			cap_coord0.y = r_i * (3./2) * z;
-			cap_coord0.x = (2.* q_i+r_i) * cos(M_PI/6.) * z;
+			cap_coord0.x = (2.* q_i+r_i) * COSPI_6 * z;
 			d_phot0 = sqrt((phot_coord0.x-cap_coord0.x)*(phot_coord0.x-cap_coord0.x)+(phot_coord0.y-cap_coord0.y)*(phot_coord0.y-cap_coord0.y));
 			if(d_phot0 < rad0 && fabs(q_i) <= n_shells && fabs(r_i) <= n_shells && fabs(-1.*q_i-r_i) <= n_shells){ //photon stumbled into capillary q_i,r_i
 				// calculate d_travel and set q_cntr and r_cntr for photon that got this far
@@ -1056,7 +1056,7 @@ next_hexagon:
 				photon_coord_rel.y = phot_coord0.y - photon->exit_coords.y;
 				photon_coord_rel.z = phot_coord0.z - photon->exit_coords.z;
 				*d_travel = sqrt(polycap_scalar(photon_coord_rel, photon_coord_rel));				
-				if(*d_travel > 1.e-4){ //must have traveled more than a micron...
+				if(*d_travel > 1.e-5){ //must have traveled more than 0.1 micron...
 //printf("			**was here; phot_dir.x: %lf, y: %lf, z: %lf\n", photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z);
 					*r_cntr = r_i;
 					*q_cntr = q_i;
@@ -1118,13 +1118,13 @@ next_hexagon:
 			phot_coord1.y = photon->exit_coords.y + photon->exit_direction.y * (photon->description->profile->z[z_id+1]-photon->exit_coords.z)/photon->exit_direction.z;
 			phot_coord1.z = photon->description->profile->z[z_id+1];
 
-			z = photon->description->profile->ext[z_id]/(2.*cos(M_PI/6.)*(n_shells+1));
+			z = photon->description->profile->ext[z_id]/(2.*COSPI_6*(n_shells+1));
 			cap_coord0.y = r_new * (3./2) * z;
-			cap_coord0.x = (2.* q_new+r_new) * cos(M_PI/6.) * z;
+			cap_coord0.x = (2.* q_new+r_new) * COSPI_6 * z;
 			cap_coord0.z = photon->description->profile->z[z_id];
-			z = photon->description->profile->ext[z_id+1]/(2.*cos(M_PI/6.)*(n_shells+1));
+			z = photon->description->profile->ext[z_id+1]/(2.*COSPI_6*(n_shells+1));
 			cap_coord1.y = r_new * (3./2) * z;
-			cap_coord1.x = (2.* q_new+r_new) * cos(M_PI/6.) * z;
+			cap_coord1.x = (2.* q_new+r_new) * COSPI_6 * z;
 			cap_coord1.z = photon->description->profile->z[z_id+1];
 			//looking for intersection of photon from outside to inside of capillary
 //printf("*Segmenting for wall_trace\n");

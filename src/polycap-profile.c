@@ -355,9 +355,9 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 //					printf("q: %lf, r: %lf \n",q_i, r_i);
 					// determine selected capillary central axis coordinates and add capillary radius along current angle
 					for(i = 0; i <= profile->nmax; i++){
-						z = profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+						z = profile->ext[i]/(2.*COSPI_6*(n_shells+1));
 						coord.y = r_i * (3./2) * z;
-						coord.x = (2* q_i + r_i) * cos(M_PI/6.) * z;
+						coord.x = (2* q_i + r_i) * COSPI_6 * z;
 						angle = atan(coord.y/coord.x);
 						coord.x += cos(angle)*profile->cap[i];
 						coord.y += sin(angle)*profile->cap[i];
@@ -397,9 +397,9 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 				}
 				// determine selected capillary central axis coordinates and add capillary radius along current angle
 				for(i = 0; i <= profile->nmax; i++){
-					z = profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+					z = profile->ext[i]/(2.*COSPI_6*(n_shells+1));
 					coord.y = r_i * (3./2) * z;
-					coord.x = (2* q_i + r_i) * cos(M_PI/6.) * z;
+					coord.x = (2* q_i + r_i) * COSPI_6 * z;
 					angle = atan(coord.y/coord.x);
 					coord.x += cos(angle)*profile->cap[i];
 					coord.y += sin(angle)*profile->cap[i];
