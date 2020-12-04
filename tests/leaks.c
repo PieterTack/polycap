@@ -101,6 +101,22 @@ void test_polycap_capil_trace_wall_leak() {
 	fprintf(stderr, "d_travel: %lf\n", d_travel);
 	assert(fabs(d_travel - 0.012741) < 1e-6);
 
+	// Another photon, testing for differences in OS
+	photon->exit_coords.x = -0.072064;
+	photon->exit_coords.y = -0.008307;
+	photon->exit_coords.z = 8.783979;
+	photon->exit_direction.x = 0.061332;
+	photon->exit_direction.y = 0.004022;
+	photon->exit_direction.z = 0.998109;
+	test = polycap_capil_trace_wall(photon, &d_travel, &r_i, &q_i, &error);
+	assert(photon != NULL);
+	assert(test == 3);
+	assert(r_i == -32);
+	assert(q_i == -226);
+	fprintf(stderr, "d_travel: %lf\n", d_travel);
+	assert(fabs(d_travel - 0.062987) < 1e-6);
+	
+
 	polycap_profile_free(profile);
 	polycap_description_free(description);
 	polycap_photon_free(photon);
