@@ -211,7 +211,7 @@ jobs:
         autoreconf -fi
         ./configure --disable-python || (cat config.log && exit 1)
         make
-        make check
+        make check || (cat tests/leaks.log && exit 1)
         make distclean
         ./configure --enable-python
         make
@@ -247,7 +247,7 @@ jobs:
         cd build
         meson --buildtype=debugoptimized -Dbuild-python-bindings=false -Dbuild-documentation=false ..
         ninja
-        ninja test
+        ninja test || (cat meson-logs/testlog.txt && exit 1)
         ninja clean
         rm -rf *
         meson --buildtype=debugoptimized -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
