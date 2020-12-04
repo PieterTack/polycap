@@ -119,7 +119,7 @@ jobs:
       env:
         CC: ${{matrix.cc}}
 
-  unix:
+  .unix:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
