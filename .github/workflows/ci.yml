@@ -119,7 +119,7 @@ jobs:
       env:
         CC: ${{matrix.cc}}
 
-  .unix:
+  unix:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -128,28 +128,28 @@ jobs:
         buildsystem: [autotools, meson]
         include:
           # Linux
-          - os: ubuntu-latest
+          #- os: ubuntu-latest
+            #rng: easyRNG
+            #compiler: clang
+            #cc: clang
+            #extra: libeasyrng-dev
+            #python: /usr/bin/python3
+            #- os: ubuntu-latest
             rng: easyRNG
-            compiler: clang
-            cc: clang
-            extra: libeasyrng-dev
-            python: /usr/bin/python3
-          - os: ubuntu-latest
-            rng: easyRNG
-            compiler: gcc
-            cc: gcc
-            extra: libeasyrng-dev
-            python: /usr/bin/python3
-          - os: ubuntu-latest
-            rng: gsl
-            compiler: clang
-            cc: clang
-            python: /usr/bin/python3
-          - os: ubuntu-latest
-            rng: gsl
-            compiler: gcc
-            cc: gcc
-            python: /usr/bin/python3
+            #compiler: gcc
+            #cc: gcc
+            #extra: libeasyrng-dev
+            #python: /usr/bin/python3
+            #- os: ubuntu-latest
+            #rng: gsl
+            #compiler: clang
+            #cc: clang
+            #python: /usr/bin/python3
+            #- os: ubuntu-latest
+            #rng: gsl
+            #compiler: gcc
+            #cc: gcc
+            #python: /usr/bin/python3
           # macOS
           - os: macos-latest
             rng: easyRNG
