@@ -152,7 +152,7 @@ class TestPolycapPhoton(unittest.TestCase):
         self.assertAlmostEqual(photon.extleak[1].direction.x, 0.000146, delta=1e-6)
         self.assertAlmostEqual(photon.extleak[1].direction.y, 0., delta=1e-6)
         self.assertAlmostEqual(photon.extleak[1].direction.z, 1., delta=1e-6)
-        self.assertAlmostEqual(photon.extleak[10].weight[0], 0.001793, delta=1e-6)
+        self.assertAlmostEqual(photon.extleak[1].weight[0], 0.001793, delta=1e-6)
         self.assertIsInstance(weights, np.ndarray)
         self.assertIsInstance(photon.get_exit_coords(), VectorTuple)
         self.assertIsInstance(photon.get_exit_direction(), VectorTuple)

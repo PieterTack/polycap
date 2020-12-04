@@ -643,7 +643,7 @@ fprintf(stderr,"Here wal_trace == %i, q: %i r: %i, phot.exit.x: %lf, y: %lf, z: 
 		photon->weight[i] = photon->weight[i] * rtot * r_rough;
 		if(photon->weight[i] >= 1.e-4) weight_flag = 1;
 	}
-//printf("	w0: %lf, lw0: %lf, w_sum: %lf, d_trav: %lf, exp: %lf \n", photon->weight[0], w_leak[0], photon->weight[0]+w_leak[0], d_travel, exp(-1.*d_travel*photon->amu[0]));
+	//printf("	w0: %lf, lw0: %lf, w_sum: %lf, d_trav: %lf, exp: %lf \n", photon->weight[0], w_leak[0], photon->weight[0]+w_leak[0], d_travel, exp(-1.*d_travel*photon->amu[0]));
 	//stop calculation if none of the energy weights is above threshold
 	if (weight_flag != 1) {
 		iesc = 0;

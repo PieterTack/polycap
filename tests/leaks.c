@@ -68,6 +68,8 @@ void test_polycap_capil_trace_wall_leak() {
 	assert(test == 1);
 	assert(r_i == 0);
 	assert(q_i == 1);
+	fprintf(stderr, "d_travel: %lf\n", d_travel);
+	assert(fabs(d_travel - 0.029464) < 1e-6);
 
 	// photon potentially going through wall straight to exit
 	photon->exit_coords.x = 10e-5;
@@ -81,6 +83,8 @@ void test_polycap_capil_trace_wall_leak() {
 	assert(test == 2);
 	assert(r_i == 0);
 	assert(q_i == 0);
+	fprintf(stderr, "d_travel: %lf\n", d_travel);
+	assert(fabs(d_travel - 0.000507) < 1e-6);
 
 	// photon potentially going through wall to outside optic
 	photon->exit_coords.x = 0.2061;
@@ -94,6 +98,8 @@ void test_polycap_capil_trace_wall_leak() {
 	assert(test == 3);
 	assert(r_i == 0);
 	assert(q_i == 259);
+	fprintf(stderr, "d_travel: %lf\n", d_travel);
+	assert(fabs(d_travel - 0.012741) < 1e-6);
 
 	polycap_profile_free(profile);
 	polycap_description_free(description);
