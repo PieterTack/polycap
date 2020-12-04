@@ -135,7 +135,7 @@ jobs:
             #extra: libeasyrng-dev
             #python: /usr/bin/python3
             #- os: ubuntu-latest
-            rng: easyRNG
+            #rng: easyRNG
             #compiler: gcc
             #cc: gcc
             #extra: libeasyrng-dev
