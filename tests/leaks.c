@@ -1066,7 +1066,7 @@ void test_polycap_photon_leak() {
 	}
 	assert(test == 0);
 	assert(photon->n_energies == 1);
-	assert(photon->n_extleak == 4);
+	assert(photon->n_extleak == 6);
 	assert(photon->n_intleak == 0);
 	/*assert(fabs(photon->extleak[0]->coords.x + 0.100817) < 0.0000005);
 	assert(fabs(photon->extleak[0]->coords.y + 0.011736) < 0.0000005);
