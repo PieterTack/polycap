@@ -1361,9 +1361,9 @@ printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, te
 			} else {
 				iesc = polycap_capil_reflect(photon, surface_norm, leak_calc, error);
 				if(iesc == 1){
-					photon->exit_direction.x = photon->exit_direction.x - 2.0*sin(M_PI_2-alfa) * surface_norm.x;
-					photon->exit_direction.y = photon->exit_direction.y - 2.0*sin(M_PI_2-alfa) * surface_norm.y;
-					photon->exit_direction.z = photon->exit_direction.z - 2.0*sin(M_PI_2-alfa) * surface_norm.z;
+					photon->exit_direction.x = photon->exit_direction.x - 2.0*cos(alfa) * surface_norm.x; //sin(pi/2-a)=cos(a)
+					photon->exit_direction.y = photon->exit_direction.y - 2.0*cos(alfa) * surface_norm.y;
+					photon->exit_direction.z = photon->exit_direction.z - 2.0*cos(alfa) * surface_norm.z;
 					polycap_norm(&photon->exit_direction);
 					photon->i_refl++;
 				}
