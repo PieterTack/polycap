@@ -1202,7 +1202,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 	polycap_vector3 phot_coord0, phot_coord1;
 	polycap_vector3 photon_coord, photon_dir;
 	polycap_vector3 surface_norm; //surface normal of capillary at interaction point
-	double alfa; //angle between capillary normal at interaction point and photon direction before interaction
+	double cosalfa; //angle between capillary normal at interaction point and photon direction before interaction
 	polycap_vector3 photon_coord_rel; //relative coordinates of new interaction point compared to previous interaction
 	double d_travel; //distance between interactions
 	double current_polycap_ext; //optic exterior radius at photon_coord.z position
@@ -1298,11 +1298,11 @@ printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, te
 		phot_coord1.z = description->profile->z[i+1];
 		//looking for intersection of photon from inside to outside of capillary
 		iesc = polycap_capil_segment(cap_coord0, cap_coord1, cap_rad0, cap_rad1, phot_coord0, phot_coord1, photon_dir, &photon_coord, &surface_norm, error);
-		alfa = acos(polycap_scalar(surface_norm, photon_dir));
-		if(alfa > M_PI/2. || alfa < 0.){
+		cosalfa = polycap_scalar(surface_norm, photon_dir);
+		if(acos(cosalfa) > M_PI/2. || acos(cosalfa) < 0.){
 			iesc = -5;
 		}
-//printf("		Segment: %i phot_temp trace: photx: %lf, y: %lf, z: %lf, interact.x: %lf, y: %lf, z: %lf, alfa: %lf\n", iesc, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, photon_coord.x, photon_coord.y, photon_coord.z, alfa*180./M_PI);
+//printf("		Segment: %i phot_temp trace: photx: %lf, y: %lf, z: %lf, interact.x: %lf, y: %lf, z: %lf, alfa: %lf\n", iesc, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, photon_coord.x, photon_coord.y, photon_coord.z, acos(cosalfa)*180./M_PI);
 		//TODO: issues actually only arise after -2 was returned.... This suggest last interaction point came from within glass wall
 
 		if(iesc == 1){
@@ -1339,7 +1339,7 @@ printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, te
 		photon->exit_coords.x = photon_coord.x;
 		photon->exit_coords.y = photon_coord.y;
 		photon->exit_coords.z = photon_coord.z;
-		if(fabs(cos(alfa)) >1.0){
+		if(fabs(cosalfa) >1.0){
 			printf("polycap_capil_trace: COS(alfa) > 1\n");
 			iesc = -1;
 		} else {
@@ -1361,9 +1361,9 @@ printf("		exit.x: %lf, y:%lf, z: %lf, i: %i, exit dir.x: %lf, y: %lf, z: %lf, te
 			} else {
 				iesc = polycap_capil_reflect(photon, surface_norm, leak_calc, error);
 				if(iesc == 1){
-					photon->exit_direction.x = photon->exit_direction.x - 2.0*cos(alfa) * surface_norm.x; //sin(pi/2-a)=cos(a)
-					photon->exit_direction.y = photon->exit_direction.y - 2.0*cos(alfa) * surface_norm.y;
-					photon->exit_direction.z = photon->exit_direction.z - 2.0*cos(alfa) * surface_norm.z;
+					photon->exit_direction.x = photon->exit_direction.x - 2.0*cosalfa * surface_norm.x; //sin(pi/2-a)=cos(a)
+					photon->exit_direction.y = photon->exit_direction.y - 2.0*cosalfa * surface_norm.y;
+					photon->exit_direction.z = photon->exit_direction.z - 2.0*cosalfa * surface_norm.z;
 					polycap_norm(&photon->exit_direction);
 					photon->i_refl++;
 				}
