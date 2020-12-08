@@ -901,9 +901,9 @@ void test_polycap_photon_leak() {
 	polycap_clear_error(&error);
 
 	//Single photon that should leak through polycapillary
-	fprintf(stderr, "-----Case1\n");
+	//fprintf(stderr, "-----Case1\n");
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
-	fprintf(stderr, "x: %lf y: %lf z: %lf dirx: %lf y: %lf z: %lf\n", photon->extleak[0]->coords.x, photon->extleak[0]->coords.y, photon->extleak[0]->coords.z, photon->extleak[0]->direction.x, photon->extleak[0]->direction.y, photon->extleak[0]->direction.z);
+	//fprintf(stderr, "x: %lf y: %lf z: %lf dirx: %lf y: %lf z: %lf\n", photon->extleak[0]->coords.x, photon->extleak[0]->coords.y, photon->extleak[0]->coords.z, photon->extleak[0]->direction.x, photon->extleak[0]->direction.y, photon->extleak[0]->direction.z);
 	assert(photon != NULL);
 	assert(test == 2);
 	assert(photon->n_extleak == 1);
@@ -1053,13 +1053,13 @@ void test_polycap_photon_leak() {
 	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error); 
-	fprintf(stderr, "-----Case2\n");
+	//fprintf(stderr, "-----Case2\n");
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
-	fprintf(stderr, "n_ext: %" PRId64 " , n_int %" PRId64 "  \n", photon->n_extleak, photon->n_intleak);
+	/*fprintf(stderr, "n_ext: %" PRId64 " , n_int %" PRId64 "  \n", photon->n_extleak, photon->n_intleak);
 	int i;
 	for(i=0; i<photon->n_extleak; i++){
 		fprintf(stderr,"extleak.x: %lf , y: %lf, z: %lf, dirx: %lf, diry: %lf, dirz: %lf, w: %lf\n", photon->extleak[i]->coords.x, photon->extleak[i]->coords.y, photon->extleak[i]->coords.z, photon->extleak[i]->direction.x, photon->extleak[i]->direction.y, photon->extleak[i]->direction.z ,photon->extleak[i]->weight[0]);
-	}
+	}*/	
 	assert(test == 0);
 	assert(photon->n_energies == 1);
 	assert(photon->n_extleak == 6);
@@ -1123,15 +1123,16 @@ void test_polycap_photon_leak() {
 	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
 	assert(photon != NULL);
 	polycap_clear_error(&error); 
-	fprintf(stderr, "------Case3\n");
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
 	assert(test == 0);
+	/*fprintf(stderr, "------Case3\n");
 	fprintf(stderr, "n_extleak: %" PRId64 " , n_intleak: %" PRId64 " \n", photon->n_extleak, photon->n_intleak);
 	for(i=0; i<photon->n_extleak; i++){
 		fprintf(stderr,"extleak.x: %lf , y: %lf, z: %lf, dirx: %lf, diry: %lf, dirz: %lf, w: %lf\n", photon->extleak[i]->coords.x, photon->extleak[i]->coords.y, photon->extleak[i]->coords.z, photon->extleak[i]->direction.x, photon->extleak[i]->direction.y, photon->extleak[i]->direction.z ,photon->extleak[i]->weight[0]);
 	}
-	//fprintf(stderr, "intleak.x: %lf, intleak.y: %lf, intleak.z:%lf, weight: %lf\n", photon->intleak[0]->coords.x, photon->intleak[0]->coords.y, photon->intleak[0]->coords.z, photon->intleak[0]->weight[0]);
-	//fprintf(stderr, "intleak.x: %lf, intleak.y: %lf, intleak.z:%lf, weight: %lf\n", photon->intleak[1]->coords.x, photon->intleak[1]->coords.y, photon->intleak[1]->coords.z, photon->intleak[1]->weight[0]);
+	for(i=0; i<photon->n_intleak; i++){
+		fprintf(stderr,"intleak.x: %lf , y: %lf, z: %lf, dirx: %lf, diry: %lf, dirz: %lf, w: %lf\n", photon->intleak[i]->coords.x, photon->intleak[i]->coords.y, photon->intleak[i]->coords.z, photon->intleak[i]->direction.x, photon->intleak[i]->direction.y, photon->intleak[i]->direction.z ,photon->intleak[i]->weight[0]);
+	}*/
 	assert(photon->n_energies == 1);
 	assert(photon->n_extleak == 2);
 	assert(photon->n_intleak == 3);
@@ -1153,13 +1154,22 @@ void test_polycap_photon_leak() {
 	assert(fabs(photon->intleak[0]->coords.y - 0.) < 0.0000005);
 	assert(fabs(photon->intleak[0]->coords.z - 9.) < 0.0000005);
 	assert(fabs(photon->intleak[0]->weight[0] - 0.000143) < 0.0000005);
+	assert(fabs(photon->intleak[0]->direction.x + 0.001078) < 0.0000005);
+	assert(fabs(photon->intleak[0]->direction.y - 0.) < 0.0000005);
+	assert(fabs(photon->intleak[0]->direction.z - 0.999999) < 0.0000005);
 	assert(fabs(photon->intleak[1]->coords.x - 0.053113) < 0.0000005);
 	assert(fabs(photon->intleak[1]->coords.y - 0.) < 0.0000005);
 	assert(fabs(photon->intleak[1]->coords.z - 9.) < 0.0000005);
+	assert(fabs(photon->intleak[1]->direction.x + 0.000511) < 0.0000005);
+	assert(fabs(photon->intleak[1]->direction.y - 0.) < 0.0000005);
+	assert(fabs(photon->intleak[1]->direction.z - 1.0) < 0.0000005);
 	assert(fabs(photon->intleak[1]->weight[0] - 0.000352) < 0.0000005);
 	assert(fabs(photon->intleak[2]->coords.x - 0.027487) < 0.0000005);
 	assert(fabs(photon->intleak[2]->coords.y - 0.) < 0.0000005);
 	assert(fabs(photon->intleak[2]->coords.z - 9.) < 0.0000005);
+	assert(fabs(photon->intleak[2]->direction.x + 0.006149) < 0.0000005);
+	assert(fabs(photon->intleak[2]->direction.y - 0.) < 0.0000005);
+	assert(fabs(photon->intleak[2]->direction.z - 0.999981) < 0.0000005);
 	assert(fabs(photon->intleak[2]->weight[0] - 0.000142) < 0.0000005);
 	//test polycap_photon_get_extleak_data()
 	polycap_leak **leaks = NULL;

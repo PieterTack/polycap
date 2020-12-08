@@ -741,6 +741,36 @@ cdef class Photon:
         # TODO: cache leaks, request it just once
         # TODO: turn into a generator function that returns an iterator
 
+    @property
+    def intleak(self):
+        '''Retrieve interior :ref:``Leak`` class array from a :ref:``Photon`` class '''
+        if self.photon is NULL:
+            return None
+
+        cdef polycap_leak **leaks = NULL
+        cdef int64_t n_leaks = 0
+        cdef polycap_error *error = NULL
+
+        #logger.debug('Before calling C') 
+        polycap_photon_get_intleak_data(self.photon, &leaks, &n_leaks, &error)
+        polycap_set_exception(error)
+        #logger.debug('After calling C') 
+
+        rv = list()
+
+        if n_leaks > 0:
+            for i in range(n_leaks):
+                leak = Leak.create(leaks[i])
+                rv.append(leak)
+                polycap_leak_free(leaks[i]) #Probably not allowed to free leaks?
+            polycap_free(leaks)
+            return rv
+        else:
+            return None
+
+        # TODO: cache leaks, request it just once
+        # TODO: turn into a generator function that returns an iterator
+
     def get_exit_coords(self):
         '''Retrieve exit coordinates from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_coords(self.photon))

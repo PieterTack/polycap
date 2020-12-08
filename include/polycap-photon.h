@@ -144,8 +144,30 @@ polycap_vector3 polycap_photon_get_exit_direction(polycap_photon *photon);
 POLYCAP_EXTERN
 polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
 
+
+/**
+ *
+ * \param photon a polycap photon
+ * \param leaks a polycap_leak structure array to contain the returned extleak data
+ * \param n_leaks a int64_t pointer that will contain the amount of returned extleaks
+ * \param error a polycap_error
+ * \returns true if succesful, false on error
+ *
+*/
 POLYCAP_EXTERN
 bool polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak ***leaks, int64_t *n_leaks, polycap_error **error);
+
+/**
+ *
+ * \param photon a polycap photon
+ * \param leaks a polycap_leak structure array to contain the returned intleak data
+ * \param n_leaks a int64_t pointer that will contain the amount of returned intleaks
+ * \param error a polycap_error
+ * \returns true if succesful, false on error
+ *
+*/
+POLYCAP_EXTERN
+bool polycap_photon_get_intleak_data(polycap_photon *photon, polycap_leak ***leaks, int64_t *n_leaks, polycap_error **error);
 
 /** Free a polycap_photon
  * 
