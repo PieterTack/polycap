@@ -68,7 +68,6 @@ void test_polycap_capil_trace_wall_leak() {
 	assert(test == 1);
 	assert(r_i == 0);
 	assert(q_i == 1);
-	fprintf(stderr, "d_travel: %lf\n", d_travel);
 	assert(fabs(d_travel - 0.029464) < 1e-6);
 
 	// photon potentially going through wall straight to exit
@@ -83,7 +82,6 @@ void test_polycap_capil_trace_wall_leak() {
 	assert(test == 2);
 	assert(r_i == 0);
 	assert(q_i == 0);
-	fprintf(stderr, "d_travel: %lf\n", d_travel);
 	assert(fabs(d_travel - 0.000507) < 1e-6);
 
 	// photon potentially going through wall to outside optic
@@ -98,7 +96,6 @@ void test_polycap_capil_trace_wall_leak() {
 	assert(test == 3);
 	assert(r_i == 0);
 	assert(q_i == 259);
-	fprintf(stderr, "d_travel: %lf\n", d_travel);
 	assert(fabs(d_travel - 0.012741) < 1e-6);
 
 	// Another photon, testing for differences in OS
@@ -113,7 +110,6 @@ void test_polycap_capil_trace_wall_leak() {
 	assert(test == 3);
 	assert(r_i == -32);
 	assert(q_i == -226);
-	fprintf(stderr, "d_travel: %lf\n", d_travel);
 	assert(fabs(d_travel - 0.062987) < 1e-6);
 	
 
@@ -1068,42 +1064,49 @@ void test_polycap_photon_leak() {
 	assert(photon->n_energies == 1);
 	assert(photon->n_extleak == 6);
 	assert(photon->n_intleak == 0);
-	/*assert(fabs(photon->extleak[0]->coords.x + 0.100817) < 0.0000005);
+	assert(fabs(photon->extleak[0]->coords.x + 0.100817) < 0.0000005);
 	assert(fabs(photon->extleak[0]->coords.y + 0.011736) < 0.0000005);
 	assert(fabs(photon->extleak[0]->coords.z - 8.189189) < 0.0000005);
 	assert(fabs(photon->extleak[0]->direction.x - 0.030894) < 0.0000005);
 	assert(fabs(photon->extleak[0]->direction.y - 0.002788) < 0.0000005);
 	assert(fabs(photon->extleak[0]->direction.z - 0.999519) < 0.0000005);
 	assert(fabs(photon->extleak[0]->weight[0] - 0.000114) < 0.0000005);
-	assert(fabs(photon->extleak[1]->coords.x + 0.088759) < 0.0000005);
-	assert(fabs(photon->extleak[1]->coords.y + 0.010696) < 0.0000005);
+	assert(fabs(photon->extleak[1]->coords.x + 0.088786) < 0.0000005);
+	assert(fabs(photon->extleak[1]->coords.y + 0.010707) < 0.0000005);
 	assert(fabs(photon->extleak[1]->coords.z - 8.477477) < 0.0000005);
-	assert(fabs(photon->extleak[1]->direction.x - 0.040573) < 0.0000005);
-	assert(fabs(photon->extleak[1]->direction.y - 0.001255) < 0.0000005);
-	assert(fabs(photon->extleak[1]->direction.z - 0.999176) < 0.0000005);
-	assert(fabs(photon->extleak[1]->weight[0] - 0.000235) < 0.0000005);
-	assert(fabs(photon->extleak[2]->coords.x + 0.081027) < 0.0000005);
-	assert(fabs(photon->extleak[2]->coords.y + 0.009295) < 0.0000005);
-	assert(fabs(photon->extleak[2]->coords.z - 8.639640) < 0.0000005);
-	assert(fabs(photon->extleak[2]->direction.x - 0.044536) < 0.0000005);
-	assert(fabs(photon->extleak[2]->direction.y - 0.005617) < 0.0000005);
-	assert(fabs(photon->extleak[2]->direction.z - 0.998992) < 0.0000005);
-	assert(fabs(photon->extleak[2]->weight[0] - 0.067939) < 0.0000005);
-	assert(fabs(photon->extleak[3]->coords.x + 0.074805) < 0.0000005);
-	assert(fabs(photon->extleak[3]->coords.y + 0.008749) < 0.0000005);
-	assert(fabs(photon->extleak[3]->coords.z - 8.747748) < 0.0000005);
-	assert(fabs(photon->extleak[3]->direction.x - 0.051551) < 0.0000005);
-	assert(fabs(photon->extleak[3]->direction.y - 0.003956) < 0.0000005);
-	assert(fabs(photon->extleak[3]->direction.z - 0.998663) < 0.0000005);
-	assert(fabs(photon->extleak[3]->weight[0] - 0.001696) < 0.0000005);
-	assert(fabs(photon->extleak[4]->coords.x + 0.068911) < 0.0000005);
-	assert(fabs(photon->extleak[4]->coords.y + 0.007881) < 0.0000005);
-	assert(fabs(photon->extleak[4]->coords.z - 8.837838) < 0.0000005);
-	assert(fabs(photon->extleak[4]->direction.x - 0.058510) < 0.0000005);
-	assert(fabs(photon->extleak[4]->direction.y - 0.008010) < 0.0000005);
-	assert(fabs(photon->extleak[4]->direction.z - 0.998255) < 0.0000005);
-	assert(fabs(photon->extleak[4]->weight[0] - 0.000200) < 0.0000005);
-	*/
+	assert(fabs(photon->extleak[1]->direction.x - 0.040382) < 0.0000005);
+	assert(fabs(photon->extleak[1]->direction.y - 0.001195) < 0.0000005);
+	assert(fabs(photon->extleak[1]->direction.z - 0.999184) < 0.0000005);
+	assert(fabs(photon->extleak[1]->weight[0] - 0.000221) < 0.0000005);
+	assert(fabs(photon->extleak[2]->coords.x + 0.080614) < 0.0000005);
+	assert(fabs(photon->extleak[2]->coords.y + 0.009185) < 0.0000005);
+	assert(fabs(photon->extleak[2]->coords.z - 8.648649) < 0.0000005);
+	assert(fabs(photon->extleak[2]->direction.x - 0.044555) < 0.0000005);
+	assert(fabs(photon->extleak[2]->direction.y - 0.005834) < 0.0000005);
+	assert(fabs(photon->extleak[2]->direction.z - 0.998990) < 0.0000005);
+	assert(fabs(photon->extleak[2]->weight[0] - 0.057475) < 0.0000005);
+	assert(fabs(photon->extleak[3]->coords.x + 0.073670) < 0.0000005);
+	assert(fabs(photon->extleak[3]->coords.y + 0.008600) < 0.0000005);
+	assert(fabs(photon->extleak[3]->coords.z - 8.765766) < 0.0000005);
+	assert(fabs(photon->extleak[3]->direction.x - 0.052757) < 0.0000005);
+	assert(fabs(photon->extleak[3]->direction.y - 0.005362) < 0.0000005);
+	assert(fabs(photon->extleak[3]->direction.z - 0.998593) < 0.0000005);
+	assert(fabs(photon->extleak[3]->weight[0] - 0.000697) < 0.0000005);
+	assert(fabs(photon->extleak[4]->coords.x + 0.069819) < 0.0000005);
+	assert(fabs(photon->extleak[4]->coords.y + 0.007596) < 0.0000005);
+	assert(fabs(photon->extleak[4]->coords.z - 8.828829) < 0.0000005);
+	assert(fabs(photon->extleak[4]->direction.x - 0.056571) < 0.0000005);
+	assert(fabs(photon->extleak[4]->direction.y - 0.010269) < 0.0000005);
+	assert(fabs(photon->extleak[4]->direction.z - 0.998346) < 0.0000005);
+	assert(fabs(photon->extleak[4]->weight[0] - 0.000116) < 0.0000005);
+	assert(fabs(photon->extleak[5]->coords.x + 0.066291) < 0.0000005);
+	assert(fabs(photon->extleak[5]->coords.y + 0.007668) < 0.0000005);
+	assert(fabs(photon->extleak[5]->coords.z - 8.873874) < 0.0000005);
+	assert(fabs(photon->extleak[5]->direction.x - 0.063141) < 0.0000005);
+	assert(fabs(photon->extleak[5]->direction.y - 0.005784) < 0.0000005);
+	assert(fabs(photon->extleak[5]->direction.z - 0.997988) < 0.0000005);
+	assert(fabs(photon->extleak[5]->weight[0] - 0.000607) < 0.0000005);
+	
 	polycap_free(weights);
 
 	//Another photon

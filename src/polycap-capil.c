@@ -611,7 +611,7 @@ int polycap_capil_reflect(polycap_photon *photon, polycap_vector3 surface_norm, 
 	//	if leak_calc is false wall_trace will remain 0 and the whole leak calculation will be skipped
 	if(leak_calc){
 		wall_trace = polycap_capil_trace_wall(photon, &d_travel, &r_cntr, &q_cntr, error);
-fprintf(stderr,"Here wal_trace == %i, q: %i r: %i, phot.exit.x: %lf, y: %lf, z: %lf, d_travel: %lf\n", wall_trace, q_cntr, r_cntr, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, d_travel);
+		//fprintf(stderr,"Here wal_trace == %i, q: %i r: %i, phot.exit.x: %lf, y: %lf, z: %lf, d_travel: %lf\n", wall_trace, q_cntr, r_cntr, photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, d_travel);
 		if(wall_trace <= 0){
 			free(w_leak);
 			return -1;

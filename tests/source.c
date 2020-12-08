@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #ifdef HAVE__UNLINK
   #include <stdio.h>
 #elif defined(HAVE_UNLINK)
@@ -264,7 +265,7 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	} while(phot_transm < 30000);
 	for(j=0; j<7; j++)
 		w_tot[j] = w_tot[j]/phot_ini; 
-	printf("Launch: %li, transm: %li, eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: %lf\n", phot_ini, phot_transm, w_tot[0], w_tot[1], w_tot[2], w_tot[3], w_tot[4], w_tot[5], w_tot[6]);
+	printf("Launch: %" PRId64 ", transm: %" PRId64 " , eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: %lf\n", phot_ini, phot_transm, w_tot[0], w_tot[1], w_tot[2], w_tot[3], w_tot[4], w_tot[5], w_tot[6]);
 	assert(fabs(efficiencies->efficiencies[0] - w_tot[0]) <= 0.0075); //1 keV
 	assert(fabs(efficiencies->efficiencies[1] - w_tot[1]) <= 0.0075); //5 keV
 	assert(fabs(efficiencies->efficiencies[2] - w_tot[2]) <= 0.0075); //10 keV
