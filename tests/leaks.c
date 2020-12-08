@@ -1326,7 +1326,7 @@ int main(int argc, char *argv[]) {
 	test_polycap_capil_reflect_leak();
 	test_polycap_capil_trace_leak();
 	test_polycap_photon_leak();
-	test_polycap_source_leak();
+	//test_polycap_source_leak();
 
 	return 0;
 }
