@@ -775,13 +775,45 @@ cdef class Photon:
         '''Retrieve exit coordinates from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_coords(self.photon))
 
+    def exit_coords(self):
+        '''Retrieve exit coordinates from a :ref:``Photon`` class'''
+        return vector2tuple(polycap_photon_get_exit_coords(self.photon))
+
+    def start_coords(self):
+        '''Retrieve start coordinates from a :ref:``Photon`` class'''
+        return vector2tuple(polycap_photon_get_start_coords(self.photon))
+
     def get_exit_direction(self):
         '''Retrieve exit direction from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_direction(self.photon))
 
+    def exit_direction(self):
+        '''Retrieve exit direction from a :ref:``Photon`` class'''
+        return vector2tuple(polycap_photon_get_exit_direction(self.photon))
+
+    def start_direction(self):
+        '''Retrieve start direction from a :ref:``Photon`` class'''
+        return vector2tuple(polycap_photon_get_start_direction(self.photon))
+
     def get_exit_electric_vector(self):
         '''Retrieve exit electric field vector from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_electric_vector(self.photon))
+
+    def exit_electric_vector(self):
+        '''Retrieve exit electric field vector from a :ref:``Photon`` class'''
+        return vector2tuple(polycap_photon_get_exit_electric_vector(self.photon))
+
+    def start_electric_vector(self):
+        '''Retrieve start electric field vector from a :ref:``Photon`` class'''
+        return vector2tuple(polycap_photon_get_start_electric_vector(self.photon))
+
+    def i_refl(self):
+        '''Retrieve i_refl from a :ref:``Photon`` class'''
+        return np.double(polycap_photon_get_irefl(self.photon))
+
+    def d_travel(self):
+        '''Retrieve d_travel from a :ref:``Photon`` class'''
+        return polycap_photon_get_dtravel(self.photon)
 
 '''Class containing information on the source from which photons can be (randomly) selected
 '''

@@ -1125,6 +1125,8 @@ void test_polycap_photon_leak() {
 	polycap_clear_error(&error); 
 	test = polycap_photon_launch(photon, 1., &energy, &weights, true, &error);
 	assert(test == 0);
+	assert(fabs(photon->i_refl - 4.) < 1e-6);
+	assert(fabs(photon->d_travel - 2.744994) < 1e-6);
 	/*fprintf(stderr, "------Case3\n");
 	fprintf(stderr, "n_extleak: %" PRId64 " , n_intleak: %" PRId64 " \n", photon->n_extleak, photon->n_intleak);
 	for(i=0; i<photon->n_extleak; i++){

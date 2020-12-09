@@ -267,6 +267,7 @@ void test_polycap_photon_launch() {
 	photon->start_direction.x = 0.;
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.0;
+	photon->d_travel = 0.;
 	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(fabs(photon->exit_coords.x) < 1.e-5);
 	assert(fabs(photon->exit_coords.y) < 1.e-5);
@@ -275,6 +276,9 @@ void test_polycap_photon_launch() {
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(test == 1);
+	fprintf(stderr,"i_refl: %li, d_travel: %lf\n", photon->i_refl , photon->d_travel);
+	assert(fabs(photon->i_refl - 0.) < 1e-6);
+	assert(fabs(photon->d_travel - 0.) < 1e-6);
 	polycap_free(weights);
 	polycap_free(photon->weight); // this is just to shut up valgrind because we are reusing the photon...
 	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...

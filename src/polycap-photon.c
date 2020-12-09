@@ -955,6 +955,20 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 }
 
 //===========================================
+// get d_travel
+double polycap_photon_get_dtravel(polycap_photon *photon)
+{
+	return photon->d_travel;
+}
+
+//===========================================
+// get i_refl
+int64_t polycap_photon_get_irefl(polycap_photon *photon)
+{
+	return photon->i_refl;
+}
+
+//===========================================
 // get start coordinates
 polycap_vector3 polycap_photon_get_start_coords(polycap_photon *photon)
 {
