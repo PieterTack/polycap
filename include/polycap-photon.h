@@ -58,6 +58,7 @@ typedef struct {
   	int64_t n_refl;
 } polycap_leak;
 
+
 /** Creates a new polycap_photon with its initial position, direction and electric field vector.
  *
  * \param description a polycap_description

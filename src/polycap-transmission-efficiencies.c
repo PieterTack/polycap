@@ -768,6 +768,80 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	return true;
 }
 //===========================================
+void polycap_images_free(struct _polycap_images *images)
+{
+	if (images->src_start_coords[0])
+		free(images->src_start_coords[0]);
+	if (images->src_start_coords[1])
+		free(images->src_start_coords[1]);
+	if (images->pc_start_coords[0])
+		free(images->pc_start_coords[0]);
+	if (images->pc_start_coords[1])
+		free(images->pc_start_coords[1]);
+	if (images->pc_start_dir[0])
+		free(images->pc_start_dir[0]);
+	if (images->pc_start_dir[1])
+		free(images->pc_start_dir[1]);
+	if (images->pc_start_elecv[0])
+		free(images->pc_start_elecv[0]);
+	if (images->pc_start_elecv[1])
+		free(images->pc_start_elecv[1]);
+	if (images->pc_exit_coords[0])
+		free(images->pc_exit_coords[0]);
+	if (images->pc_exit_coords[1])
+		free(images->pc_exit_coords[1]);
+	if (images->pc_exit_coords[2])
+		free(images->pc_exit_coords[2]);
+	if (images->pc_exit_dir[0])
+		free(images->pc_exit_dir[0]);
+	if (images->pc_exit_dir[1])
+		free(images->pc_exit_dir[1]);
+	if (images->pc_exit_elecv[0])
+		free(images->pc_exit_elecv[0]);
+	if (images->pc_exit_elecv[1])
+		free(images->pc_exit_elecv[1]);
+	if (images->pc_exit_nrefl)
+		free(images->pc_exit_nrefl);
+	if (images->pc_exit_dtravel)
+		free(images->pc_exit_dtravel);
+	if (images->exit_coord_weights)
+		free(images->exit_coord_weights);
+	if (images->extleak_coords[0])
+		free(images->extleak_coords[0]);
+	if (images->extleak_coords[1])
+		free(images->extleak_coords[1]);
+	if (images->extleak_coords[2])
+		free(images->extleak_coords[2]);
+	if (images->extleak_dir[0])
+		free(images->extleak_dir[0]);
+	if (images->extleak_dir[1])
+		free(images->extleak_dir[1]);
+	if (images->extleak_coord_weights)
+		free(images->extleak_coord_weights);
+	if (images->extleak_n_refl)
+		free(images->extleak_n_refl);
+	if (images->intleak_coords[0])
+		free(images->intleak_coords[0]);
+	if (images->intleak_coords[1])
+		free(images->intleak_coords[1]);
+	if (images->intleak_coords[2])
+		free(images->intleak_coords[2]);
+	if (images->intleak_dir[0])
+		free(images->intleak_dir[0]);
+	if (images->intleak_dir[1])
+		free(images->intleak_dir[1]);
+	if (images->intleak_elecv[0])
+		free(images->intleak_elecv[0]);
+	if (images->intleak_elecv[1])
+		free(images->intleak_elecv[1]);
+	if (images->intleak_coord_weights)
+		free(images->intleak_coord_weights);
+	if (images->intleak_n_refl)
+		free(images->intleak_n_refl);
+	free(images);
+
+}
+//===========================================
 void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *efficiencies)
 {
 	if (efficiencies == NULL)
@@ -777,75 +851,7 @@ void polycap_transmission_efficiencies_free(polycap_transmission_efficiencies *e
 	if (efficiencies->efficiencies)
 		free(efficiencies->efficiencies);
 	if (efficiencies->images) {
-		if (efficiencies->images->src_start_coords[0])
-			free(efficiencies->images->src_start_coords[0]);
-		if (efficiencies->images->src_start_coords[1])
-			free(efficiencies->images->src_start_coords[1]);
-		if (efficiencies->images->pc_start_coords[0])
-			free(efficiencies->images->pc_start_coords[0]);
-		if (efficiencies->images->pc_start_coords[1])
-			free(efficiencies->images->pc_start_coords[1]);
-		if (efficiencies->images->pc_start_dir[0])
-			free(efficiencies->images->pc_start_dir[0]);
-		if (efficiencies->images->pc_start_dir[1])
-			free(efficiencies->images->pc_start_dir[1]);
-		if (efficiencies->images->pc_start_elecv[0])
-			free(efficiencies->images->pc_start_elecv[0]);
-		if (efficiencies->images->pc_start_elecv[1])
-			free(efficiencies->images->pc_start_elecv[1]);
-		if (efficiencies->images->pc_exit_coords[0])
-			free(efficiencies->images->pc_exit_coords[0]);
-		if (efficiencies->images->pc_exit_coords[1])
-			free(efficiencies->images->pc_exit_coords[1]);
-		if (efficiencies->images->pc_exit_coords[2])
-			free(efficiencies->images->pc_exit_coords[2]);
-		if (efficiencies->images->pc_exit_dir[0])
-			free(efficiencies->images->pc_exit_dir[0]);
-		if (efficiencies->images->pc_exit_dir[1])
-			free(efficiencies->images->pc_exit_dir[1]);
-		if (efficiencies->images->pc_exit_elecv[0])
-			free(efficiencies->images->pc_exit_elecv[0]);
-		if (efficiencies->images->pc_exit_elecv[1])
-			free(efficiencies->images->pc_exit_elecv[1]);
-		if (efficiencies->images->pc_exit_nrefl)
-			free(efficiencies->images->pc_exit_nrefl);
-		if (efficiencies->images->pc_exit_dtravel)
-			free(efficiencies->images->pc_exit_dtravel);
-		if (efficiencies->images->exit_coord_weights)
-			free(efficiencies->images->exit_coord_weights);
-		if (efficiencies->images->extleak_coords[0])
-			free(efficiencies->images->extleak_coords[0]);
-		if (efficiencies->images->extleak_coords[1])
-			free(efficiencies->images->extleak_coords[1]);
-		if (efficiencies->images->extleak_coords[2])
-			free(efficiencies->images->extleak_coords[2]);
-		if (efficiencies->images->extleak_dir[0])
-			free(efficiencies->images->extleak_dir[0]);
-		if (efficiencies->images->extleak_dir[1])
-			free(efficiencies->images->extleak_dir[1]);
-		if (efficiencies->images->extleak_coord_weights)
-			free(efficiencies->images->extleak_coord_weights);
-		if (efficiencies->images->extleak_n_refl)
-			free(efficiencies->images->extleak_n_refl);
-		if (efficiencies->images->intleak_coords[0])
-			free(efficiencies->images->intleak_coords[0]);
-		if (efficiencies->images->intleak_coords[1])
-			free(efficiencies->images->intleak_coords[1]);
-		if (efficiencies->images->intleak_coords[2])
-			free(efficiencies->images->intleak_coords[2]);
-		if (efficiencies->images->intleak_dir[0])
-			free(efficiencies->images->intleak_dir[0]);
-		if (efficiencies->images->intleak_dir[1])
-			free(efficiencies->images->intleak_dir[1]);
-		if (efficiencies->images->intleak_elecv[0])
-			free(efficiencies->images->intleak_elecv[0]);
-		if (efficiencies->images->intleak_elecv[1])
-			free(efficiencies->images->intleak_elecv[1]);
-		if (efficiencies->images->intleak_coord_weights)
-			free(efficiencies->images->intleak_coord_weights);
-		if (efficiencies->images->intleak_n_refl)
-			free(efficiencies->images->intleak_n_refl);
-		free(efficiencies->images);
+		polycap_images_free(efficiencies->images);
 	}
 	free(efficiencies);
 }
