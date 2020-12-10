@@ -770,6 +770,9 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 //===========================================
 void polycap_images_free(struct _polycap_images *images)
 {
+	if (images == NULL)
+		return;
+
 	if (images->src_start_coords[0])
 		free(images->src_start_coords[0]);
 	if (images->src_start_coords[1])

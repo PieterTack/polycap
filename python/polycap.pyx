@@ -722,8 +722,9 @@ cdef class Photon:
         cdef polycap_error *error = NULL
 
         #logger.debug('Before calling C') 
-        polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error)
-        polycap_set_exception(error)
+        if polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error) is False:
+            polycap_set_exception(error)
+            return None
         #logger.debug('After calling C') 
 
         rv = list()
@@ -752,8 +753,9 @@ cdef class Photon:
         cdef polycap_error *error = NULL
 
         #logger.debug('Before calling C') 
-        polycap_photon_get_intleak_data(self.photon, &leaks, &n_leaks, &error)
-        polycap_set_exception(error)
+        if polycap_photon_get_intleak_data(self.photon, &leaks, &n_leaks, &error) is False:
+            polycap_set_exception(error)
+            return None
         #logger.debug('After calling C') 
 
         rv = list()
@@ -775,10 +777,12 @@ cdef class Photon:
         '''Retrieve exit coordinates from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_coords(self.photon))
 
+    @property
     def exit_coords(self):
         '''Retrieve exit coordinates from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_coords(self.photon))
 
+    @property
     def start_coords(self):
         '''Retrieve start coordinates from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_start_coords(self.photon))
@@ -787,10 +791,12 @@ cdef class Photon:
         '''Retrieve exit direction from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_direction(self.photon))
 
+    @property
     def exit_direction(self):
         '''Retrieve exit direction from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_direction(self.photon))
 
+    @property
     def start_direction(self):
         '''Retrieve start direction from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_start_direction(self.photon))
@@ -799,18 +805,22 @@ cdef class Photon:
         '''Retrieve exit electric field vector from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_electric_vector(self.photon))
 
+    @property
     def exit_electric_vector(self):
         '''Retrieve exit electric field vector from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_exit_electric_vector(self.photon))
 
+    @property
     def start_electric_vector(self):
         '''Retrieve start electric field vector from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_start_electric_vector(self.photon))
 
+    @property
     def i_refl(self):
         '''Retrieve i_refl from a :ref:``Photon`` class'''
         return np.double(polycap_photon_get_irefl(self.photon))
 
+    @property
     def d_travel(self):
         '''Retrieve d_travel from a :ref:``Photon`` class'''
         return polycap_photon_get_dtravel(self.photon)

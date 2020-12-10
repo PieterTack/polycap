@@ -130,14 +130,14 @@ class TestPolycapPhoton(unittest.TestCase):
         self.assertIsInstance(photon.get_exit_coords(), VectorTuple)
         self.assertIsInstance(photon.get_exit_direction(), VectorTuple)
         self.assertIsInstance(photon.get_exit_electric_vector(), VectorTuple)
-        self.assertIsInstance(photon.exit_coords(), VectorTuple)
-        self.assertIsInstance(photon.exit_direction(), VectorTuple)
-        self.assertIsInstance(photon.exit_electric_vector(), VectorTuple)
-        self.assertIsInstance(photon.start_coords(), VectorTuple)
-        self.assertIsInstance(photon.start_direction(), VectorTuple)
-        self.assertIsInstance(photon.start_electric_vector(), VectorTuple)
-        self.assertEqual(photon.i_refl(), 0.)
-        self.assertEqual(photon.d_travel(), 0.)
+        self.assertIsInstance(photon.exit_coords, VectorTuple)
+        self.assertIsInstance(photon.exit_direction, VectorTuple)
+        self.assertIsInstance(photon.exit_electric_vector, VectorTuple)
+        self.assertIsInstance(photon.start_coords, VectorTuple)
+        self.assertIsInstance(photon.start_direction, VectorTuple)
+        self.assertIsInstance(photon.start_electric_vector, VectorTuple)
+        self.assertEqual(photon.i_refl, 0.)
+        self.assertEqual(photon.d_travel, 0.)
 
     def test_photon_good_coords_leaks(self):
         VectorTuple = polycap.VectorTuple
