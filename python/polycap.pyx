@@ -615,6 +615,8 @@ cdef class Leak:
 '''
 cdef class Photon:
     cdef polycap_photon *photon
+    cdef polycap_leak **ext_leaks
+    cdef int64_t n_ext_leaks
 
     def __cinit__(self, 
         Description description,
@@ -640,6 +642,9 @@ cdef class Photon:
         cdef polycap_vector3 start_direction_pc
         cdef polycap_vector3 start_electric_vector_pc
         cdef polycap_error *error = NULL
+
+        self.ext_leaks = NULL
+        self.n_ext_leaks = 0
 
         if ignore is True:
             self.photon = NULL
@@ -675,6 +680,11 @@ cdef class Photon:
         '''Free a :ref:``Photon`` class and all associated data'''
         if self.photon is not NULL:
             polycap_photon_free(self.photon)
+
+        if self.n_ext_leaks > 0:
+            for i in range(self.n_ext_leaks):
+                polycap_leak_free(self.ext_leaks[i])
+            polycap_free(self.ext_leaks)
 
     def launch(self,
         object energies not None,
@@ -712,38 +722,26 @@ cdef class Photon:
         return weights_np
 
     @property
-    def extleak(self):
+    def extleaks(self):
         '''Retrieve exterior :ref:``Leak`` class array from a :ref:``Photon`` class '''
         if self.photon is NULL:
             return None
 
-        cdef polycap_leak **leaks = NULL
-        cdef int64_t n_leaks = 0
         cdef polycap_error *error = NULL
 
-        #logger.debug('Before calling C') 
-        if polycap_photon_get_extleak_data(self.photon, &leaks, &n_leaks, &error) is False:
+        if self.n_ext_leaks == 0:
+            polycap_photon_get_extleak_data(self.photon, &self.ext_leaks, &self.n_ext_leaks, &error)
             polycap_set_exception(error)
-            return None
-        #logger.debug('After calling C') 
 
-        rv = list()
-
-        if n_leaks > 0:
-            for i in range(n_leaks):
-                leak = Leak.create(leaks[i])
-                rv.append(leak)
-                polycap_leak_free(leaks[i]) #Probably not allowed to free leaks?
-            polycap_free(leaks)
-            return rv
+        if self.n_ext_leaks > 0:
+            for i in range(self.n_ext_leaks):
+                leak = Leak.create(self.ext_leaks[i])
+                yield leak
         else:
             return None
 
-        # TODO: cache leaks, request it just once
-        # TODO: turn into a generator function that returns an iterator
-
     @property
-    def intleak(self):
+    def intleaks(self):
         '''Retrieve interior :ref:``Leak`` class array from a :ref:``Photon`` class '''
         if self.photon is NULL:
             return None
