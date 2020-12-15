@@ -617,6 +617,8 @@ cdef class Photon:
     cdef polycap_photon *photon
     cdef polycap_leak **ext_leaks
     cdef int64_t n_ext_leaks
+    cdef polycap_leak **int_leaks
+    cdef int64_t n_int_leaks
 
     def __cinit__(self, 
         Description description,
@@ -645,6 +647,8 @@ cdef class Photon:
 
         self.ext_leaks = NULL
         self.n_ext_leaks = 0
+        self.int_leaks = NULL
+        self.n_int_leaks = 0
 
         if ignore is True:
             self.photon = NULL
@@ -685,6 +689,11 @@ cdef class Photon:
             for i in range(self.n_ext_leaks):
                 polycap_leak_free(self.ext_leaks[i])
             polycap_free(self.ext_leaks)
+        
+        if self.n_int_leaks > 0:
+            for i in range(self.n_int_leaks):
+                polycap_leak_free(self.int_leaks[i])
+            polycap_free(self.int_leaks)
 
     def launch(self,
         object energies not None,
@@ -746,30 +755,22 @@ cdef class Photon:
         if self.photon is NULL:
             return None
 
-        cdef polycap_leak **leaks = NULL
-        cdef int64_t n_leaks = 0
         cdef polycap_error *error = NULL
 
-        #logger.debug('Before calling C') 
-        if polycap_photon_get_intleak_data(self.photon, &leaks, &n_leaks, &error) is False:
+        #logger.debug('Before calling C')
+        if self.n_int_leaks == 0:
+            polycap_photon_get_intleak_data(self.photon, &self.int_leaks, &self.n_int_leaks, &error)
             polycap_set_exception(error)
-            return None
         #logger.debug('After calling C') 
 
         rv = list()
 
-        if n_leaks > 0:
-            for i in range(n_leaks):
-                leak = Leak.create(leaks[i])
-                rv.append(leak)
-                polycap_leak_free(leaks[i]) #Probably not allowed to free leaks?
-            polycap_free(leaks)
-            return rv
+        if self.n_int_leaks > 0:
+            for i in range(self.n_int_leaks):
+                leak = Leak.create(self.int_leaks[i])
+                yield leak
         else:
             return None
-
-        # TODO: cache leaks, request it just once
-        # TODO: turn into a generator function that returns an iterator
 
     def get_exit_coords(self):
         '''Retrieve exit coordinates from a :ref:``Photon`` class'''
