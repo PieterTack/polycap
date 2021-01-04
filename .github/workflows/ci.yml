@@ -195,9 +195,10 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         set -ex
+        rm -f /usr/local/bin/2to3
         brew uninstall -f bazel bazelisk
         brew update
-        brew upgrade || true
+        brew upgrade
         brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl numpy meson ninja
         brew install ${{ matrix.extra }} tschoonj/tap/xraylib
         /usr/local/bin/pip3 install Cython
