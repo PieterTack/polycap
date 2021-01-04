@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <hdf5.h>
+#include <math.h>
 
 /* Ideally, we would need to do something similar on Windows, instead of just disabling the use of a mutex...
  * Still, seems unlikely to cause problems anytime soon...
@@ -765,6 +766,308 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 	if (H5Fclose(file) < 0)
 		set_exception(error);
 	
+	return true;
+}
+//===========================================
+bool polycap_transmission_efficiencies_get_start_data(polycap_transmission_efficiencies *efficiencies, int64_t *n_start, polycap_vector3 **start_coords, polycap_vector3 **start_direction, polycap_vector3 **start_elecv, polycap_vector3 **src_start_coords, polycap_error **error)
+{
+	int i;
+	polycap_vector3 temp, dir;
+
+	if (efficiencies == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_start_data: efficiencies cannot be NULL");
+		return false;
+	}
+	if (efficiencies->images == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_start_data: source->images cannot be NULL");
+		return false;
+	}
+
+	*n_start = efficiencies->images->i_start;
+	if (efficiencies->images->i_start == 0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_start_data: no photon start events in efficiencies");
+		return false;
+	}
+
+	*start_coords = malloc(sizeof(polycap_vector3) * efficiencies->images->i_start);
+	if (*start_coords == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for start_coords -> %s", strerror(errno));
+		return false;
+	}
+	*start_direction = malloc(sizeof(polycap_vector3) * efficiencies->images->i_start);
+	if (*start_direction == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for start_direction -> %s", strerror(errno));
+		return false;
+	}
+	*start_elecv = malloc(sizeof(polycap_vector3) * efficiencies->images->i_start);
+	if (*start_elecv == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for start_elecv -> %s", strerror(errno));
+		return false;
+	}
+	*src_start_coords = malloc(sizeof(polycap_vector3) * efficiencies->images->i_start);
+	if (*src_start_coords == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for src_start_coords -> %s", strerror(errno));
+		return false;
+	}
+
+	for(i = 0; i < efficiencies->images->i_start; i++) {
+		temp.x = efficiencies->images->pc_start_coords[0][i];
+		temp.y = efficiencies->images->pc_start_coords[1][i];
+		temp.z = 0.;
+		memcpy(start_coords[i], &temp, sizeof(polycap_vector3));
+
+		dir.x = efficiencies->images->pc_start_dir[0][i];
+		dir.y = efficiencies->images->pc_start_dir[1][i];
+		dir.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
+		memcpy(start_direction[i], &dir, sizeof(polycap_vector3));
+
+		temp.x = efficiencies->images->pc_start_elecv[0][i];
+		temp.y = efficiencies->images->pc_start_elecv[1][i];
+		temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
+		memcpy(start_elecv[i], &temp, sizeof(polycap_vector3));
+
+		temp.x = efficiencies->images->src_start_coords[0][i];
+		temp.y = efficiencies->images->src_start_coords[1][i];
+		temp.z = 0.-(dir.z * (efficiencies->images->pc_start_coords[0][i]-temp.x)/dir.x);
+		memcpy(src_start_coords[i], &temp, sizeof(polycap_vector3));
+	}
+
+	return true;
+}
+//===========================================
+bool polycap_transmission_efficiencies_get_exit_data(polycap_transmission_efficiencies *efficiencies, int64_t *n_exit, polycap_vector3 **exit_coords, polycap_vector3 **exit_direction, polycap_vector3 **exit_elecv, int64_t **n_refl, double **d_travel, size_t *n_energies, double ***exit_weights, polycap_error **error)
+{
+	int i,j;
+	polycap_vector3 temp;
+	double *temp_w;
+
+	if (efficiencies == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_exit_data: efficiencies cannot be NULL");
+		return false;
+	}
+	if (efficiencies->images == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_exit_data: source->images cannot be NULL");
+		return false;
+	}
+
+	*n_exit = efficiencies->images->i_exit;
+	*n_energies = efficiencies->n_energies;
+	if (efficiencies->images->i_start == 0){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_exit_data: no photon start events in efficiencies");
+		return false;
+	}
+
+	*exit_coords = malloc(sizeof(polycap_vector3) * efficiencies->images->i_exit);
+	if (*exit_coords == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_exit_data: could not allocate memory for exit_coords -> %s", strerror(errno));
+		return false;
+	}
+	*exit_direction = malloc(sizeof(polycap_vector3) * efficiencies->images->i_exit);
+	if (*exit_direction == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_exit_data: could not allocate memory for exit_direction -> %s", strerror(errno));
+		return false;
+	}
+	*exit_elecv = malloc(sizeof(polycap_vector3) * efficiencies->images->i_exit);
+	if (*exit_elecv == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_exit_data: could not allocate memory for exit_elecv -> %s", strerror(errno));
+		return false;
+	}
+	*n_refl = malloc(sizeof(int64_t) * efficiencies->images->i_exit);
+	if (*n_refl == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_exit_data: could not allocate memory for n_refl -> %s", strerror(errno));
+		return false;
+	}
+	*d_travel = malloc(sizeof(double) * efficiencies->images->i_exit);
+	if (*d_travel == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_exit_data: could not allocate memory for d_travel -> %s", strerror(errno));
+		return false;
+	}
+	*exit_weights = malloc(sizeof(double*) * efficiencies->images->i_exit);
+	if (*exit_weights == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_exit_data: could not allocate memory for exit_weights -> %s", strerror(errno));
+		return false;
+	}
+
+	memcpy(n_refl, efficiencies->images->pc_exit_nrefl, sizeof(int64_t)*efficiencies->images->i_exit);
+	memcpy(d_travel, efficiencies->images->pc_exit_dtravel, sizeof(double)*efficiencies->images->i_exit);
+
+	for(i = 0; i < efficiencies->images->i_exit; i++) {
+		temp.x = efficiencies->images->pc_exit_coords[0][i];
+		temp.y = efficiencies->images->pc_exit_coords[1][i];
+		temp.z = efficiencies->images->pc_exit_coords[2][i];
+		memcpy(exit_coords[i], &temp, sizeof(polycap_vector3));
+
+		temp.x = efficiencies->images->pc_exit_dir[0][i];
+		temp.y = efficiencies->images->pc_exit_dir[1][i];
+		temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
+		memcpy(exit_direction[i], &temp, sizeof(polycap_vector3));
+
+		temp.x = efficiencies->images->pc_exit_elecv[0][i];
+		temp.y = efficiencies->images->pc_exit_elecv[1][i];
+		temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
+		memcpy(exit_elecv[i], &temp, sizeof(polycap_vector3));
+
+		(*exit_weights)[i] = malloc(sizeof(double) * efficiencies->n_energies);
+		if ( (*exit_weights)[i] == NULL){
+			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_exit_data: could not allocate memory for (*exit_weights)[i] -> %s", strerror(errno));
+			return false;
+		}
+		temp_w = malloc(sizeof(double) * efficiencies->n_energies);
+		if ( temp_w == NULL){
+			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_exit_data: could not allocate memory for temp_w -> %s", strerror(errno));
+			return false;
+		}
+		for(j=0; j < efficiencies->n_energies; j++){
+			temp_w[j] = efficiencies->images->exit_coord_weights[i*efficiencies->n_energies+j];
+		}
+		memcpy((*exit_weights)[i], temp_w, sizeof(double) * efficiencies->n_energies);
+		free(temp_w);
+		temp_w = NULL;
+	}
+
+	return true;
+}
+//===========================================
+bool polycap_transmission_efficiencies_get_extleak_data(polycap_transmission_efficiencies *efficiencies, polycap_leak ***leaks, int64_t *n_leaks, polycap_error **error)
+{
+	int i,j;
+	polycap_vector3 temp;
+	double *temp_w;
+
+	if (efficiencies == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_extleak_data: efficiencies cannot be NULL");
+		return false;
+	}
+	if (efficiencies->images == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_extleak_data: source->images cannot be NULL");
+		return false;
+	}
+
+	*n_leaks = efficiencies->images->i_extleak;
+	//fprintf(stderr, "C: n_extleak: %lld\n", efficiencies->images->i_extleak);
+	if (efficiencies->images->i_extleak == 0){
+		*leaks = NULL;
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_extleak_data: no extleak events in efficiencies");
+		return false;
+	}
+
+	*leaks = malloc(sizeof(polycap_leak*) * efficiencies->images->i_extleak);
+	if (*leaks == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_extleak_data: could not allocate memory for leaks -> %s", strerror(errno));
+		return false;
+	}
+
+	for(i = 0; i < efficiencies->images->i_extleak; i++) {
+		(*leaks)[i] = malloc(sizeof(polycap_leak));
+		if ((*leaks)[i] == NULL){
+			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_extleak_data: could not allocate memory for (*leaks)[i] -> %s", strerror(errno));
+			return false;
+		}
+		temp.x = efficiencies->images->extleak_coords[0][i];
+		temp.y = efficiencies->images->extleak_coords[1][i];
+		temp.z = efficiencies->images->extleak_coords[2][i];
+		memcpy(&(*leaks)[i]->coords, &temp, sizeof(polycap_vector3));
+		temp.x = efficiencies->images->extleak_dir[0][i];
+		temp.y = efficiencies->images->extleak_dir[1][i];
+		temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
+		memcpy(&(*leaks)[i]->direction, &temp, sizeof(polycap_vector3));
+		//temp.x = efficiencies->images->extleak_elecv[0][i];
+		//temp.y = efficiencies->images->extleak_elecv[1][i];
+		//temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
+		//memcpy(&(*leaks)[i]->elecv, &temp, sizeof(polycap_vector3));
+		
+		memcpy(&(*leaks)[i]->n_energies, &efficiencies->n_energies, sizeof(size_t));
+		memcpy(&(*leaks)[i]->n_refl, &efficiencies->images->extleak_n_refl[i], sizeof(int64_t));
+		
+		(*leaks)[i]->weight = malloc(sizeof(double) * efficiencies->n_energies);
+		if ( (*leaks)[i]->weight == NULL){
+			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_extleak_data: could not allocate memory for (*leaks[i])->weight -> %s", strerror(errno));
+			return false;
+		}
+		temp_w = malloc(sizeof(double) * efficiencies->n_energies);
+		if ( temp_w == NULL){
+			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_extleak_data: could not allocate memory for temp_w -> %s", strerror(errno));
+			return false;
+		}
+		for(j=0; j < efficiencies->n_energies; j++){
+			temp_w[j] = efficiencies->images->extleak_coord_weights[i*efficiencies->n_energies+j];
+		}
+		memcpy((*leaks)[i]->weight, temp_w, sizeof(double) * efficiencies->n_energies);
+		free(temp_w);
+		temp_w = NULL;
+	}
+
+	return true;
+}
+//===========================================
+bool polycap_transmission_efficiencies_get_intleak_data(polycap_transmission_efficiencies *efficiencies, polycap_leak ***leaks, int64_t *n_leaks, polycap_error **error)
+{
+	int i,j;
+	polycap_vector3 temp;
+	double *temp_w;
+
+	if (efficiencies == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_intleak_data: efficiencies cannot be NULL");
+		return false;
+	}
+	if (efficiencies->images == NULL){
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_intleak_data: source->images cannot be NULL");
+		return false;
+	}
+
+	*n_leaks = efficiencies->images->i_intleak;
+	if (efficiencies->images->i_intleak == 0){
+		*leaks = NULL;
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_getintleak_data: no intleak events in efficiencies");
+		return false;
+	}
+
+	*leaks = malloc(sizeof(polycap_leak*) * efficiencies->images->i_intleak);
+	if (*leaks == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_intleak_data: could not allocate memory for leaks -> %s", strerror(errno));
+		return false;
+	}
+
+	for(i = 0; i < efficiencies->images->i_intleak; i++) {
+		(*leaks)[i] = malloc(sizeof(polycap_leak));
+		if ((*leaks)[i] == NULL){
+			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_intleak_data: could not allocate memory for (*leaks)[i] -> %s", strerror(errno));
+			return false;
+		}
+		temp.x = efficiencies->images->intleak_coords[0][i];
+		temp.y = efficiencies->images->intleak_coords[1][i];
+		temp.z = efficiencies->images->intleak_coords[2][i];
+		memcpy(&(*leaks)[i]->coords, &temp, sizeof(polycap_vector3));
+		temp.x = efficiencies->images->intleak_dir[0][i];
+		temp.y = efficiencies->images->intleak_dir[1][i];
+		temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
+		memcpy(&(*leaks)[i]->direction, &temp, sizeof(polycap_vector3));
+		temp.x = efficiencies->images->intleak_elecv[0][i];
+		temp.y = efficiencies->images->intleak_elecv[1][i];
+		temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
+		memcpy(&(*leaks)[i]->elecv, &temp, sizeof(polycap_vector3));
+		
+		memcpy(&(*leaks)[i]->n_energies, &efficiencies->n_energies, sizeof(size_t));
+		memcpy(&(*leaks)[i]->n_refl, &efficiencies->images->intleak_n_refl[i], sizeof(int64_t));
+		
+		(*leaks)[i]->weight = malloc(sizeof(double) * efficiencies->n_energies);
+		if ( (*leaks)[i]->weight == NULL){
+			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_intleak_data: could not allocate memory for (*leaks[i])->weight -> %s", strerror(errno));
+			return false;
+		}
+		temp_w = malloc(sizeof(double) * efficiencies->n_energies);
+		if ( temp_w == NULL){
+			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_intleak_data: could not allocate memory for temp_w -> %s", strerror(errno));
+			return false;
+		}
+		for(j=0; j < efficiencies->n_energies; j++){
+			temp_w[j] = efficiencies->images->intleak_coord_weights[i*efficiencies->n_energies+j];
+		}
+		memcpy((*leaks)[i]->weight, temp_w, sizeof(double) * efficiencies->n_energies);
+		free(temp_w);
+		temp_w = NULL;
+	}
+
 	return true;
 }
 //===========================================
