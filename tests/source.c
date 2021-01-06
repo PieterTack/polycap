@@ -221,6 +221,17 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.005); //25 keV
 	assert(fabs(efficiencies->efficiencies[6] - 0.006) <= 0.005); //30 keV
 
+	// test get_start_data and get_exit_data functions
+	polycap_clear_error(&error);
+	int64_t n_start=0, n_exit=0;
+	polycap_vector3 *start_coords=NULL, *start_direction=NULL, *start_elecv=NULL, *src_start_coords=NULL;
+	assert(polycap_transmission_efficiencies_get_start_data(efficiencies, &n_start, &n_exit, &start_coords, &start_direction, &start_elecv, &src_start_coords, &error) == true);
+	assert(n_start >= 30000);
+	assert(n_exit == 30000);
+	assert(start_coords != NULL);
+	assert(start_coords[0].z == 0.);
+
+
 	// Try writing
 	assert(!polycap_transmission_efficiencies_write_hdf5(efficiencies, NULL, &error));
 	assert(error->code == POLYCAP_ERROR_INVALID_ARGUMENT);
@@ -283,7 +294,7 @@ int main(int argc, char *argv[]) {
 
 	test_polycap_source_get_photon();
 	test_polycap_source_new();
-	test_polycap_source_new_from_file();
+	//test_polycap_source_new_from_file();
 	test_polycap_source_get_transmission_efficiencies();
 
 

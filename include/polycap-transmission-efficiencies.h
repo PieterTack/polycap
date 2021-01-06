@@ -90,16 +90,17 @@ bool polycap_transmission_efficiencies_get_intleak_data(polycap_transmission_eff
 /** Extract photon start data from a polycap_transmission_efficiencies struct.
  *
  * \param efficiencies a polycap_transmission_efficiencies struct
- * \param n_start a int64_t pointer that will contain the amount of returned start events
+ * \param n_start a int64_t pointer that will contain the amount of started events
+ * \param n_exit a int64_t pointer that will contain the amount of returned start events, that are also transmitted through the optic
  * \param start_coords a polycap_vector3 structure array to contain the event start coordinates
  * \param start_direction a polycap_vector3 structure array to contain the event start direction
  * \param start_elecv a polycap_vector3 structure array to contain the event start electric vector
- * \param src_start_coords a polycap_vector3 structure array to contain the event source start coordinates. Z value is relative to optic entrance window at Z=0.
+ * \param src_start_coords a polycap_vector3 structure array to contain the event source start coordinates. Z value equals 0 on return but should be replaced by -1*optic-source distance for correct comparison to optic entrance window.
  * \param error a polycap_error
  * \returns true or false
  */
 POLYCAP_EXTERN
-bool polycap_transmission_efficiencies_get_start_data(polycap_transmission_efficiencies *efficiencies, int64_t *n_start, polycap_vector3 **start_coords, polycap_vector3 **start_direction, polycap_vector3 **start_elecv, polycap_vector3 **src_start_coords, polycap_error **error);
+bool polycap_transmission_efficiencies_get_start_data(polycap_transmission_efficiencies *efficiencies, int64_t *n_start, int64_t *n_exit, polycap_vector3 **start_coords, polycap_vector3 **start_direction, polycap_vector3 **start_elecv, polycap_vector3 **src_start_coords, polycap_error **error);
 
 /** Extract photon exit data from a polycap_transmission_efficiencies struct.
  *
