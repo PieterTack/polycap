@@ -772,7 +772,6 @@ bool polycap_transmission_efficiencies_write_hdf5(polycap_transmission_efficienc
 bool polycap_transmission_efficiencies_get_start_data(polycap_transmission_efficiencies *efficiencies, int64_t *n_start, int64_t *n_exit, polycap_vector3 **start_coords, polycap_vector3 **start_direction, polycap_vector3 **start_elecv, polycap_vector3 **src_start_coords, polycap_error **error)
 {
 	int i;
-	polycap_vector3 temp;
 
 	if (efficiencies == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_start_data: efficiencies cannot be NULL");
@@ -794,68 +793,43 @@ bool polycap_transmission_efficiencies_get_start_data(polycap_transmission_effic
 		return false;
 	}
 
-	*start_coords = malloc(sizeof(polycap_vector3*) * efficiencies->images->i_exit);
+	*start_coords = malloc(sizeof(polycap_vector3) * efficiencies->images->i_exit);
 	if (*start_coords == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for start_coords -> %s", strerror(errno));
 		return false;
 	}
-	*start_direction = malloc(sizeof(polycap_vector3*) * efficiencies->images->i_exit);
+	*start_direction = malloc(sizeof(polycap_vector3) * efficiencies->images->i_exit);
 	if (*start_direction == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for start_direction -> %s", strerror(errno));
 		return false;
 	}
-	*start_elecv = malloc(sizeof(polycap_vector3*) * efficiencies->images->i_exit);
+	*start_elecv = malloc(sizeof(polycap_vector3) * efficiencies->images->i_exit);
 	if (*start_elecv == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for start_elecv -> %s", strerror(errno));
 		return false;
 	}
-	*src_start_coords = malloc(sizeof(polycap_vector3*) * efficiencies->images->i_exit);
+	*src_start_coords = malloc(sizeof(polycap_vector3) * efficiencies->images->i_exit);
 	if (*src_start_coords == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for src_start_coords -> %s", strerror(errno));
 		return false;
 	}
 
 	for(i = 0; i < efficiencies->images->i_exit; i++) {
-		temp.x = efficiencies->images->pc_start_coords[0][i];
-		temp.y = efficiencies->images->pc_start_coords[1][i];
-		temp.z = 0.;
-		start_coords[i] = malloc(sizeof(polycap_vector3));
-		if(start_coords[i] == NULL){
-			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for start_coords[i] -> %s", strerror(errno));
-			return false;
-		}
-		memcpy(start_coords[i], &temp, sizeof(polycap_vector3));
+		(*start_coords)[i].x = efficiencies->images->pc_start_coords[0][i];
+		(*start_coords)[i].y = efficiencies->images->pc_start_coords[1][i];
+		(*start_coords)[i].z = 0.;
 
-		temp.x = efficiencies->images->pc_start_dir[0][i];
-		temp.y = efficiencies->images->pc_start_dir[1][i];
-		temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
-		start_direction[i] = malloc(sizeof(polycap_vector3));
-		if(start_direction[i] == NULL){
-			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for start_direction[i] -> %s", strerror(errno));
-			return false;
-		}
-		memcpy(start_direction[i], &temp, sizeof(polycap_vector3));
+		(*start_direction)[i].x = efficiencies->images->pc_start_dir[0][i];
+		(*start_direction)[i].y = efficiencies->images->pc_start_dir[1][i];
+		(*start_direction)[i].z = sqrt(1.- (*start_direction)[i].x * (*start_direction)[i].x - (*start_direction)[i].y * (*start_direction)[i].y);
 
-		temp.x = efficiencies->images->pc_start_elecv[0][i];
-		temp.y = efficiencies->images->pc_start_elecv[1][i];
-		temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
-		start_elecv[i] = malloc(sizeof(polycap_vector3));
-		if(start_elecv[i] == NULL){
-			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for start_elecv[i] -> %s", strerror(errno));
-			return false;
-		}
-		memcpy(start_elecv[i], &temp, sizeof(polycap_vector3));
+		(*start_elecv)[i].x = efficiencies->images->pc_start_elecv[0][i];
+		(*start_elecv)[i].y = efficiencies->images->pc_start_elecv[1][i];
+		(*start_elecv)[i].z = sqrt(1.- (*start_elecv)[i].x * (*start_elecv)[i].x - (*start_elecv)[i].y * (*start_elecv)[i].y);
 
-		temp.x = efficiencies->images->src_start_coords[0][i];
-		temp.y = efficiencies->images->src_start_coords[1][i];
-		temp.z = 0.;
-		fprintf(stderr, "i: %i, tempx: %lf y: %lf z: %lf\n", i, temp.x, temp.y, temp.z);
-		src_start_coords[i] = malloc(sizeof(polycap_vector3));
-		if(src_start_coords[i] == NULL){
-			polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_get_start_data: could not allocate memory for src_start_coords[i] -> %s", strerror(errno));
-			return false;
-		}
-		memcpy(src_start_coords[i], &temp, sizeof(polycap_vector3));
+		(*src_start_coords)[i].x = efficiencies->images->src_start_coords[0][i];
+		(*src_start_coords)[i].y = efficiencies->images->src_start_coords[1][i];
+		(*src_start_coords)[i].z = 0.;
 	}
 
 	return true;
