@@ -459,12 +459,12 @@ cdef class TransmissionEfficiencies:
     cdef polycap_vector3 *start_coords
     cdef polycap_vector3 *start_direction
     cdef polycap_vector3 *start_elecv
+    cdef polycap_vector3 *src_start_coords
     cdef int64_t n_exit
+    cdef size_t n_energies
     cdef polycap_vector3 *exit_coords
     cdef polycap_vector3 *exit_direction
     cdef polycap_vector3 *exit_elecv
-    cdef polycap_vector3 *src_start_coords
-    cdef size_t n_energies
     cdef double **exit_weights
     cdef int64_t *n_refl
     cdef double *d_travel
@@ -505,10 +505,13 @@ cdef class TransmissionEfficiencies:
                 polycap_leak_free(self.int_leaks[i])
             polycap_free(self.int_leaks)
             
-        if self.n_start > 0:
+        if self.start_coords:
             polycap_free(self.start_coords)
+        if self.start_direction:
             polycap_free(self.start_direction)
+        if self.start_elecv:
             polycap_free(self.start_elecv)
+        if self.src_start_coords:
             polycap_free(self.src_start_coords)
 
         if self.n_exit > 0:
