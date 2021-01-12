@@ -699,7 +699,7 @@ cdef class TransmissionEfficiencies:
 
     @property
     def startcoords(self):
-        '''Retrieve photon start direction vector tuple from a :ref:``TransmissionEfficiencies`` class '''
+        '''Retrieve photon start coordinates vector tuple from a :ref:``TransmissionEfficiencies`` class '''
         if self.trans_eff is NULL:
             return None
 
@@ -709,7 +709,7 @@ cdef class TransmissionEfficiencies:
             polycap_transmission_efficiencies_get_start_data(self.trans_eff, &self.n_start, &self.n_exit, &self.start_coords, &self.start_direction, &self.start_elecv, &self.src_start_coords, &error)
             polycap_set_exception(error)
 
-        if self.start_coords != NULL > 0:
+        if self.start_coords != NULL:
             for i in range(self.n_exit):
                 yield vector2tuple(self.start_coords[i])
         else:

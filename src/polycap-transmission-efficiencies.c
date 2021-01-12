@@ -887,24 +887,22 @@ bool polycap_transmission_efficiencies_get_exit_data(polycap_transmission_effici
 		return false;
 	}
 
-	memcpy(n_refl, efficiencies->images->pc_exit_nrefl, sizeof(int64_t)*efficiencies->images->i_exit);
-	memcpy(d_travel, efficiencies->images->pc_exit_dtravel, sizeof(double)*efficiencies->images->i_exit);
 
 	for(i = 0; i < efficiencies->images->i_exit; i++) {
-		temp.x = efficiencies->images->pc_exit_coords[0][i];
-		temp.y = efficiencies->images->pc_exit_coords[1][i];
-		temp.z = efficiencies->images->pc_exit_coords[2][i];
-		memcpy(exit_coords[i], &temp, sizeof(polycap_vector3));
+		(*n_refl)[i] = efficiencies->images->pc_exit_nrefl[i];
+		(*d_travel)[i] = efficiencies->images->pc_exit_dtravel[i];
 
-		temp.x = efficiencies->images->pc_exit_dir[0][i];
-		temp.y = efficiencies->images->pc_exit_dir[1][i];
-		temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
-		memcpy(exit_direction[i], &temp, sizeof(polycap_vector3));
+		(*exit_coords)[i].x = efficiencies->images->pc_exit_coords[0][i];
+		(*exit_coords)[i].y = efficiencies->images->pc_exit_coords[1][i];
+		(*exit_coords)[i].z = efficiencies->images->pc_exit_coords[2][i];
 
-		temp.x = efficiencies->images->pc_exit_elecv[0][i];
-		temp.y = efficiencies->images->pc_exit_elecv[1][i];
-		temp.z = sqrt(1.-temp.x*temp.x - temp.y*temp.y);
-		memcpy(exit_elecv[i], &temp, sizeof(polycap_vector3));
+		(*exit_direction)[i].x = efficiencies->images->pc_exit_dir[0][i];
+		(*exit_direction)[i].y = efficiencies->images->pc_exit_dir[1][i];
+		(*exit_direction)[i].z = sqrt(1.-(*exit_direction)[i].x*(*exit_direction)[i].x - (*exit_direction)[i].y*(*exit_direction)[i].y);
+
+		(*exit_elecv)[i].x = efficiencies->images->pc_exit_elecv[0][i];
+		(*exit_elecv)[i].y = efficiencies->images->pc_exit_elecv[1][i];
+		(*exit_elecv)[i].z = sqrt(1.-(*exit_elecv)[i].x*(*exit_elecv)[i].x - (*exit_elecv)[i].y*(*exit_elecv)[i].y);
 
 		(*exit_weights)[i] = malloc(sizeof(double) * efficiencies->n_energies);
 		if ( (*exit_weights)[i] == NULL){

@@ -238,11 +238,12 @@ class TestPolycapSource(unittest.TestCase):
         #self.assertIsInstance(efficiencies.exitweights[0], np.ndarray)
         #self.assertIsInstance(efficiencies.dtravel[0], double)
         start_coords = list(efficiencies.startcoords)
+        #self.assertEqual(len(start_coords), 10000)
         #start_direction = list(efficiencies.startdirection)
         #start_elecv = list(efficiencies.startelecv)
         #src_start_coords = list(efficiencies.src_startcoords)
         #self.assertIsInstance(src_start_coords[0], VectorTuple)
-        #self.assertIsInstance(start_coords[0], VectorTuple)
+        self.assertIsInstance(efficiencies.startcoords[0], VectorTuple)
         #self.assertIsInstance(start_direction[0], VectorTuple)
         #self.assertIsInstance(start_elecv[0], VectorTuple)
         
