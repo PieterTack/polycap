@@ -206,7 +206,7 @@ cdef class Profile:
     PARABOLOIDAL = POLYCAP_PROFILE_PARABOLOIDAL
     ELLIPSOIDAL = POLYCAP_PROFILE_ELLIPSOIDAL
 
-    cdef polycap_profile *profile
+    cdef polycap_profile *_profile
 
     def __cinit__(self,
 	polycap_profile_type type,
@@ -239,11 +239,11 @@ cdef class Profile:
         :return: a new :ref:``Profile``, or \c NULL if an error occurred
         '''
         if ignore is True:
-            self.profile = NULL
+            self._profile = NULL
             return
 
         cdef polycap_error *error = NULL
-        self.profile = polycap_profile_new(
+        self._profile = polycap_profile_new(
 	    type,
 	    length,
 	    rad_ext_upstream,
@@ -257,8 +257,8 @@ cdef class Profile:
 
     def __dealloc__(self):
         '''Free the :ref:``Profile`` class and its associated data'''
-        if self.profile is not NULL:
-            polycap_profile_free(self.profile)
+        if self._profile is not NULL:
+            polycap_profile_free(self._profile)
 
     @classmethod
     def new_from_arrays(cls,
@@ -283,7 +283,7 @@ cdef class Profile:
         polycap_set_exception(error)
 
         rv = Profile(Profile.CONICAL, 0, 0, 0, 0, 0, 0, 0, ignore=True)
-        rv.profile = profile
+        rv._profile = profile
 
         return rv
 
@@ -293,7 +293,7 @@ cdef class Profile:
         cdef double *ext = NULL
         cdef polycap_error *error = NULL
         
-        polycap_profile_get_ext(self.profile, &nid, &ext, &error)
+        polycap_profile_get_ext(self._profile, &nid, &ext, &error)
         polycap_set_exception(error)
         cdef np.npy_intp dims[1]
         dims[0] = nid+1 
@@ -310,7 +310,7 @@ cdef class Profile:
         cdef double *cap = NULL
         cdef polycap_error *error = NULL
         
-        polycap_profile_get_cap(self.profile, &nid, &cap, &error)
+        polycap_profile_get_cap(self._profile, &nid, &cap, &error)
         polycap_set_exception(error)
         cdef np.npy_intp dims[1]
         dims[0] = nid+1 
@@ -327,7 +327,7 @@ cdef class Profile:
         cdef double *z = NULL
         cdef polycap_error *error = NULL
         
-        polycap_profile_get_z(self.profile, &nid, &z, &error)
+        polycap_profile_get_z(self._profile, &nid, &z, &error)
         polycap_set_exception(error)
         cdef np.npy_intp dims[1]
         dims[0] = nid+1 
@@ -343,7 +343,7 @@ cdef class Profile:
 The :ref:``Rng`` class is  mapped to either gsl_rng or easy_rng.``.
 '''
 cdef class Rng:
-    cdef polycap_rng *rng
+    cdef polycap_rng *_rng
     def __cinit__(self, seed=None):
         '''get a new rng with seed provided by caller
         :param seed: a seed provided by the caller, if not provided one is generated for the user
@@ -351,15 +351,15 @@ cdef class Rng:
         :return: a new :ref:``Rng``
         '''
         if seed is None:
-            self.rng = polycap_rng_new()
+            self._rng = polycap_rng_new()
             return
         seed = <unsigned long int?> seed
-        self.rng = polycap_rng_new_with_seed(seed)
+        self._rng = polycap_rng_new_with_seed(seed)
 
     def __dealloc__(self):
         '''free a ``Rng`` class'''
-        if self.rng is not NULL:
-            polycap_rng_free(self.rng)
+        if self._rng is not NULL:
+            polycap_rng_free(self._rng)
 
 def ensure_int(x):
     cdef xrl_error *error = NULL
@@ -373,8 +373,8 @@ def ensure_int(x):
 '''Class containing information about a polycapillary description such as shape and composition
 '''
 cdef class Description:
-    cdef polycap_description *description
-    cdef object profile_py
+    cdef polycap_description *_description
+    cdef object _profile_py
 
     def __cinit__(self, 
         Profile profile not None,
@@ -425,8 +425,8 @@ cdef class Description:
             raise TypeError("composition must be a dictionary or a string")
 
         cdef polycap_error *error = NULL
-        self.description = polycap_description_new(
-            profile.profile,
+        self._description = polycap_description_new(
+            profile._profile,
             sig_rough,
             n_cap,
             comp_len,
@@ -436,98 +436,103 @@ cdef class Description:
             &error)
         polycap_set_exception(error)
 
-#        self.profile_py = Profile()
-#        self.profile_py.profile = polycap_description_get_profile(self.description)
+#        self._profile_py = Profile()
+#        self._profile_py._profile = polycap_description_get_profile(self.description)
 
     def __dealloc__(self):
         '''free a :ref:``Description`` class and associated data'''
-        if self.description is not NULL:
-            polycap_description_free(self.description)
+        if self._description is not NULL:
+            polycap_description_free(self._description)
     
 
 '''Class containing all output information such as simulated photon coordinates, direction, energies, weights, ...
 '''
 cdef class TransmissionEfficiencies:
-    cdef polycap_transmission_efficiencies *trans_eff
-    cdef object energies_np
-    cdef object efficiencies_np
-    cdef polycap_leak **int_leaks
-    cdef int64_t n_int_leaks
-    cdef polycap_leak **ext_leaks
-    cdef int64_t n_ext_leaks
-    cdef int64_t n_start
-    cdef polycap_vector3 *start_coords
-    cdef polycap_vector3 *start_direction
-    cdef polycap_vector3 *start_elecv
-    cdef polycap_vector3 *src_start_coords
-    cdef int64_t n_exit
-    cdef size_t n_energies
-    cdef polycap_vector3 *exit_coords
-    cdef polycap_vector3 *exit_direction
-    cdef polycap_vector3 *exit_elecv
-    cdef double **exit_weights
-    cdef int64_t *n_refl
-    cdef double *d_travel
+    cdef polycap_transmission_efficiencies *_trans_eff
+    cdef object _energies_np
+    cdef object _efficiencies_np
+    cdef polycap_leak **_int_leaks
+    cdef int64_t _n_int_leaks
+    cdef polycap_leak **_ext_leaks
+    cdef int64_t _n_ext_leaks
+    cdef int64_t _n_start
+    cdef polycap_vector3 *_start_coords
+    cdef polycap_vector3 *_start_direction
+    cdef polycap_vector3 *_start_elecv
+    cdef polycap_vector3 *_src_start_coords
+    cdef int64_t _n_exit
+    cdef size_t _n_energies
+    cdef polycap_vector3 *_exit_coords
+    cdef polycap_vector3 *_exit_direction
+    cdef polycap_vector3 *_exit_elecv
+    cdef double **_exit_weights
+    cdef int64_t *_n_refl
+    cdef double *_d_travel
 
     def __cinit__(self):
-        self.trans_eff = NULL
-        self.energies_np = None
-        self.efficiencies_np = None
-        self.ext_leaks = NULL
-        self.n_ext_leaks = 0
-        self.int_leaks = NULL
-        self.n_int_leaks = 0
-        self.n_start = 0
-        self.start_coords = NULL
-        self.start_direction = NULL
-        self.start_elecv = NULL
-        self.n_exit = 0
-        self.exit_coords = NULL
-        self.exit_direction = NULL
-        self.exit_elecv = NULL
-        self.src_start_coords = NULL
-        self.exit_weights = NULL
-        self.n_refl = NULL
-        self.d_travel = NULL
+        self._trans_eff = NULL
+        self._energies_np = None
+        self._efficiencies_np = None
+        self._ext_leaks = NULL
+        self._n_ext_leaks = 0
+        self._int_leaks = NULL
+        self._n_int_leaks = 0
+        self._n_start = 0
+        self._start_coords = NULL
+        self._start_direction = NULL
+        self._start_elecv = NULL
+        self._n_exit = 0
+        self._exit_coords = NULL
+        self._exit_direction = NULL
+        self._exit_elecv = NULL
+        self._src_start_coords = NULL
+        self._exit_weights = NULL
+        self._n_refl = NULL
+        self._d_travel = NULL
 
     def __dealloc__(self):
         '''free a :ref:``TransmissionEfficiencies`` class and all associated data'''
-        if self.trans_eff is not NULL:
-            polycap_transmission_efficiencies_free(self.trans_eff)
+        if self._trans_eff is not NULL:
+            polycap_transmission_efficiencies_free(self._trans_eff)
 
-        if self.n_ext_leaks > 0:
-            for i in range(self.n_ext_leaks):
-                polycap_leak_free(self.ext_leaks[i])
-            polycap_free(self.ext_leaks)
+        if self._n_ext_leaks > 0:
+            for i in range(self._n_ext_leaks):
+                polycap_leak_free(self._ext_leaks[i])
+            polycap_free(self._ext_leaks)
         
-        if self.n_int_leaks > 0:
-            for i in range(self.n_int_leaks):
-                polycap_leak_free(self.int_leaks[i])
-            polycap_free(self.int_leaks)
+        if self._n_int_leaks > 0:
+            for i in range(self._n_int_leaks):
+                polycap_leak_free(self._int_leaks[i])
+            polycap_free(self._int_leaks)
             
-        if self.start_coords:
-            polycap_free(self.start_coords)
-        if self.start_direction:
-            polycap_free(self.start_direction)
-        if self.start_elecv:
-            polycap_free(self.start_elecv)
-        if self.src_start_coords:
-            polycap_free(self.src_start_coords)
+        if self._start_coords != NULL:
+            polycap_free(self._start_coords)
+        if self._start_direction != NULL:
+            polycap_free(self._start_direction)
+        if self._start_elecv != NULL:
+            polycap_free(self._start_elecv)
+        if self._src_start_coords != NULL:
+            polycap_free(self._src_start_coords)
 
-        if self.n_exit > 0:
-            for i in range(self.n_exit):
-                polycap_free(self.exit_weights[i])
-            polycap_free(self.exit_coords)
-            polycap_free(self.exit_direction)
-            polycap_free(self.exit_elecv)
-            polycap_free(self.exit_weights)
-            polycap_free(self.n_refl)
-            polycap_free(self.d_travel)
+        if self._exit_weights != NULL:
+            for i in range(self._n_exit):
+                polycap_free(self._exit_weights[i])
+            polycap_free(self._exit_weights)
+        if self._exit_coords != NULL:
+            polycap_free(self._exit_coords)
+        if self._exit_direction != NULL:
+            polycap_free(self._exit_direction)
+        if self._exit_elecv != NULL:
+            polycap_free(self._exit_elecv)
+        if self._n_refl != NULL:
+            polycap_free(self._n_refl)
+        if self._d_travel != NULL:
+            polycap_free(self._d_travel)
 
-        #if self.energies_np is not None:
-        #    Py_DECREF(self.energies_np)
-        #if self.efficiencies_np is not None:
-        #    Py_DECREF(self.efficiencies_np)
+        #if self._energies_np is not None:
+        #    Py_DECREF(self._energies_np)
+        #if self._efficiencies_np is not None:
+        #    Py_DECREF(self._efficiencies_np)
 
     def write_hdf5(self, str filename not None):
         '''Write :ref:``TransmissionEfficiencies`` data to a hdf5 file
@@ -536,31 +541,31 @@ cdef class TransmissionEfficiencies:
         :return: true or false, or \c NULL if an error occurred
         '''
         cdef polycap_error *error = NULL
-        polycap_transmission_efficiencies_write_hdf5(self.trans_eff, filename.encode(), &error)
+        polycap_transmission_efficiencies_write_hdf5(self._trans_eff, filename.encode(), &error)
         polycap_set_exception(error)
 
     @property
     def data(self):
         '''Extract data from a polycap_transmission_efficiencies struct. returned arrays should be freed by the user with polycap_free() or free().
-        return : tuple of (self.energies_np, self.efficiencies_np)
+        return : tuple of (self._energies_np, self._efficiencies_np)
         '''
-        return (self.energies_np, self.efficiencies_np)
+        return (self._energies_np, self._efficiencies_np)
 
     @property
     def extleaks(self):
         '''Retrieve exterior :ref:``Leak`` class array from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.n_ext_leaks == 0:
-            polycap_transmission_efficiencies_get_extleak_data(self.trans_eff, &self.ext_leaks, &self.n_ext_leaks, &error)
+        if self._n_ext_leaks == 0:
+            polycap_transmission_efficiencies_get_extleak_data(self._trans_eff, &self._ext_leaks, &self._n_ext_leaks, &error)
             polycap_set_exception(error)
 
-        if self.n_ext_leaks > 0:
-            for i in range(self.n_ext_leaks):
-                leak = Leak.create(self.ext_leaks[i])
+        if self._n_ext_leaks > 0:
+            for i in range(self._n_ext_leaks):
+                leak = Leak.create(self._ext_leaks[i])
                 yield leak
         else:
             return None
@@ -568,207 +573,207 @@ cdef class TransmissionEfficiencies:
     @property
     def intleaks(self):
         '''Retrieve interior :ref:``Leak`` class array from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.n_int_leaks == 0:
-            polycap_transmission_efficiencies_get_intleak_data(self.trans_eff, &self.int_leaks, &self.n_int_leaks, &error)
+        if self._n_int_leaks == 0:
+            polycap_transmission_efficiencies_get_intleak_data(self._trans_eff, &self._int_leaks, &self._n_int_leaks, &error)
             polycap_set_exception(error)
 
-        if self.n_int_leaks > 0:
-            for i in range(self.n_int_leaks):
-                leak = Leak.create(self.int_leaks[i])
+        if self._n_int_leaks > 0:
+            for i in range(self._n_int_leaks):
+                leak = Leak.create(self._int_leaks[i])
                 yield leak
         else:
             return None
 
     @property
-    def exitcoords(self):
+    def exit_coords(self):
         '''Retrieve photon exit coordinates vector tuple from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.exit_coords == NULL:
-            polycap_transmission_efficiencies_get_exit_data(self.trans_eff, &self.n_exit, &self.exit_coords, &self.exit_direction, &self.exit_elecv, &self.n_refl, &self.d_travel, &self.n_energies, &self.exit_weights, &error)
+        if self._exit_coords == NULL:
+            polycap_transmission_efficiencies_get_exit_data(self._trans_eff, &self._n_exit, &self._exit_coords, &self._exit_direction, &self._exit_elecv, &self._n_refl, &self._d_travel, &self._n_energies, &self._exit_weights, &error)
             polycap_set_exception(error)
 
-        if self.exit_coords != NULL:
-            for i in range(self.n_exit):
-                yield vector2tuple(self.exit_coords[i])
+        if self._exit_coords != NULL:
+            for i in range(self._n_exit):
+                yield vector2tuple(self._exit_coords[i])
         else:
             return None
 
     @property
-    def exitdirection(self):
+    def exit_direction(self):
         '''Retrieve photon exit direction vector tuple from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.exit_direction == NULL:
-            polycap_transmission_efficiencies_get_exit_data(self.trans_eff, &self.n_exit, &self.exit_coords, &self.exit_direction, &self.exit_elecv, &self.n_refl, &self.d_travel, &self.n_energies, &self.exit_weights, &error)
+        if self._exit_direction == NULL:
+            polycap_transmission_efficiencies_get_exit_data(self._trans_eff, &self._n_exit, &self._exit_coords, &self._exit_direction, &self._exit_elecv, &self._n_refl, &self._d_travel, &self._n_energies, &self._exit_weights, &error)
             polycap_set_exception(error)
 
-        if self.exit_direction != NULL:
-            for i in range(self.n_exit):
-                yield vector2tuple(self.exit_direction[i])
+        if self._exit_direction != NULL:
+            for i in range(self._n_exit):
+                yield vector2tuple(self._exit_direction[i])
         else:
             return None
 
     @property
-    def exitelecv(self):
+    def exit_elecv(self):
         '''Retrieve photon exit electric vector vector tuple from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.exit_elecv == NULL:
-            polycap_transmission_efficiencies_get_exit_data(self.trans_eff, &self.n_exit, &self.exit_coords, &self.exit_direction, &self.exit_elecv, &self.n_refl, &self.d_travel, &self.n_energies, &self.exit_weights, &error)
+        if self._exit_elecv == NULL:
+            polycap_transmission_efficiencies_get_exit_data(self._trans_eff, &self._n_exit, &self._exit_coords, &self._exit_direction, &self._exit_elecv, &self._n_refl, &self._d_travel, &self._n_energies, &self._exit_weights, &error)
             polycap_set_exception(error)
 
-        if self.exit_elecv != NULL:
-            for i in range(self.n_exit):
-                yield vector2tuple(self.exit_elecv[i])
+        if self._exit_elecv != NULL:
+            for i in range(self._n_exit):
+                yield vector2tuple(self._exit_elecv[i])
         else:
             return None
 
     @property
-    def nrefl(self):
+    def n_refl(self):
         '''Retrieve photon amount of internal reflections from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.n_refl == NULL:
-            polycap_transmission_efficiencies_get_exit_data(self.trans_eff, &self.n_exit, &self.exit_coords, &self.exit_direction, &self.exit_elecv, &self.n_refl, &self.d_travel, &self.n_energies, &self.exit_weights, &error)
+        if self._n_refl == NULL:
+            polycap_transmission_efficiencies_get_exit_data(self._trans_eff, &self._n_exit, &self._exit_coords, &self._exit_direction, &self._exit_elecv, &self._n_refl, &self._d_travel, &self._n_energies, &self._exit_weights, &error)
             polycap_set_exception(error)
 
-        if self.n_refl != NULL:
-            for i in range(self.n_exit):
-                yield self.n_refl[i]
+        if self._n_refl != NULL:
+            for i in range(self._n_exit):
+                yield self._n_refl[i]
         else:
             return None
 
     @property
-    def exitweights(self):
+    def exit_weights(self):
         '''Retrieve photon exit weight from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
         cdef size_t n_energies = 0
 
-        if self.exit_weights == NULL:
-            polycap_transmission_efficiencies_get_exit_data(self.trans_eff, &self.n_exit, &self.exit_coords, &self.exit_direction, &self.exit_elecv, &self.n_refl, &self.d_travel, &self.n_energies, &self.exit_weights, &error)
+        if self._exit_weights == NULL:
+            polycap_transmission_efficiencies_get_exit_data(self._trans_eff, &self._n_exit, &self._exit_coords, &self._exit_direction, &self._exit_elecv, &self._n_refl, &self._d_travel, &self._n_energies, &self._exit_weights, &error)
             polycap_set_exception(error)
 
         cdef np.npy_intp dims[1]
-        if self.exit_weights != NULL:
-            dims[0] = self.n_energies
-            for i in range(self.n_exit):
+        if self._exit_weights != NULL:
+            dims[0] = self._n_energies
+            for i in range(self._n_exit):
 
                 weights_np = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
                 # make read-only
                 weights_np.flags.writeable = False
-                memcpy(np.PyArray_DATA(weights_np), self.exit_weights[i], sizeof(double) * self.n_energies)
+                memcpy(np.PyArray_DATA(weights_np), self._exit_weights[i], sizeof(double) * self._n_energies)
                 yield weights_np
         else:
             return None
 
     @property
-    def dtravel(self):
+    def d_travel(self):
         '''Retrieve exit photon travel distance within optic from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.d_travel == NULL:
-            polycap_transmission_efficiencies_get_exit_data(self.trans_eff, &self.n_exit, &self.exit_coords, &self.exit_direction, &self.exit_elecv, &self.n_refl, &self.d_travel, &self.n_energies, &self.exit_weights, &error)
+        if self._d_travel == NULL:
+            polycap_transmission_efficiencies_get_exit_data(self._trans_eff, &self._n_exit, &self._exit_coords, &self._exit_direction, &self._exit_elecv, &self._n_refl, &self._d_travel, &self._n_energies, &self._exit_weights, &error)
             polycap_set_exception(error)
 
-        if self.d_travel != NULL:
-            for i in range(self.n_exit):
-                yield self.d_travel[i]
+        if self._d_travel != NULL:
+            for i in range(self._n_exit):
+                yield self._d_travel[i]
         else:
             return None
 
     @property
-    def startcoords(self):
+    def start_coords(self):
         '''Retrieve photon start coordinates vector tuple from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.start_coords == NULL:
-            polycap_transmission_efficiencies_get_start_data(self.trans_eff, &self.n_start, &self.n_exit, &self.start_coords, &self.start_direction, &self.start_elecv, &self.src_start_coords, &error)
+        if self._start_coords == NULL:
+            polycap_transmission_efficiencies_get_start_data(self._trans_eff, &self._n_start, &self._n_exit, &self._start_coords, &self._start_direction, &self._start_elecv, &self._src_start_coords, &error)
             polycap_set_exception(error)
 
-        if self.start_coords != NULL:
-            for i in range(self.n_exit):
-                yield vector2tuple(self.start_coords[i])
+        if self._start_coords != NULL:
+            for i in range(self._n_exit):
+                yield vector2tuple(self._start_coords[i])
         else:
             return None
 
     @property
-    def startdirection(self):
+    def start_direction(self):
         '''Retrieve photon start direction vector tuple from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.start_direction == NULL:
-            polycap_transmission_efficiencies_get_start_data(self.trans_eff, &self.n_start, &self.n_exit, &self.start_coords, &self.start_direction, &self.start_elecv, &self.src_start_coords, &error)
+        if self._start_direction == NULL:
+            polycap_transmission_efficiencies_get_start_data(self._trans_eff, &self._n_start, &self._n_exit, &self._start_coords, &self._start_direction, &self._start_elecv, &self._src_start_coords, &error)
             polycap_set_exception(error)
 
-        if self.start_direction != NULL:
-            for i in range(self.n_exit):
-                yield vector2tuple(self.start_direction[i])
+        if self._start_direction != NULL:
+            for i in range(self._n_exit):
+                yield vector2tuple(self._start_direction[i])
         else:
             return None
 
     @property
-    def startelecv(self):
+    def start_elecv(self):
         '''Retrieve photon start electric vector vector tuple from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.start_elecv == NULL:
-            polycap_transmission_efficiencies_get_start_data(self.trans_eff, &self.n_start, &self.n_exit, &self.start_coords, &self.start_direction, &self.start_elecv, &self.src_start_coords, &error)
+        if self._start_elecv == NULL:
+            polycap_transmission_efficiencies_get_start_data(self._trans_eff, &self._n_start, &self._n_exit, &self._start_coords, &self._start_direction, &self._start_elecv, &self._src_start_coords, &error)
             polycap_set_exception(error)
 
-        if self.start_elecv != NULL:
-            for i in range(self.n_exit):
-                yield vector2tuple(self.start_elecv[i])
+        if self._start_elecv != NULL:
+            for i in range(self._n_exit):
+                yield vector2tuple(self._start_elecv[i])
         else:
             return None
 
     @property
-    def src_startcoords(self):
+    def src_start_coords(self):
         '''Retrieve source start coordinates vector tuple from a :ref:``TransmissionEfficiencies`` class '''
-        if self.trans_eff is NULL:
+        if self._trans_eff is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.src_start_coords == NULL:
-            polycap_transmission_efficiencies_get_start_data(self.trans_eff, &self.n_start, &self.n_exit, &self.start_coords, &self.start_direction, &self.start_elecv, &self.src_start_coords, &error)
+        if self._src_start_coords == NULL:
+            polycap_transmission_efficiencies_get_start_data(self._trans_eff, &self._n_start, &self._n_exit, &self._start_coords, &self._start_direction, &self._start_elecv, &self._src_start_coords, &error)
             polycap_set_exception(error)
 
-        if self.src_start_coords != NULL:
-            for i in range(self.n_exit):
-                yield vector2tuple(self.src_coords[i])
+        if self._src_start_coords != NULL:
+            for i in range(self._n_exit):
+                yield vector2tuple(self._src_start_coords[i])
         else:
             return None
 
@@ -778,31 +783,31 @@ cdef class TransmissionEfficiencies:
         if trans_eff is NULL:
             return None
         rv = TransmissionEfficiencies()
-        rv.trans_eff = trans_eff
+        rv._trans_eff = trans_eff
 
         cdef size_t n_energies = 0
         cdef double *energies_arr = NULL
         cdef double *efficiencies_arr = NULL
         cdef polycap_error *error = NULL
 
-        polycap_transmission_efficiencies_get_data(rv.trans_eff, &n_energies, &energies_arr, &efficiencies_arr, &error)
+        polycap_transmission_efficiencies_get_data(rv._trans_eff, &n_energies, &energies_arr, &efficiencies_arr, &error)
         polycap_set_exception(error)
 
         cdef np.npy_intp dims[1]
         dims[0] = n_energies
 
-        rv.energies_np = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        rv._energies_np = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
         # make read-only
-        #np.PyArray_CLEARFLAGS(rv.energies_np, np.NPY_ARRAY_WRITEABLE) # needs verification
-        rv.energies_np.flags.writeable = False
-        memcpy(np.PyArray_DATA(rv.energies_np), energies_arr, sizeof(double) * n_energies)
+        #np.PyArray_CLEARFLAGS(rv._energies_np, np.NPY_ARRAY_WRITEABLE) # needs verification
+        rv._energies_np.flags.writeable = False
+        memcpy(np.PyArray_DATA(rv._energies_np), energies_arr, sizeof(double) * n_energies)
         polycap_free(energies_arr)
 
-        rv.efficiencies_np= np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        rv._efficiencies_np= np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
         # make read-only
-        #np.PyArray_CLEARFLAGS(rv.efficiencies_np, np.NPY_ARRAY_WRITEABLE) # needs verification
-        rv.efficiencies_np.flags.writeable = False
-        memcpy(np.PyArray_DATA(rv.efficiencies_np), efficiencies_arr, sizeof(double) * n_energies)
+        #np.PyArray_CLEARFLAGS(rv._efficiencies_np, np.NPY_ARRAY_WRITEABLE) # needs verification
+        rv._efficiencies_np.flags.writeable = False
+        memcpy(np.PyArray_DATA(rv._efficiencies_np), efficiencies_arr, sizeof(double) * n_energies)
         polycap_free(efficiencies_arr)
 
         return rv
@@ -826,20 +831,20 @@ cdef vector2tuple(polycap_vector3 vec):
 '''Class containing information about the simulated leak events such as position and direction, energy and transmission weights.
 '''
 cdef class Leak:
-    cdef object coords
-    cdef object direction
-    cdef object elecv
-    cdef object weight
-    cdef int64_t n_refl
-    cdef size_t n_energies
+    cdef object _coords
+    cdef object _direction
+    cdef object _elecv
+    cdef object _weight
+    cdef int64_t _n_refl
+    cdef size_t _n_energies
 
     def __cinit__(self):
-        self.coords = None
-        self.direction = None
-        self.elecv = None
-        self.weight = None
-        self.n_refl = 0
-        self.n_energies = 0
+        self._coords = None
+        self._direction = None
+        self._elecv = None
+        self._weight = None
+        self._n_refl = 0
+        self._n_energies = 0
 
     @staticmethod
     cdef create(polycap_leak *leak):
@@ -847,18 +852,18 @@ cdef class Leak:
             return None
         rv = Leak()
 
-        rv.coords = vector2tuple(leak.coords)
-        rv.direction = vector2tuple(leak.direction)
-        rv.elecv = vector2tuple(leak.elecv)
+        rv._coords = vector2tuple(leak.coords)
+        rv._direction = vector2tuple(leak.direction)
+        rv._elecv = vector2tuple(leak.elecv)
 
         cdef np.npy_intp dims[1]
         dims[0] = leak.n_energies
-        rv.weight = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
-        rv.weight.flags.writeable = False
+        rv._weight = np.PyArray_EMPTY(1, dims, np.NPY_DOUBLE, False)
+        rv._weight.flags.writeable = False
 
-        memcpy(np.PyArray_DATA(rv.weight), leak.weight, sizeof(double) * leak.n_energies)
-        rv.n_refl = leak.n_refl
-        rv.n_energies = leak.n_energies
+        memcpy(np.PyArray_DATA(rv._weight), leak.weight, sizeof(double) * leak.n_energies)
+        rv._n_refl = leak.n_refl
+        rv._n_energies = leak.n_energies
 
         return rv
         # DO NOT FREE leak!
@@ -867,46 +872,46 @@ cdef class Leak:
     @property
     def coords(self):
         '''Extract coords data from a polycap_leak struct. returned arrays should be freed by the user with polycap_free() or free().
-        return : tuple of self.coords
+        return : tuple of self._coords
         '''
-        return self.coords
+        return self._coords
 
     @property
     def direction(self):
         '''Extract direction data from a polycap_leak struct. returned arrays should be freed by the user with polycap_free() or free().
-        return : tuple of self.direction
+        return : tuple of self._direction
         '''
-        return self.direction
+        return self._direction
 
     @property
     def elecv(self):
         '''Extract electric vector data from a polycap_leak struct. returned arrays should be freed by the user with polycap_free() or free().
-        return : tuple of self.elecv
+        return : tuple of self._elecv
         '''
-        return self.elecv
+        return self._elecv
 
     @property
     def weight(self):
         '''Extract weight data from a polycap_leak struct. returned arrays should be freed by the user with polycap_free() or free().
-        return : tuple of self.weight
+        return : tuple of self._weight
         '''
-        return self.weight
+        return self._weight
 
     @property
     def n_refl(self):
         '''Extract amount of reflection data from a polycap_leak struct. returned arrays should be freed by the user with polycap_free() or free().
-        return : tuple of self.n_refl
+        return : tuple of self._n_refl
         '''
-        return self.n_refl
+        return self._n_refl
 
 '''Class containing information about the simulated photon such as position and direction, energy and transmission weights.
 '''
 cdef class Photon:
-    cdef polycap_photon *photon
-    cdef polycap_leak **ext_leaks
-    cdef int64_t n_ext_leaks
-    cdef polycap_leak **int_leaks
-    cdef int64_t n_int_leaks
+    cdef polycap_photon *_photon
+    cdef polycap_leak **_ext_leaks
+    cdef int64_t _n_ext_leaks
+    cdef polycap_leak **_int_leaks
+    cdef int64_t _n_int_leaks
 
     def __cinit__(self, 
         Description description,
@@ -933,13 +938,13 @@ cdef class Photon:
         cdef polycap_vector3 start_electric_vector_pc
         cdef polycap_error *error = NULL
 
-        self.ext_leaks = NULL
-        self.n_ext_leaks = 0
-        self.int_leaks = NULL
-        self.n_int_leaks = 0
+        self._ext_leaks = NULL
+        self._n_ext_leaks = 0
+        self._int_leaks = NULL
+        self._n_int_leaks = 0
 
         if ignore is True:
-            self.photon = NULL
+            self._photon = NULL
         else:
             if description is None:
                 raise ValueError("description cannot be None")
@@ -960,8 +965,8 @@ cdef class Photon:
             start_direction_pc = np2vector(start_direction)
             start_electric_vector_pc = np2vector(start_electric_vector)
 
-            self.photon = polycap_photon_new(
-                description.description,
+            self._photon = polycap_photon_new(
+                description._description,
                 start_coords_pc,
                 start_direction_pc,
                 start_electric_vector_pc,
@@ -970,18 +975,18 @@ cdef class Photon:
 
     def __dealloc__(self):
         '''Free a :ref:``Photon`` class and all associated data'''
-        if self.photon is not NULL:
-            polycap_photon_free(self.photon)
+        if self._photon is not NULL:
+            polycap_photon_free(self._photon)
 
-        if self.n_ext_leaks > 0:
-            for i in range(self.n_ext_leaks):
-                polycap_leak_free(self.ext_leaks[i])
-            polycap_free(self.ext_leaks)
+        if self._n_ext_leaks > 0:
+            for i in range(self._n_ext_leaks):
+                polycap_leak_free(self._ext_leaks[i])
+            polycap_free(self._ext_leaks)
         
-        if self.n_int_leaks > 0:
-            for i in range(self.n_int_leaks):
-                polycap_leak_free(self.int_leaks[i])
-            polycap_free(self.int_leaks)
+        if self._n_int_leaks > 0:
+            for i in range(self._n_int_leaks):
+                polycap_leak_free(self._int_leaks[i])
+            polycap_free(self._int_leaks)
 
     def launch(self,
         object energies not None,
@@ -1004,7 +1009,7 @@ cdef class Photon:
         cdef polycap_error *error = NULL
         cdef double *weights = NULL
            
-        rv = polycap_photon_launch(self.photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, leak_calc, &error)
+        rv = polycap_photon_launch(self._photon, energies.size, <double*> np.PyArray_DATA(energies), &weights, leak_calc, &error)
         polycap_set_exception(error)
         if rv == 2:
             return None
@@ -1021,18 +1026,18 @@ cdef class Photon:
     @property
     def extleaks(self):
         '''Retrieve exterior :ref:``Leak`` class array from a :ref:``Photon`` class '''
-        if self.photon is NULL:
+        if self._photon is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
-        if self.n_ext_leaks == 0:
-            polycap_photon_get_extleak_data(self.photon, &self.ext_leaks, &self.n_ext_leaks, &error)
+        if self._n_ext_leaks == 0:
+            polycap_photon_get_extleak_data(self._photon, &self._ext_leaks, &self._n_ext_leaks, &error)
             polycap_set_exception(error)
 
-        if self.n_ext_leaks > 0:
-            for i in range(self.n_ext_leaks):
-                leak = Leak.create(self.ext_leaks[i])
+        if self._n_ext_leaks > 0:
+            for i in range(self._n_ext_leaks):
+                leak = Leak.create(self._ext_leaks[i])
                 yield leak
         else:
             return None
@@ -1040,82 +1045,82 @@ cdef class Photon:
     @property
     def intleaks(self):
         '''Retrieve interior :ref:``Leak`` class array from a :ref:``Photon`` class '''
-        if self.photon is NULL:
+        if self._photon is NULL:
             return None
 
         cdef polycap_error *error = NULL
 
         #logger.debug('Before calling C')
-        if self.n_int_leaks == 0:
-            polycap_photon_get_intleak_data(self.photon, &self.int_leaks, &self.n_int_leaks, &error)
+        if self._n_int_leaks == 0:
+            polycap_photon_get_intleak_data(self._photon, &self._int_leaks, &self._n_int_leaks, &error)
             polycap_set_exception(error)
         #logger.debug('After calling C') 
 
         rv = list()
 
-        if self.n_int_leaks > 0:
-            for i in range(self.n_int_leaks):
-                leak = Leak.create(self.int_leaks[i])
+        if self._n_int_leaks > 0:
+            for i in range(self._n_int_leaks):
+                leak = Leak.create(self._int_leaks[i])
                 yield leak
         else:
             return None
 
     def get_exit_coords(self):
         '''Retrieve exit coordinates from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_exit_coords(self.photon))
+        return vector2tuple(polycap_photon_get_exit_coords(self._photon))
 
     @property
     def exit_coords(self):
         '''Retrieve exit coordinates from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_exit_coords(self.photon))
+        return vector2tuple(polycap_photon_get_exit_coords(self._photon))
 
     @property
     def start_coords(self):
         '''Retrieve start coordinates from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_start_coords(self.photon))
+        return vector2tuple(polycap_photon_get_start_coords(self._photon))
 
     def get_exit_direction(self):
         '''Retrieve exit direction from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_exit_direction(self.photon))
+        return vector2tuple(polycap_photon_get_exit_direction(self._photon))
 
     @property
     def exit_direction(self):
         '''Retrieve exit direction from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_exit_direction(self.photon))
+        return vector2tuple(polycap_photon_get_exit_direction(self._photon))
 
     @property
     def start_direction(self):
         '''Retrieve start direction from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_start_direction(self.photon))
+        return vector2tuple(polycap_photon_get_start_direction(self._photon))
 
     def get_exit_electric_vector(self):
         '''Retrieve exit electric field vector from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_exit_electric_vector(self.photon))
+        return vector2tuple(polycap_photon_get_exit_electric_vector(self._photon))
 
     @property
     def exit_electric_vector(self):
         '''Retrieve exit electric field vector from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_exit_electric_vector(self.photon))
+        return vector2tuple(polycap_photon_get_exit_electric_vector(self._photon))
 
     @property
     def start_electric_vector(self):
         '''Retrieve start electric field vector from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_start_electric_vector(self.photon))
+        return vector2tuple(polycap_photon_get_start_electric_vector(self._photon))
 
     @property
     def i_refl(self):
         '''Retrieve i_refl from a :ref:``Photon`` class'''
-        return np.double(polycap_photon_get_irefl(self.photon))
+        return np.double(polycap_photon_get_irefl(self._photon))
 
     @property
     def d_travel(self):
         '''Retrieve d_travel from a :ref:``Photon`` class'''
-        return polycap_photon_get_dtravel(self.photon)
+        return polycap_photon_get_dtravel(self._photon)
 
 '''Class containing information on the source from which photons can be (randomly) selected
 '''
 cdef class Source:
-    cdef polycap_source *source
+    cdef polycap_source *_source
 
     def __cinit__(self, 
         Description description not None,
@@ -1159,8 +1164,8 @@ cdef class Source:
 
 
         cdef polycap_error *error = NULL
-        self.source = polycap_source_new(
-            description.description,
+        self._source = polycap_source_new(
+            description._description,
             d_source,
             src_x,
             src_y,
@@ -1176,8 +1181,8 @@ cdef class Source:
 
     def __dealloc__(self):
         '''free a :ref:``Source`` class and associated data'''
-        if self.source is not NULL:
-            polycap_source_free(self.source)
+        if self._source is not NULL:
+            polycap_source_free(self._source)
 
     def get_photon(self,
         Rng rng not None):
@@ -1190,13 +1195,13 @@ cdef class Source:
 
         cdef polycap_error *error = NULL
         cdef polycap_photon *photon = polycap_source_get_photon(
-            self.source,
-            rng.rng,
+            self._source,
+            rng._rng,
             &error)
         polycap_set_exception(error)
 
         rv = Photon(None, None, None, None, ignore=True)
-        rv.photon = photon
+        rv._photon = photon
 
         return rv
 
@@ -1216,7 +1221,7 @@ cdef class Source:
 
         cdef polycap_error *error = NULL
         cdef polycap_transmission_efficiencies *transmission_efficiencies = polycap_source_get_transmission_efficiencies(
-            self.source,
+            self._source,
             max_threads,
             n_photons,
             leak_calc, #leak_calc option
