@@ -1260,7 +1260,7 @@ int polycap_capil_trace(int *ix, polycap_photon *photon, polycap_description *de
 		phot_coord1.y = photon->exit_coords.y + photon->exit_direction.y * (description->profile->z[i+1]-photon->exit_coords.z)/photon->exit_direction.z;
 		phot_coord1.z = description->profile->z[i+1];
 		// check if cap_coord0 and cap_coord1 are within optic: otherwise errors are inbound
-		if( polycap_photon_within_pc_boundary(description->profile->ext[i], cap_coord0, NULL) == 0 | polycap_photon_within_pc_boundary(description->profile->ext[i+1], cap_coord1, NULL) == 0){
+		if( (polycap_photon_within_pc_boundary(description->profile->ext[i], cap_coord0, NULL) == 0) || (polycap_photon_within_pc_boundary(description->profile->ext[i+1], cap_coord1, NULL) == 0) ){
 			polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_capil_trace: invalid description->profile shape: cap_coord outside optic");
 			return -1;
 		}

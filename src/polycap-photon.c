@@ -944,7 +944,7 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		photon->scatf = NULL;
 	}
 
-	if(iesc == -1 | iesc == -3){
+	if( (iesc == -1) || (iesc == -3) ){
 		return -1; //Return -1 if polycap_capil_trace() returned -1 (error) or -3 (something nonsensical occured during polycap_capil_trace)
 	}
 	if(iesc == 0){

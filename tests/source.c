@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
 
 	test_polycap_source_get_photon();
 	test_polycap_source_new();
-	//test_polycap_source_new_from_file();
+	test_polycap_source_new_from_file();
 	test_polycap_source_get_transmission_efficiencies();
 
 

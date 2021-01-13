@@ -838,7 +838,6 @@ bool polycap_transmission_efficiencies_get_start_data(polycap_transmission_effic
 bool polycap_transmission_efficiencies_get_exit_data(polycap_transmission_efficiencies *efficiencies, int64_t *n_exit, polycap_vector3 **exit_coords, polycap_vector3 **exit_direction, polycap_vector3 **exit_elecv, int64_t **n_refl, double **d_travel, size_t *n_energies, double ***exit_weights, polycap_error **error)
 {
 	int i,j;
-	polycap_vector3 temp;
 
 	if (efficiencies == NULL){
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_get_exit_data: efficiencies cannot be NULL");
