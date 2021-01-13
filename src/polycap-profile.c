@@ -107,7 +107,6 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: focal_dist_downstream must be greater than 0.0");
 		return NULL;
 	}
-	/* add checks for all other arguments */
 
 	//Make profile of sufficient memory size (999 points along PC shape should be sufficient)
 	profile = malloc(sizeof(polycap_profile));

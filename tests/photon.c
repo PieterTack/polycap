@@ -313,6 +313,46 @@ void test_polycap_photon_launch() {
 	assert(photon->n_energies == 1);
 	polycap_free(weights);
 
+	polycap_photon_free(photon);
+	polycap_description_free(description);
+	polycap_profile_free(profile);
+
+
+	//Another photon
+	fprintf(stderr,"***************\n");
+	polycap_clear_error(&error);
+	energies = 17.3;
+	rad_ext_upstream = 0.5;
+	rad_ext_downstream = 0.54;
+	rad_int_upstream = 0.0014;
+	rad_int_downstream = rad_int_upstream*(rad_ext_downstream/rad_ext_upstream);
+	focal_dist_upstream = 50.0;
+	focal_dist_downstream = 1e5;
+	start_coords.x = 0.30026212;
+	start_coords.y = 0.34431622;
+	start_coords.z = 0.0;
+	start_direction.x = 0.00599358;
+	start_direction.y = 0.00689407;
+	start_direction.z = 0.99995629;
+	start_electric_vector.x = 9.99982038e-01;
+	start_electric_vector.y = -4.13209039e-05;
+	start_electric_vector.z = -5.99342381e-03;
+	profile = polycap_profile_new(POLYCAP_PROFILE_CONICAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
+	assert(profile != NULL);
+	polycap_clear_error(&error);
+	description = polycap_description_new(profile, 5, 45019, 2, iz, wi, 2.23, &error);
+	assert(description != NULL);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
+	assert(photon != NULL);
+
+	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
+	fprintf(stderr, "test: %i\n", test);
+	fprintf(stderr, "exitx: %lf y: %lf z: %lf dirx: %lf y: %lf z: %lf\n", photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z);
+	fprintf(stderr, "i_refl: %lli, d_travel: %lf \n", photon->i_refl, photon->d_travel);
+	assert(test == -1);
+	assert(photon->n_energies == 1);
+	polycap_free(weights);
+
 	
 	polycap_photon_free(photon);
 	polycap_description_free(description);

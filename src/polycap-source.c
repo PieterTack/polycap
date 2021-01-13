@@ -184,6 +184,12 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 			return NULL;
 		}
 	}
+	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
+	if(polycap_profile_validate(description->profile, description->n_cap, error) != 1){
+		polycap_clear_error(error);
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
+		return NULL;
+	}
 
 	source = malloc(sizeof(polycap_source));
 	if(source == NULL){

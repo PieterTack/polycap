@@ -944,13 +944,13 @@ int polycap_photon_launch(polycap_photon *photon, size_t n_energies, double *ene
 		photon->scatf = NULL;
 	}
 
-	if(iesc == -1){
-		return -1; //Return -1 if polycap_capil_trace() returned -1
+	if(iesc == -1 | iesc == -3){
+		return -1; //Return -1 if polycap_capil_trace() returned -1 (error) or -3 (something nonsensical occured during polycap_capil_trace)
 	}
 	if(iesc == 0){
 		return 0; //return 0 if photon did not reach end of capillary; is absorbed
 	} else {
-		return 1; //if photon reached end of capillary, return 1 //TODO: 1 will be returned if capil_trace returns -2 or -3, or 1.
+		return 1; //if photon reached end of capillary, return 1 (when capil_trace returns -2: photon reaches exit without interections, or 1: photon reaches exit after interactions)
 	}
 }
 
