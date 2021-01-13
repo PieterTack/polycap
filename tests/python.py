@@ -127,9 +127,9 @@ class TestPolycapPhoton(unittest.TestCase):
         photon = polycap.Photon(TestPolycapPhoton.description, start_coords, start_direction, start_electric_vector)
         weights = photon.launch(10.0, leak_calc=False)
         self.assertIsInstance(weights, np.ndarray)
-        self.assertIsInstance(photon.get_exit_coords(), VectorTuple)
-        self.assertIsInstance(photon.get_exit_direction(), VectorTuple)
-        self.assertIsInstance(photon.get_exit_electric_vector(), VectorTuple)
+        self.assertIsInstance(photon.get_exit_coords, VectorTuple)
+        self.assertIsInstance(photon.get_exit_direction, VectorTuple)
+        self.assertIsInstance(photon.get_exit_electric_vector, VectorTuple)
         self.assertIsInstance(photon.exit_coords, VectorTuple)
         self.assertIsInstance(photon.exit_direction, VectorTuple)
         self.assertIsInstance(photon.exit_electric_vector, VectorTuple)
@@ -146,13 +146,13 @@ class TestPolycapPhoton(unittest.TestCase):
         start_electric_vector = (0.5, 0.5, 0.)
         photon = polycap.Photon(TestPolycapPhoton.description, start_coords, start_direction, start_electric_vector)
         weights = photon.launch(40.0, leak_calc=True)
-        extleaks = list(photon.extleaks)
+        extleaks = list(photon.extleak_data)
         self.assertEqual(len(extleaks), 2)
-        extleaks = list(photon.extleaks) # do it twice to test caching
+        extleaks = list(photon.extleak_data) # do it twice to test caching
         self.assertEqual(len(extleaks), 2)
-        intleaks = list(photon.intleaks)
+        intleaks = list(photon.intleak_data)
         self.assertEqual(len(intleaks), 3)
-        intleaks = list(photon.intleaks) # do it twice to test caching
+        intleaks = list(photon.intleak_data) # do it twice to test caching
         self.assertEqual(len(intleaks), 3)
         self.assertAlmostEqual(extleaks[0].coords.x, 0.067419, delta=1e-6)
         self.assertAlmostEqual(extleaks[0].coords.y, 0., delta=1e-6)
@@ -190,9 +190,9 @@ class TestPolycapPhoton(unittest.TestCase):
         self.assertAlmostEqual(intleaks[2].direction.z, 0.999981, delta=1e-6)
         self.assertAlmostEqual(intleaks[2].weight[0], 0.000142, delta=1e-6)
         self.assertIsInstance(weights, np.ndarray)
-        self.assertIsInstance(photon.get_exit_coords(), VectorTuple)
-        self.assertIsInstance(photon.get_exit_direction(), VectorTuple)
-        self.assertIsInstance(photon.get_exit_electric_vector(), VectorTuple)
+        self.assertIsInstance(photon.get_exit_coords, VectorTuple)
+        self.assertIsInstance(photon.get_exit_direction, VectorTuple)
+        self.assertIsInstance(photon.get_exit_electric_vector, VectorTuple)
         del photon
 
 class TestPolycapSource(unittest.TestCase):

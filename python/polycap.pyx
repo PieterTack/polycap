@@ -287,6 +287,7 @@ cdef class Profile:
 
         return rv
 
+    @property
     def get_ext(self):
         '''Retrieve exterior profile from a :ref:``Profile`` class'''
         cdef size_t nid = 0
@@ -304,6 +305,7 @@ cdef class Profile:
 
         return rv
 
+    @property
     def get_cap(self):
         '''Retrieve capillary profile from a :ref:``Profile`` class'''
         cdef size_t nid = 0
@@ -321,6 +323,7 @@ cdef class Profile:
 
         return rv
 
+    @property
     def get_z(self):
         '''Retrieve length profile from a :ref:``Profile`` class'''
         cdef size_t nid = 0
@@ -552,7 +555,7 @@ cdef class TransmissionEfficiencies:
         return (self._energies_np, self._efficiencies_np)
 
     @property
-    def extleaks(self):
+    def extleak_data(self):
         '''Retrieve exterior :ref:``Leak`` class array from a :ref:``TransmissionEfficiencies`` class '''
         if self._trans_eff is NULL:
             return None
@@ -571,7 +574,7 @@ cdef class TransmissionEfficiencies:
             return None
 
     @property
-    def intleaks(self):
+    def intleak_data(self):
         '''Retrieve interior :ref:``Leak`` class array from a :ref:``TransmissionEfficiencies`` class '''
         if self._trans_eff is NULL:
             return None
@@ -1024,7 +1027,7 @@ cdef class Photon:
         return weights_np
 
     @property
-    def extleaks(self):
+    def extleak_data(self):
         '''Retrieve exterior :ref:``Leak`` class array from a :ref:``Photon`` class '''
         if self._photon is NULL:
             return None
@@ -1043,7 +1046,7 @@ cdef class Photon:
             return None
 
     @property
-    def intleaks(self):
+    def intleak_data(self):
         '''Retrieve interior :ref:``Leak`` class array from a :ref:``Photon`` class '''
         if self._photon is NULL:
             return None
@@ -1065,9 +1068,10 @@ cdef class Photon:
         else:
             return None
 
+    @property
     def get_exit_coords(self):
         '''Retrieve exit coordinates from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_exit_coords(self._photon))
+        return self.exit_coords
 
     @property
     def exit_coords(self):
@@ -1079,9 +1083,10 @@ cdef class Photon:
         '''Retrieve start coordinates from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_start_coords(self._photon))
 
+    @property
     def get_exit_direction(self):
         '''Retrieve exit direction from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_exit_direction(self._photon))
+        return self.exit_direction
 
     @property
     def exit_direction(self):
@@ -1093,9 +1098,10 @@ cdef class Photon:
         '''Retrieve start direction from a :ref:``Photon`` class'''
         return vector2tuple(polycap_photon_get_start_direction(self._photon))
 
+    @property
     def get_exit_electric_vector(self):
         '''Retrieve exit electric field vector from a :ref:``Photon`` class'''
-        return vector2tuple(polycap_photon_get_exit_electric_vector(self._photon))
+        return self.exit_electric_vector
 
     @property
     def exit_electric_vector(self):
