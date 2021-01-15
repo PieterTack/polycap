@@ -232,6 +232,8 @@ void test_polycap_photon_launch() {
 	test = polycap_photon_launch(NULL, 1., &energies, NULL, false, &error);
 	assert(test == -1);
 	assert(polycap_error_matches(error, POLYCAP_ERROR_INVALID_ARGUMENT));
+	polycap_free(photon->scatf); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->amu); // this is just to shut up valgrind because we are reusing the photon...
 
 	//This works but returns -2 (as photon was not in PC to begin with)
 	polycap_clear_error(&error);
@@ -243,6 +245,8 @@ void test_polycap_photon_launch() {
 	polycap_free(weights);
 	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...
 	polycap_free(photon->weight); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->scatf); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->amu); // this is just to shut up valgrind because we are reusing the photon...
 	
 	//This works but returns 0 (as photon does not reach the end of the capillary)
 	polycap_clear_error(&error);
@@ -253,13 +257,17 @@ void test_polycap_photon_launch() {
 	assert(photon->n_energies == 1);
 	assert(test == 0);
 	polycap_free(weights);
+	polycap_free(photon->weight); // this is just to shut up valgrind because we are reusing the photon...
 	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->scatf); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->amu); // this is just to shut up valgrind because we are reusing the photon...
 	
 	//This works and returns 1 (photon reached end of capillary)
 	polycap_clear_error(&error);
 	photon->start_direction.x = 0.;
 	photon->start_direction.y = 0.;
 	photon->start_direction.z = 1.0;
+	photon->d_travel = 0.;
 	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(fabs(photon->exit_coords.x) < 1.e-5);
 	assert(fabs(photon->exit_coords.y) < 1.e-5);
@@ -268,7 +276,14 @@ void test_polycap_photon_launch() {
 	assert(photon->amu == NULL);
 	assert(photon->scatf == NULL);
 	assert(test == 1);
+	fprintf(stderr,"i_refl: %li, d_travel: %lf\n", photon->i_refl , photon->d_travel);
+	assert(fabs(photon->i_refl - 0.) < 1e-6);
+	assert(fabs(photon->d_travel - 0.) < 1e-6);
 	polycap_free(weights);
+	polycap_free(photon->weight); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->energies); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->scatf); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->amu); // this is just to shut up valgrind because we are reusing the photon...
 	
 	//Another photon, outside of optic shells, but just within optic exterior (so should leak if enabled)
 	polycap_clear_error(&error);
@@ -282,6 +297,8 @@ void test_polycap_photon_launch() {
 	assert(test == 2);
 	assert(photon->n_energies == 1);
 	polycap_free(weights);
+	polycap_free(photon->scatf); // this is just to shut up valgrind because we are reusing the photon...
+	polycap_free(photon->amu); // this is just to shut up valgrind because we are reusing the photon...
 
 	//Another photon
 	polycap_clear_error(&error);
@@ -293,6 +310,46 @@ void test_polycap_photon_launch() {
 	photon->start_direction.z = 1.0;
 	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
 	assert(test == 0);
+	assert(photon->n_energies == 1);
+	polycap_free(weights);
+
+	polycap_photon_free(photon);
+	polycap_description_free(description);
+	polycap_profile_free(profile);
+
+
+	//Another photon
+	fprintf(stderr,"***************\n");
+	polycap_clear_error(&error);
+	energies = 17.3;
+	rad_ext_upstream = 0.5;
+	rad_ext_downstream = 0.54;
+	rad_int_upstream = 0.0014;
+	rad_int_downstream = rad_int_upstream*(rad_ext_downstream/rad_ext_upstream);
+	focal_dist_upstream = 50.0;
+	focal_dist_downstream = 1e5;
+	start_coords.x = 0.30026212;
+	start_coords.y = 0.34431622;
+	start_coords.z = 0.0;
+	start_direction.x = 0.00599358;
+	start_direction.y = 0.00689407;
+	start_direction.z = 0.99995629;
+	start_electric_vector.x = 9.99982038e-01;
+	start_electric_vector.y = -4.13209039e-05;
+	start_electric_vector.z = -5.99342381e-03;
+	profile = polycap_profile_new(POLYCAP_PROFILE_CONICAL, 9., rad_ext_upstream, rad_ext_downstream, rad_int_upstream, rad_int_downstream, focal_dist_upstream, focal_dist_downstream, &error);
+	assert(profile != NULL);
+	polycap_clear_error(&error);
+	description = polycap_description_new(profile, 5, 45019, 2, iz, wi, 2.23, &error);
+	assert(description != NULL);
+	photon = polycap_photon_new(description, start_coords, start_direction, start_electric_vector, &error);
+	assert(photon != NULL);
+
+	test = polycap_photon_launch(photon, 1., &energies, &weights, false, &error);
+	fprintf(stderr, "test: %i\n", test);
+	fprintf(stderr, "exitx: %lf y: %lf z: %lf dirx: %lf y: %lf z: %lf\n", photon->exit_coords.x, photon->exit_coords.y, photon->exit_coords.z, photon->exit_direction.x, photon->exit_direction.y, photon->exit_direction.z);
+	fprintf(stderr, "i_refl: %lli, d_travel: %lf \n", photon->i_refl, photon->d_travel);
+	assert(test == -1);
 	assert(photon->n_energies == 1);
 	polycap_free(weights);
 

@@ -184,6 +184,12 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 			return NULL;
 		}
 	}
+	// perform profile sanity check to see if any capillaries are outside of polycap boundaries (they shouldn't be...)
+	if(polycap_profile_validate(description->profile, description->n_cap, error) != 1){
+		polycap_clear_error(error);
+		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_source_new: description->profile is faulty. Some capillary coordinates are outside of the external radius.");
+		return NULL;
+	}
 
 	source = malloc(sizeof(polycap_source));
 	if(source == NULL){
@@ -195,12 +201,7 @@ polycap_source* polycap_source_new(polycap_description *description, double d_so
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source->energies -> %s", strerror(errno));
 		return NULL;
 	}
-	source->rng = malloc(sizeof(polycap_rng));
-	if(source->rng == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new: could not allocate memory for source->rng -> %s", strerror(errno));
-		return NULL;
-	}
-	
+
 	source->d_source = d_source;
 	source->src_x = src_x;
 	source->src_y = src_y;
@@ -248,12 +249,6 @@ polycap_source* polycap_source_new_from_file(const char *filename, polycap_error
 	description = calloc(1, sizeof(polycap_description));
 	if(description == NULL){
 		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new_from_file: could not allocate memory for description -> %s", strerror(errno));
-		return NULL;
-	}
-
-	rng = calloc(1, sizeof(polycap_rng));
-	if(rng == NULL){
-		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_source_new_from_file: could not allocate memory for rng -> %s", strerror(errno));
 		return NULL;
 	}
 	
@@ -712,17 +707,17 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 	double *weights;
 	double *weights_temp;
 	//polycap_error *local_error = NULL; // to be used when we are going to call methods that take a polycap_error as argument
-	polycap_leak *extleak = NULL; // define extleak structure for each thread
+	polycap_leak **extleak = NULL; // define extleak structure for each thread
 	int64_t n_extleak=0;
-	polycap_leak *intleak = NULL; // define intleak structure for each thread
+	polycap_leak **intleak = NULL; // define intleak structure for each thread
 	int64_t n_intleak=0;
 	int64_t leak_mem_size=0, intleak_mem_size=0; //memory size indicator for leak and intleak structure arrays
 	polycap_vector3 temp_vect; //temporary vector to store electric_vectors during projection onto photon direction
 	double cosalpha, alpha; //angle between initial electric vector and photon direction
 	double c_ae, c_be;
-	polycap_leak *extleak_temp = NULL; // define extleak_temp structure for each thread
+	polycap_leak **extleak_temp = NULL; // define extleak_temp structure for each thread
 	int64_t n_extleak_temp = 0;
-	polycap_leak *intleak_temp = NULL; // define intleak_temp structure for each thread
+	polycap_leak **intleak_temp = NULL; // define intleak_temp structure for each thread
 	int64_t n_intleak_temp = 0;
 	int64_t leak_mem_size_temp=0, intleak_mem_size_temp=0; //memory size indicator for leak and intleak temp structure arrays
 
@@ -814,15 +809,11 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 								leak_mem_size_temp *= 2;
 								if (leak_mem_size_temp < n_extleak_temp) leak_mem_size_temp = n_extleak_temp; //not doing this could be dangerous at low values
 							}
-							extleak_temp = realloc(extleak_temp, sizeof(struct _polycap_leak) * leak_mem_size_temp);
+							extleak_temp = realloc(extleak_temp, sizeof(struct _polycap_leak*) * leak_mem_size_temp);
 						}
 						for(k = 0; k < photon->n_extleak; k++){
-							extleak_temp[n_extleak_temp-photon->n_extleak+k].coords = photon->extleak[k].coords;
-							extleak_temp[n_extleak_temp-photon->n_extleak+k].direction = photon->extleak[k].direction;
-							extleak_temp[n_extleak_temp-photon->n_extleak+k].elecv = photon->extleak[k].elecv;
-							extleak_temp[n_extleak_temp-photon->n_extleak+k].n_refl = photon->extleak[k].n_refl;
-							extleak_temp[n_extleak_temp-photon->n_extleak+k].weight = malloc(sizeof(double)*source->n_energies);
-							memcpy(extleak_temp[n_extleak_temp-photon->n_extleak+k].weight, photon->extleak[k].weight, sizeof(double)*source->n_energies);
+							polycap_leak *new_leak = polycap_leak_new(photon->extleak[k]->coords, photon->extleak[k]->direction, photon->extleak[k]->elecv, photon->extleak[k]->n_refl, source->n_energies, photon->extleak[k]->weight, NULL);
+							extleak_temp[n_extleak_temp-photon->n_extleak+k] = new_leak;
 						}
 					}
 					if(photon->n_intleak > 0){
@@ -834,15 +825,11 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 								intleak_mem_size_temp *= 2;
 								if (intleak_mem_size_temp < n_intleak_temp) intleak_mem_size_temp = n_intleak_temp; //not doing this could be dangerous at low values
 							}
-							intleak_temp = realloc(intleak_temp, sizeof(struct _polycap_leak) * intleak_mem_size_temp);
+							intleak_temp = realloc(intleak_temp, sizeof(struct _polycap_leak*) * intleak_mem_size_temp);
 						}
 						for(k = 0; k < photon->n_intleak; k++){
-							intleak_temp[n_intleak_temp-photon->n_intleak+k].coords = photon->intleak[k].coords;
-							intleak_temp[n_intleak_temp-photon->n_intleak+k].direction = photon->intleak[k].direction;
-							intleak_temp[n_intleak_temp-photon->n_intleak+k].elecv = photon->intleak[k].elecv;
-							intleak_temp[n_intleak_temp-photon->n_intleak+k].n_refl = photon->intleak[k].n_refl;
-							intleak_temp[n_intleak_temp-photon->n_intleak+k].weight = malloc(sizeof(double)*source->n_energies);
-							memcpy(intleak_temp[n_intleak_temp-photon->n_intleak+k].weight, photon->intleak[k].weight, sizeof(double)*source->n_energies);
+							polycap_leak *new_leak = polycap_leak_new(photon->intleak[k]->coords, photon->intleak[k]->direction, photon->intleak[k]->elecv, photon->intleak[k]->n_refl, source->n_energies, photon->intleak[k]->weight, NULL);
+							intleak_temp[n_intleak_temp-photon->n_intleak+k] = new_leak;
 						}
 					}	
 				}
@@ -850,19 +837,18 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					// so pass on all previously acquired leak info (leak_temp, intleak_temp) to this photon
 					if(n_extleak_temp > 0){
 						photon->n_extleak += n_extleak_temp;
-						photon->extleak = realloc(photon->extleak, sizeof(struct _polycap_leak) * photon->n_extleak);
+						photon->extleak = realloc(photon->extleak, sizeof(struct _polycap_leak*) * photon->n_extleak);
 						for(k = 0; k < n_extleak_temp; k++){
-							photon->extleak[photon->n_extleak-n_extleak_temp+k].coords = extleak_temp[k].coords;
-							photon->extleak[photon->n_extleak-n_extleak_temp+k].direction = extleak_temp[k].direction;
-							photon->extleak[photon->n_extleak-n_extleak_temp+k].elecv = extleak_temp[k].elecv;
-							photon->extleak[photon->n_extleak-n_extleak_temp+k].n_refl = extleak_temp[k].n_refl;
-							photon->extleak[photon->n_extleak-n_extleak_temp+k].weight = malloc(sizeof(double)*source->n_energies);
-							memcpy(photon->extleak[photon->n_extleak-n_extleak_temp+k].weight, extleak_temp[k].weight, sizeof(double)*source->n_energies);
+							polycap_leak *new_leak = polycap_leak_new(extleak_temp[k]->coords, extleak_temp[k]->direction, extleak_temp[k]->elecv, extleak_temp[k]->n_refl, source->n_energies, extleak_temp[k]->weight, NULL);
+							photon->extleak[photon->n_extleak-n_extleak_temp+k] = new_leak;
 						}	
 
 						//free the temp intleak and leak structs
 						if(extleak_temp){
-							polycap_leak_free(extleak_temp, n_extleak_temp);
+							for(k = 0; k < n_extleak_temp; k++){
+								polycap_leak_free(extleak_temp[k]);
+							}
+							free(extleak_temp);
 							extleak_temp = NULL;
 						}
 						//and set their memory counters to 0
@@ -871,19 +857,18 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					}
 					if(n_intleak_temp > 0){
 						photon->n_intleak += n_intleak_temp;
-						photon->intleak = realloc(photon->intleak, sizeof(struct _polycap_leak) * photon->n_intleak);
+						photon->intleak = realloc(photon->intleak, sizeof(struct _polycap_leak*) * photon->n_intleak);
 						for(k = 0; k < n_intleak_temp; k++){
-							photon->intleak[photon->n_intleak-n_intleak_temp+k].coords = intleak_temp[k].coords;
-							photon->intleak[photon->n_intleak-n_intleak_temp+k].direction = intleak_temp[k].direction;
-							photon->intleak[photon->n_intleak-n_intleak_temp+k].elecv = intleak_temp[k].elecv;
-							photon->intleak[photon->n_intleak-n_intleak_temp+k].n_refl = intleak_temp[k].n_refl;
-							photon->intleak[photon->n_intleak-n_intleak_temp+k].weight = malloc(sizeof(double)*source->n_energies);
-							memcpy(photon->intleak[photon->n_intleak-n_intleak_temp+k].weight, intleak_temp[k].weight, sizeof(double)*source->n_energies);
+							polycap_leak *new_leak = polycap_leak_new(intleak_temp[k]->coords, intleak_temp[k]->direction, intleak_temp[k]->elecv, intleak_temp[k]->n_refl, source->n_energies, intleak_temp[k]->weight, NULL);
+							photon->intleak[photon->n_intleak-n_intleak_temp+k] = new_leak;
 						}	
 
 						//free the temp intleak and leak structs
 						if(intleak_temp){
-							polycap_leak_free(intleak_temp, n_intleak_temp);
+							for(k = 0; k < n_intleak_temp; k++){
+								polycap_leak_free(intleak_temp[k]);
+							}
+							free(intleak_temp);
 							intleak_temp = NULL;
 						}
 						//and set their memory counters to 0
@@ -947,7 +932,7 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					leak_mem_size *= 2;
 					if (leak_mem_size < n_extleak) leak_mem_size = n_extleak; //not doing this could be dangerous at low values
 				}
-				extleak = realloc(extleak, sizeof(struct _polycap_leak) * leak_mem_size);
+				extleak = realloc(extleak, sizeof(struct _polycap_leak*) * leak_mem_size);
 			}
 			n_intleak += photon->n_intleak;
 			if(n_intleak > intleak_mem_size){
@@ -957,28 +942,20 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 					intleak_mem_size *= 2;
 					if (intleak_mem_size < n_intleak) intleak_mem_size = n_intleak; //not doing this could be dangerous at low values
 				}
-				intleak = realloc(intleak, sizeof(struct _polycap_leak) * intleak_mem_size);
+				intleak = realloc(intleak, sizeof(struct _polycap_leak*) * intleak_mem_size);
 			}
 
 			//Write leak photon data.
 			if(photon->n_extleak > 0){
 				for(k=0; k<photon->n_extleak; k++){
-					extleak[n_extleak-photon->n_extleak+k].coords = photon->extleak[k].coords;
-					extleak[n_extleak-photon->n_extleak+k].direction = photon->extleak[k].direction;
-					extleak[n_extleak-photon->n_extleak+k].elecv = photon->extleak[k].elecv;
-					extleak[n_extleak-photon->n_extleak+k].n_refl = photon->extleak[k].n_refl;
-					extleak[n_extleak-photon->n_extleak+k].weight = malloc(sizeof(double)*source->n_energies);
-					memcpy(extleak[n_extleak-photon->n_extleak+k].weight, photon->extleak[k].weight, sizeof(double)*source->n_energies);
+					polycap_leak *new_leak = polycap_leak_new(photon->extleak[k]->coords, photon->extleak[k]->direction, photon->extleak[k]->elecv, photon->extleak[k]->n_refl, source->n_energies, photon->extleak[k]->weight, NULL);
+					extleak[n_extleak-photon->n_extleak+k] = new_leak;
 				}
 			}
 			if(photon->n_intleak > 0){
 				for(k=0; k<photon->n_intleak; k++){
-					intleak[n_intleak-photon->n_intleak+k].coords = photon->intleak[k].coords;
-					intleak[n_intleak-photon->n_intleak+k].direction = photon->intleak[k].direction;
-					intleak[n_intleak-photon->n_intleak+k].elecv = photon->intleak[k].elecv;
-					intleak[n_intleak-photon->n_intleak+k].n_refl = photon->intleak[k].n_refl;
-					intleak[n_intleak-photon->n_intleak+k].weight = malloc(sizeof(double)*source->n_energies);
-					memcpy(intleak[n_intleak-photon->n_intleak+k].weight, photon->intleak[k].weight, sizeof(double)*source->n_energies);
+					polycap_leak *new_leak = polycap_leak_new(photon->intleak[k]->coords, photon->intleak[k]->direction, photon->intleak[k]->elecv, photon->intleak[k]->n_refl, source->n_energies, photon->intleak[k]->weight, NULL);
+					intleak[n_intleak-photon->n_intleak+k] = new_leak;
 				}
 			}
 		}
@@ -1028,39 +1005,45 @@ polycap_transmission_efficiencies* polycap_source_get_transmission_efficiencies(
 		#pragma omp critical //continue with all threads, but one at a time...
 		{
 		for(k=0; k < n_extleak; k++){
-			efficiencies->images->extleak_coords[0][leak_counter] = extleak[k].coords.x;
-			efficiencies->images->extleak_coords[1][leak_counter] = extleak[k].coords.y;
-			efficiencies->images->extleak_coords[2][leak_counter] = extleak[k].coords.z;
-			efficiencies->images->extleak_dir[0][leak_counter] = extleak[k].direction.x;
-			efficiencies->images->extleak_dir[1][leak_counter] = extleak[k].direction.y;
-			efficiencies->images->extleak_n_refl[leak_counter] = extleak[k].n_refl;
+			efficiencies->images->extleak_coords[0][leak_counter] = extleak[k]->coords.x;
+			efficiencies->images->extleak_coords[1][leak_counter] = extleak[k]->coords.y;
+			efficiencies->images->extleak_coords[2][leak_counter] = extleak[k]->coords.z;
+			efficiencies->images->extleak_dir[0][leak_counter] = extleak[k]->direction.x;
+			efficiencies->images->extleak_dir[1][leak_counter] = extleak[k]->direction.y;
+			efficiencies->images->extleak_n_refl[leak_counter] = extleak[k]->n_refl;
 			for(l=0; l < source->n_energies; l++)
-				efficiencies->images->extleak_coord_weights[leak_counter*source->n_energies+l] = extleak[k].weight[l];
+				efficiencies->images->extleak_coord_weights[leak_counter*source->n_energies+l] = extleak[k]->weight[l];
 			leak_counter++;
-			//Free extleak data
-			free(extleak[k].weight);
 		}
 		for(k=0; k < n_intleak; k++){
-			efficiencies->images->intleak_coords[0][intleak_counter] = intleak[k].coords.x;
-			efficiencies->images->intleak_coords[1][intleak_counter] = intleak[k].coords.y;
-			efficiencies->images->intleak_coords[2][intleak_counter] = intleak[k].coords.z;
-			efficiencies->images->intleak_dir[0][intleak_counter] = intleak[k].direction.x;
-			efficiencies->images->intleak_dir[1][intleak_counter] = intleak[k].direction.y;
-			efficiencies->images->intleak_elecv[0][intleak_counter] = intleak[k].elecv.x;
-			efficiencies->images->intleak_elecv[1][intleak_counter] = intleak[k].elecv.y;
-			efficiencies->images->intleak_n_refl[intleak_counter] = intleak[k].n_refl;
+			efficiencies->images->intleak_coords[0][intleak_counter] = intleak[k]->coords.x;
+			efficiencies->images->intleak_coords[1][intleak_counter] = intleak[k]->coords.y;
+			efficiencies->images->intleak_coords[2][intleak_counter] = intleak[k]->coords.z;
+			efficiencies->images->intleak_dir[0][intleak_counter] = intleak[k]->direction.x;
+			efficiencies->images->intleak_dir[1][intleak_counter] = intleak[k]->direction.y;
+			efficiencies->images->intleak_elecv[0][intleak_counter] = intleak[k]->elecv.x;
+			efficiencies->images->intleak_elecv[1][intleak_counter] = intleak[k]->elecv.y;
+			efficiencies->images->intleak_n_refl[intleak_counter] = intleak[k]->n_refl;
 			for(l=0; l < source->n_energies; l++)
-				efficiencies->images->intleak_coord_weights[intleak_counter*source->n_energies+l] = intleak[k].weight[l];
+				efficiencies->images->intleak_coord_weights[intleak_counter*source->n_energies+l] = intleak[k]->weight[l];
 			intleak_counter++;
-			//Free intleak data
-			free(intleak[k].weight);
 		}
 		}//#pragma omp critical
 	}
-	if(extleak)
+	if(extleak){
+		for(k = 0; k < n_extleak; k++){
+			polycap_leak_free(extleak[k]);
+		}
 		free(extleak);
-	if(intleak)
+		extleak = NULL;
+	}
+	if(intleak){
+		for(k = 0; k < n_intleak; k++){
+			polycap_leak_free(intleak[k]);
+		}
 		free(intleak);
+		intleak = NULL;
+	}
 	polycap_rng_free(rng);
 	free(weights);
 } //#pragma omp parallel

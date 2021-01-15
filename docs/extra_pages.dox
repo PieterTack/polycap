@@ -234,7 +234,7 @@
  *
  * Syntax:
  * \code{.py}
- * profile = Profile(polycap_profile_type type, double length, double rad_ext_upstream, double rad_ext_downstream, double rad_int_upstream, double rad_int_downstream, double focal_dist_upstream, double focal_dist_downstream)
+ * profile = Profile(polycap_profile_type type, double length, double rad_ext_upstream, double rad_ext_downstream, double rad_int_upstream, double rad_int_downstream, double focal_dist_upstream, double focal_dist_downstream[, bool ignore=False])
  * \endcode
  *       - **type:** an integer or \ref profiletype that indicates the profile type
  *       - **length:** the polycapillary length, as measured along the central axis [cm]
@@ -244,6 +244,7 @@
  *       - **rad_int_downstream:** internal downstream capillary radius (photons stream from upstream to downstream) [cm]
  *       - **focal_dist_upstream:** focal distance upstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
  *       - **focal_dist_downstream:** focal distance downstream of the polycapillary optic (photons stream from upstream to downstream) [cm]
+ *       - **ignore:** [OPTIONAL] if set to True, a \c None Profile will be generated. Default is False.
  *       - **returns:** a new \ref Profile, or raises an exception if an error occurred.
  *
  * \subsection profiletype Profile type
@@ -252,6 +253,45 @@
  * 	- **CONICAL:** the external profile shape is a straight line between the polycapillary entrance and exit radii.
  *	- **PARABOLOIDAL:** a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
  *	- **ELLIPSOIDAL:** an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
+ *
+ * \subsection profilenewarrays new_from_arrays
+ * Define a profile shape using user defined arrays.
+ * 
+ * Syntax:
+ * \code{.py}
+ * Profile.new_from_arrays(object ext, object cap, object z)
+ * \endcode
+ *       - **ext:** a double array containing the polycapillary exterior profile shape radii [cm]
+ *       - **cap:** a double array containing the polycapillary central capillary profile shape radii [cm]
+ *       - **z:** a double array containing the polycapillary length profile running from 0 to polycapillary length [cm]
+ *       - **returns:** a new \ref Profile, or raises an exception if an error occurred.
+ *
+ * \subsection extget get_ext
+ * Get exterior profile shape from a `Profile` class.
+ * 
+ * Syntax:
+ * \code{.py}
+ * ext = Profile.get_ext()
+ * \endcode
+ *       - **returns:** a double array containing the polycapillary exterior profile shape radii [cm]
+ *
+ * \subsection capget get_cap
+ * Get central capillary profile shape from a `Profile` class.
+ * 
+ * Syntax:
+ * \code{.py}
+ * cap = Profile.get_cap()
+ * \endcode
+ *       - **returns:** a double array containing the polycapillary central capillary profile shape radii [cm]
+ *
+ * \subsection zget get_z
+ * Get length profile from a `Profile` class.
+ * 
+ * Syntax:
+ * \code{.py}
+ * z = Profile.get_z()
+ * \endcode
+ *       - **returns:** a double array containing the polycapillary length profile running from 0 to polycapillary length [cm]
  *
  * \section rng Rng
  * 

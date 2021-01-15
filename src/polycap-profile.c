@@ -107,7 +107,6 @@ polycap_profile* polycap_profile_new(polycap_profile_type type, double length, d
 		polycap_set_error_literal(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new: focal_dist_downstream must be greater than 0.0");
 		return NULL;
 	}
-	/* add checks for all other arguments */
 
 	//Make profile of sufficient memory size (999 points along PC shape should be sufficient)
 	profile = malloc(sizeof(polycap_profile));
@@ -355,9 +354,9 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 //					printf("q: %lf, r: %lf \n",q_i, r_i);
 					// determine selected capillary central axis coordinates and add capillary radius along current angle
 					for(i = 0; i <= profile->nmax; i++){
-						z = profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+						z = profile->ext[i]/(2.*COSPI_6*(n_shells+1));
 						coord.y = r_i * (3./2) * z;
-						coord.x = (2* q_i + r_i) * cos(M_PI/6.) * z;
+						coord.x = (2* q_i + r_i) * COSPI_6 * z;
 						angle = atan(coord.y/coord.x);
 						coord.x += cos(angle)*profile->cap[i];
 						coord.y += sin(angle)*profile->cap[i];
@@ -397,9 +396,9 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 				}
 				// determine selected capillary central axis coordinates and add capillary radius along current angle
 				for(i = 0; i <= profile->nmax; i++){
-					z = profile->ext[i]/(2.*cos(M_PI/6.)*(n_shells+1));
+					z = profile->ext[i]/(2.*COSPI_6*(n_shells+1));
 					coord.y = r_i * (3./2) * z;
-					coord.x = (2* q_i + r_i) * cos(M_PI/6.) * z;
+					coord.x = (2* q_i + r_i) * COSPI_6 * z;
 					angle = atan(coord.y/coord.x);
 					coord.x += cos(angle)*profile->cap[i];
 					coord.y += sin(angle)*profile->cap[i];
@@ -421,6 +420,102 @@ int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_er
 	}
 
 	return 1;
+}
+//===========================================
+// set exterior profile
+polycap_profile *polycap_profile_new_from_arrays(int nid, double *ext, double *cap, double *z, polycap_error **error)
+{
+	polycap_profile *profile;
+
+	//argument sanity check
+	if(ext == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_array: ext cannot be NULL");
+		return NULL;
+	}
+	if(cap == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_array: cap cannot be NULL");
+		return NULL;
+	}
+	if(z == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_array: z cannot be NULL");
+		return NULL;
+	}
+	if(nid <= 1){
+		polycap_set_error(error, POLYCAP_ERROR_INVALID_ARGUMENT, "polycap_profile_new_from_array: nid must be greater than 1");
+		return NULL;
+	}
+
+	// first define profile
+	profile = malloc(sizeof(polycap_profile));
+	if(profile == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_new_from_array: could not allocate memory for profile -> %s", strerror(errno));
+		return NULL;
+	}
+
+	// alloc new array memory
+	profile->nmax = nid;
+	profile->ext = malloc(sizeof(double)*(nid+1));
+	if(profile->ext == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_set_profile: could not allocate memory for profile->ext -> %s", strerror(errno));
+	}
+	profile->cap = malloc(sizeof(double)*(nid+1));
+	if(profile->cap == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_set_profile: could not allocate memory for profile->cap -> %s", strerror(errno));
+	}
+	profile->z = malloc(sizeof(double)*(nid+1));
+	if(profile->z == NULL){
+		polycap_set_error(error, POLYCAP_ERROR_MEMORY, "polycap_profile_set_profile: could not allocate memory for profile->z -> %s", strerror(errno));
+	}
+	memcpy(profile->ext, ext, sizeof(double) * (nid+1));
+	memcpy(profile->cap, cap, sizeof(double) * (nid+1));
+	memcpy(profile->z, z, sizeof(double) * (nid+1));
+
+	return profile;
+}
+//===========================================
+// return exterior profile
+bool polycap_profile_get_ext(polycap_profile *profile, size_t *nid, double **ext, polycap_error **error)
+{
+	if(profile == NULL)
+		return false;
+	if(nid == NULL)
+		return false;
+
+	*nid = profile->nmax;
+        *ext = malloc(sizeof(double) * (profile->nmax+1));
+        memcpy(*ext, profile->ext, sizeof(double) * (profile->nmax+1));
+
+	return true;
+}
+//===========================================
+// return capillary profile
+bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap, polycap_error **error)
+{
+	if(profile == NULL)
+		return false;
+	if(nid == NULL)
+		return false;
+
+	*nid = profile->nmax;
+        *cap = malloc(sizeof(double) * (profile->nmax+1));
+        memcpy(*cap, profile->cap, sizeof(double) * (profile->nmax+1));
+
+	return true;
+}
+//===========================================
+// return z profile
+bool polycap_profile_get_z(polycap_profile *profile, size_t *nid, double **z, polycap_error **error)
+{
+	if(profile == NULL)
+		return false;
+	if(nid == NULL)
+		return false;
+
+	*nid = profile->nmax;
+        *z = malloc(sizeof(double) * (profile->nmax+1));
+        memcpy(*z, profile->z, sizeof(double) * (profile->nmax+1));
+
+	return true;
 }
 //===========================================
 // free the polycap_profile structure and its associated data

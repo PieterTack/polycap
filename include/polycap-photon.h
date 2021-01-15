@@ -45,6 +45,20 @@ struct _polycap_photon;
  */
 typedef struct _polycap_photon                      polycap_photon;
 
+/** Struct containing information about the simulated photon leak events such as position and direction, energy and transmission weights.
+ *
+ * When this struct is no longer required, it is the user's responsability to free the memory using polycap_leak_free().
+ */
+typedef struct {
+	polycap_vector3 coords;
+  	polycap_vector3 direction;
+  	polycap_vector3 elecv;
+  	size_t n_energies;
+  	double *weight;
+  	int64_t n_refl;
+} polycap_leak;
+
+
 /** Creates a new polycap_photon with its initial position, direction and electric field vector.
  *
  * \param description a polycap_description
@@ -83,6 +97,30 @@ int polycap_photon_launch(
 	bool leak_calc,
 	polycap_error **error);
 
+/** Retrieve start coordinates from a polycap_photon
+ * 
+ * \param photon a polycap_photon
+ * \returns start coordinates
+ */
+POLYCAP_EXTERN
+polycap_vector3 polycap_photon_get_start_coords(polycap_photon *photon);
+
+/** Retrieve start direction vector from a polycap_photon
+ * 
+ * \param photon a polycap_photon
+ * \returns start direction vector
+ */
+POLYCAP_EXTERN
+polycap_vector3 polycap_photon_get_start_direction(polycap_photon *photon);
+
+/** Retrieve start electric field vector from a polycap_photon
+ * 
+ * \param photon a polycap_photon
+ * \returns start electric field vector
+ */
+POLYCAP_EXTERN
+polycap_vector3 polycap_photon_get_start_electric_vector(polycap_photon *photon);
+
 /** Retrieve exit coordinates from a polycap_photon
  * 
  * \param photon a polycap_photon
@@ -103,9 +141,52 @@ polycap_vector3 polycap_photon_get_exit_direction(polycap_photon *photon);
  * 
  * \param photon a polycap_photon
  * \returns exit electric field vector
+ *
  */
 POLYCAP_EXTERN
 polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
+
+/* Retrieve d_travel [cm] from a polycap_photon
+ *
+ * \param photon a polycap_photon
+ * \returns photon distance traveled within the optic [cm]
+ *
+ */
+POLYCAP_EXTERN
+double polycap_photon_get_dtravel(polycap_photon *photon);
+
+/* Retrieve i_refl from a polycap_photon
+ *
+ * \param photon a polycap_photon
+ * \returns amount of reflection events along photon path within the optic [int64_t]
+ *
+ */
+POLYCAP_EXTERN
+int64_t polycap_photon_get_irefl(polycap_photon *photon);
+
+/** Retrieve extleak events from a polycap_photon
+ *
+ * \param photon a polycap photon
+ * \param leaks a polycap_leak structure array to contain the returned extleak data
+ * \param n_leaks a int64_t pointer that will contain the amount of returned extleaks
+ * \param error a polycap_error
+ * \returns true if succesful, false on error
+ *
+ */
+POLYCAP_EXTERN
+bool polycap_photon_get_extleak_data(polycap_photon *photon, polycap_leak ***leaks, int64_t *n_leaks, polycap_error **error);
+
+/** Retrieve intleak events from a polycap_photon
+ *
+ * \param photon a polycap photon
+ * \param leaks a polycap_leak structure array to contain the returned intleak data
+ * \param n_leaks a int64_t pointer that will contain the amount of returned intleaks
+ * \param error a polycap_error
+ * \returns true if succesful, false on error
+ *
+ */
+POLYCAP_EXTERN
+bool polycap_photon_get_intleak_data(polycap_photon *photon, polycap_leak ***leaks, int64_t *n_leaks, polycap_error **error);
 
 /** Free a polycap_photon
  * 
@@ -113,6 +194,13 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
  */
 POLYCAP_EXTERN
 void polycap_photon_free(polycap_photon *photon);
+
+/** Free a polycap_leak
+ * 
+ * \param photon a polycap_leak
+ */
+POLYCAP_EXTERN
+void polycap_leak_free(polycap_leak *leak);
 
 #ifdef __cplusplus
 }

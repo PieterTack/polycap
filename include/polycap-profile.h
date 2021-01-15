@@ -81,7 +81,7 @@ polycap_profile* polycap_profile_new(
 
 /** Create a new profile given ASCII files correponding to the old polycap program format.
  *
- * Each file contains a 2 column data set, preceded by the amount of rows in the data set. The first column contains the Z-coordinate, running from 0 to polycappillary length, and the second column contains the corresponding radius. The Z-coordinates should be the same over all files.
+ * Each file contains a 2 column data set, preceded by the amount of rows in the data set. The first column contains the Z-coordinate, running from 0 to polycapillary length, and the second column contains the corresponding radius. The Z-coordinates should be the same over all files.
  * In case of the central axis file a 3 column data set is expected, where the second and third column represent the X and Y coordinates of the polycapillary axis respectively.
  *
  * \param single_cap_profile_file filename of an ASCII file containing the single capillary radii [cm]. Default extension is *.prf
@@ -105,6 +105,52 @@ polycap_profile* polycap_profile_new_from_file(
  * \returns an integer: 1 on success (valid profile), 0 on fail, -1 on error
  */
 int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_error **error);
+
+
+/* Allows the user to set a profile shape given the appropriate shape parameter arrays
+ *
+ * \param nid amount of elements in the provided array. It is suggested to have at least 1000 elements.
+ * \param ext external polycapillary shape profile radii [cm].
+ * \param cap central capillary shape profile radii [cm].
+ * \param z Z-coordinates running from 0 to polycapillary length [cm].
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns a polycap_profile
+ */ 
+POLYCAP_EXTERN
+polycap_profile *polycap_profile_new_from_arrays(int nid, double *ext, double *cap, double *z, polycap_error **error);
+
+/** Retrieve external polycapillary radius profile from a polycap_profile
+ * 
+ * \param profile a polycap_profile
+ * \param nid amount of elements in the array.
+ * \param ext external polycapillary shape profile radii [cm].
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns true on success, otherwise fail.
+ */
+POLYCAP_EXTERN
+bool polycap_profile_get_ext(polycap_profile *profile, size_t *nid, double **ext, polycap_error **error);
+
+/** Retrieve central capillary radius profile from a polycap_profile
+ * 
+ * \param profile a polycap_profile
+ * \param nid amount of elements in the array.
+ * \param cap central capillary shape profile radii [cm].
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns true on success, otherwise fail.
+ */
+POLYCAP_EXTERN
+bool polycap_profile_get_cap(polycap_profile *profile, size_t *nid, double **cap, polycap_error **error);
+
+/** Retrieve z array from a polycap_profile
+ * 
+ * \param profile a polycap_profile
+ * \param nid amount of elements in the array.
+ * \param z Z-coordinates running from 0 to polycapillary length [cm] 
+ * \param error a pointer to a \c NULL polycap_error, or \c NULL
+ * \returns true on success, otherwise fail.
+ */
+POLYCAP_EXTERN
+bool polycap_profile_get_z(polycap_profile *profile, size_t *nid, double **z, polycap_error **error);
 
 /** Free the polycap_profile structure and its associated data
  *

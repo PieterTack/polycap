@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #ifdef HAVE__UNLINK
   #include <stdio.h>
 #elif defined(HAVE_UNLINK)
@@ -166,7 +167,7 @@ void test_polycap_source_get_transmission_efficiencies() {
 	polycap_profile *profile;
 	polycap_description *description;
 	polycap_source *source;
-	int iz[2]={8,14};
+	int iz[2]={8,14}, i;
 	double wi[2]={53.0,47.0};
 	double energies[7]={1,5,10,15,20,25,30};
 	double rad_ext_upstream = 0.2065;
@@ -220,6 +221,71 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	assert(fabs(efficiencies->efficiencies[5] - 0.011) <= 0.005); //25 keV
 	assert(fabs(efficiencies->efficiencies[6] - 0.006) <= 0.005); //30 keV
 
+	// test get_start_data and get_exit_data functions
+	polycap_clear_error(&error);
+	int64_t n_start=0, n_exit=0;
+	polycap_vector3 *start_coords=NULL, *start_direction=NULL, *start_elecv=NULL, *src_start_coords=NULL;
+	assert(polycap_transmission_efficiencies_get_start_data(efficiencies, &n_start, &n_exit, &start_coords, &start_direction, &start_elecv, &src_start_coords, &error) == true);
+	assert(n_start >= 30000);
+	assert(n_exit == 30000);
+	assert(start_coords != NULL);
+	assert(fabs(start_coords[0].x) <= 0.2065);
+	assert(fabs(start_coords[0].y) <= 0.2065);
+	assert(start_coords[0].z == 0.);
+	assert(start_direction != NULL);
+	assert(start_direction[0].x == 0.);
+	assert(start_direction[0].y == 0.);
+	assert(start_direction[0].z == 1.);
+	assert(start_elecv != NULL);
+	assert(fabs(start_elecv[0].x) <= 1.);
+	assert(fabs(start_elecv[0].y) <= 1.);
+	assert(fabs(start_elecv[0].z) <= 1.);
+	assert(src_start_coords != NULL);
+	assert(fabs(src_start_coords[0].x) <= 0.2065);
+	assert(fabs(src_start_coords[0].y) <= 0.2065);
+	assert(src_start_coords[0].z == 0.);
+	polycap_free(start_coords);
+	polycap_free(start_direction);
+	polycap_free(start_elecv);
+	polycap_free(src_start_coords);
+	polycap_clear_error(&error);
+	double *d_travel, **exit_weights;
+	int64_t *n_refl;
+        size_t n_energies=0;
+	polycap_vector3 *exit_coords=NULL, *exit_direction=NULL, *exit_elecv=NULL;
+	polycap_transmission_efficiencies_get_exit_data(efficiencies, &n_exit, &exit_coords, &exit_direction, &exit_elecv, &n_refl, &d_travel, &n_energies, &exit_weights, &error);
+	assert(n_exit == 30000);
+	assert(n_energies ==7);
+	assert(n_refl[0] > 0);
+	assert(n_refl[0] < 200);
+	assert(d_travel[0] >= 9.);
+	assert(exit_coords != NULL);
+	assert(fabs(exit_coords[0].x) <= 0.0585);
+	assert(fabs(exit_coords[0].y) <= 0.0585);
+	assert(exit_coords[0].z == 9.);
+	assert(exit_direction != NULL);
+	assert(fabs(exit_direction[0].x) <= 1.);
+	assert(fabs(exit_direction[0].y) <= 1.);
+	assert(fabs(exit_direction[0].z) <= 1.);
+	assert(exit_elecv != NULL);
+	assert(fabs(exit_elecv[0].x) <= 1.);
+	assert(fabs(exit_elecv[0].y) <= 1.);
+	assert(fabs(exit_elecv[0].z) <= 1.);
+	assert(exit_weights != NULL);
+	assert(exit_weights[0][0] >= 3.5e-4);
+	assert(exit_weights[0][0] <= 1.);
+	assert(exit_weights[0][6] >= 0.);
+	assert(exit_weights[0][6] <= 1.);
+	polycap_free(exit_coords);
+	polycap_free(exit_direction);
+	polycap_free(exit_elecv);
+	polycap_free(d_travel);
+	polycap_free(n_refl);
+	for(i=0; i<n_exit; i++){
+		polycap_free(exit_weights[i]);
+	}
+	polycap_free(exit_weights);
+
 	// Try writing
 	assert(!polycap_transmission_efficiencies_write_hdf5(efficiencies, NULL, &error));
 	assert(error->code == POLYCAP_ERROR_INVALID_ARGUMENT);
@@ -264,7 +330,7 @@ printf("eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: 
 	} while(phot_transm < 30000);
 	for(j=0; j<7; j++)
 		w_tot[j] = w_tot[j]/phot_ini; 
-	printf("Launch: %lli, transm: %lli, eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: %lf\n", phot_ini, phot_transm, w_tot[0], w_tot[1], w_tot[2], w_tot[3], w_tot[4], w_tot[5], w_tot[6]);
+	printf("Launch: %" PRId64 ", transm: %" PRId64 " , eff0: %lf, eff1: %lf, eff2: %lf, eff3: %lf, eff4: %lf, eff5: %lf, eff6: %lf\n", phot_ini, phot_transm, w_tot[0], w_tot[1], w_tot[2], w_tot[3], w_tot[4], w_tot[5], w_tot[6]);
 	assert(fabs(efficiencies->efficiencies[0] - w_tot[0]) <= 0.0075); //1 keV
 	assert(fabs(efficiencies->efficiencies[1] - w_tot[1]) <= 0.0075); //5 keV
 	assert(fabs(efficiencies->efficiencies[2] - w_tot[2]) <= 0.0075); //10 keV

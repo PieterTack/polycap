@@ -15,6 +15,8 @@ import polycap
 import numpy as np
 import os
 import sys
+from collections import namedtuple
+import logging
 #import matplotlib.pyplot as plt
 
 class TestPolycapRng(unittest.TestCase):
@@ -55,6 +57,10 @@ class TestPolycapProfile(unittest.TestCase):
 
     def test_profile_good_paraboloidal(self):
         profile = polycap.Profile(polycap.Profile.PARABOLOIDAL, 6., TestPolycapProfile.rad_ext_upstream, TestPolycapProfile.rad_ext_downstream, TestPolycapProfile.rad_int_upstream, TestPolycapProfile.rad_int_downstream, TestPolycapProfile.focal_dist_upstream, TestPolycapProfile.focal_dist_downstream)
+        self.assertIsInstance(profile, polycap.Profile)
+
+    def test_profile_good_from_arrays(self):
+        profile = polycap.Profile.new_from_arrays(np.linspace(TestPolycapProfile.rad_ext_upstream, TestPolycapProfile.rad_ext_downstream, 1000), np.linspace(TestPolycapProfile.rad_int_upstream, TestPolycapProfile.rad_int_downstream, 1000), np.linspace(0., 6., 1000))
         self.assertIsInstance(profile, polycap.Profile)
 
 class TestPolycapDescription(unittest.TestCase):
@@ -114,15 +120,80 @@ class TestPolycapPhoton(unittest.TestCase):
         self.assertIsNone(photon.launch(10.0))
 
     def test_photon_good_coords(self):
+        VectorTuple = polycap.VectorTuple
         start_coords = (0., 0. , 0.)
         start_direction = (0, 0, 1.0)
         start_electric_vector = (0.5, 0.5, 0.)
         photon = polycap.Photon(TestPolycapPhoton.description, start_coords, start_direction, start_electric_vector)
         weights = photon.launch(10.0, leak_calc=False)
         self.assertIsInstance(weights, np.ndarray)
-        self.assertIsInstance(photon.get_exit_coords(), tuple)
-        self.assertIsInstance(photon.get_exit_direction(), tuple)
-        self.assertIsInstance(photon.get_exit_electric_vector(), tuple)
+        self.assertIsInstance(photon.get_exit_coords, VectorTuple)
+        self.assertIsInstance(photon.get_exit_direction, VectorTuple)
+        self.assertIsInstance(photon.get_exit_electric_vector, VectorTuple)
+        self.assertIsInstance(photon.exit_coords, VectorTuple)
+        self.assertIsInstance(photon.exit_direction, VectorTuple)
+        self.assertIsInstance(photon.exit_electric_vector, VectorTuple)
+        self.assertIsInstance(photon.start_coords, VectorTuple)
+        self.assertIsInstance(photon.start_direction, VectorTuple)
+        self.assertIsInstance(photon.start_electric_vector, VectorTuple)
+        self.assertEqual(photon.i_refl, 0.)
+        self.assertEqual(photon.d_travel, 0.)
+
+    def test_photon_good_coords_leaks(self):
+        VectorTuple = polycap.VectorTuple
+        start_coords = (0.0585, 0. , 0.)
+        start_direction = (0.001, 0, 1.0)
+        start_electric_vector = (0.5, 0.5, 0.)
+        photon = polycap.Photon(TestPolycapPhoton.description, start_coords, start_direction, start_electric_vector)
+        weights = photon.launch(40.0, leak_calc=True)
+        extleaks = list(photon.extleak_data)
+        self.assertEqual(len(extleaks), 2)
+        extleaks = list(photon.extleak_data) # do it twice to test caching
+        self.assertEqual(len(extleaks), 2)
+        intleaks = list(photon.intleak_data)
+        self.assertEqual(len(intleaks), 3)
+        intleaks = list(photon.intleak_data) # do it twice to test caching
+        self.assertEqual(len(intleaks), 3)
+        self.assertAlmostEqual(extleaks[0].coords.x, 0.067419, delta=1e-6)
+        self.assertAlmostEqual(extleaks[0].coords.y, 0., delta=1e-6)
+        self.assertAlmostEqual(extleaks[0].coords.z, 8.918919, delta=1e-6)
+        self.assertAlmostEqual(extleaks[0].direction.x, 0.001, delta=1e-6)
+        self.assertAlmostEqual(extleaks[0].direction.y, 0., delta=1e-6)
+        self.assertAlmostEqual(extleaks[0].direction.z, 1., delta=1e-6)
+        self.assertAlmostEqual(extleaks[0].weight[0], 0.042922, delta=1e-6)
+        self.assertAlmostEqual(extleaks[1].coords.x, 0.058851, delta=1e-6)
+        self.assertAlmostEqual(extleaks[1].coords.y, 0., delta=1e-6)
+        self.assertAlmostEqual(extleaks[1].coords.z, 9., delta=1e-6)
+        self.assertAlmostEqual(extleaks[1].direction.x, 0.000146, delta=1e-6)
+        self.assertAlmostEqual(extleaks[1].direction.y, 0., delta=1e-6)
+        self.assertAlmostEqual(extleaks[1].direction.z, 1., delta=1e-6)
+        self.assertAlmostEqual(extleaks[1].weight[0], 0.001793, delta=1e-6)
+        self.assertAlmostEqual(intleaks[0].coords.x, 0.048777, delta=1e-6)
+        self.assertAlmostEqual(intleaks[0].coords.y, 0., delta=1e-6)
+        self.assertAlmostEqual(intleaks[0].coords.z, 9., delta=1e-6)
+        self.assertAlmostEqual(intleaks[0].direction.x, -0.001078, delta=1e-6)
+        self.assertAlmostEqual(intleaks[0].direction.y, 0., delta=1e-6)
+        self.assertAlmostEqual(intleaks[0].direction.z, 0.999999, delta=1e-6)
+        self.assertAlmostEqual(intleaks[0].weight[0], 0.000143, delta=1e-6)
+        self.assertAlmostEqual(intleaks[1].coords.x, 0.053113, delta=1e-6)
+        self.assertAlmostEqual(intleaks[1].coords.y, 0., delta=1e-6)
+        self.assertAlmostEqual(intleaks[1].coords.z, 9., delta=1e-6)
+        self.assertAlmostEqual(intleaks[1].direction.x, -0.000511, delta=1e-6)
+        self.assertAlmostEqual(intleaks[1].direction.y, 0., delta=1e-6)
+        self.assertAlmostEqual(intleaks[1].direction.z, 1., delta=1e-6)
+        self.assertAlmostEqual(intleaks[1].weight[0], 0.000352, delta=1e-6)
+        self.assertAlmostEqual(intleaks[2].coords.x, 0.027487, delta=1e-6)
+        self.assertAlmostEqual(intleaks[2].coords.y, 0., delta=1e-6)
+        self.assertAlmostEqual(intleaks[2].coords.z, 9., delta=1e-6)
+        self.assertAlmostEqual(intleaks[2].direction.x, -0.006149, delta=1e-6)
+        self.assertAlmostEqual(intleaks[2].direction.y, 0., delta=1e-6)
+        self.assertAlmostEqual(intleaks[2].direction.z, 0.999981, delta=1e-6)
+        self.assertAlmostEqual(intleaks[2].weight[0], 0.000142, delta=1e-6)
+        self.assertIsInstance(weights, np.ndarray)
+        self.assertIsInstance(photon.get_exit_coords, VectorTuple)
+        self.assertIsInstance(photon.get_exit_direction, VectorTuple)
+        self.assertIsInstance(photon.get_exit_electric_vector, VectorTuple)
+        del photon
 
 class TestPolycapSource(unittest.TestCase):
     rng = polycap.Rng()
@@ -145,6 +216,7 @@ class TestPolycapSource(unittest.TestCase):
             efficiencies = source.get_transmission_efficiencies(-1, 1000, False, "extra arg")
 
     def test_source_good_get_transmission_efficiencies(self):
+        VectorTuple = polycap.VectorTuple
         source = polycap.Source(TestPolycapPhoton.description, 2000.0, 0.2065, 0.2065, 0.0, 0.0, 0.0, 0.0, 0.5, np.linspace(1, 25.0, 250))
         efficiencies = source.get_transmission_efficiencies(-1, 10000, leak_calc=False)
         efficiencies.write_hdf5("temp-py.h5")
@@ -156,6 +228,31 @@ class TestPolycapSource(unittest.TestCase):
         self.assertIsNot(data, data2)
         self.assertIs(data[0], data2[0])
         self.assertIs(data[1], data2[1])
+        start_coords = list(efficiencies.start_coords)
+        self.assertEqual(len(start_coords), 10000)
+        start_coords = list(efficiencies.start_coords) # do it twice to test caching
+        self.assertEqual(len(start_coords), 10000)
+        start_direction = list(efficiencies.start_direction)
+        start_elecv = list(efficiencies.start_elecv)
+        src_start_coords = list(efficiencies.src_start_coords)
+        self.assertIsInstance(start_coords[0], VectorTuple)
+        self.assertEqual(start_coords[0].z, 0.)
+        self.assertIsInstance(start_direction[0], VectorTuple)
+        self.assertEqual(start_direction[0].z, 1.)
+        self.assertIsInstance(start_elecv[0], VectorTuple)
+        self.assertIsInstance(src_start_coords[0], VectorTuple)
+        exit_coords = list(efficiencies.exit_coords)
+        exit_direction = list(efficiencies.exit_direction)
+        exit_elecv = list(efficiencies.exit_elecv)
+        self.assertIsInstance(exit_coords[0], VectorTuple)
+        self.assertIsInstance(exit_direction[0], VectorTuple)
+        self.assertIsInstance(exit_elecv[0], VectorTuple)
+        n_refl = list(efficiencies.n_refl)
+        exit_weights = list(efficiencies.exit_weights)
+        d_travel = list(efficiencies.d_travel)
+        self.assertIsInstance(n_refl[0], int)
+        self.assertIsInstance(exit_weights[0], np.ndarray)
+        self.assertIsInstance(d_travel[0], float)
         
         self.assertEqual(sys.getrefcount(data[0]), 4)
 
@@ -201,5 +298,7 @@ class TestPolycapSource(unittest.TestCase):
         del(efficiencies)
 
 if __name__ == '__main__':
+    logging.basicConfig(stream=sys.stderr)
+    logging.getLogger('polycap').setLevel(logging.DEBUG)
     print("version: {}".format(polycap.__version__))
     unittest.main(verbosity=2)

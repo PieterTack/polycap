@@ -31,4 +31,29 @@ cdef extern from "polycap-profile.h" nogil:
 	double focal_dist_downstream,
 	polycap_error **error)
 
+    polycap_profile *polycap_profile_new_from_arrays(
+        int nid,
+        double *ext,
+        double *cap,
+        double *z,
+        polycap_error **error)
+
+    void polycap_profile_get_ext(
+        polycap_profile *profile,
+        size_t *nid,
+        double **ext,
+        polycap_error **error)
+
+    void polycap_profile_get_cap(
+        polycap_profile *profile,
+        size_t *nid,
+        double **cap,
+        polycap_error **error)
+
+    void polycap_profile_get_z(
+        polycap_profile *profile,
+        size_t *nid,
+        double **z,
+        polycap_error **error)
+
     void polycap_profile_free(polycap_profile *profile)
