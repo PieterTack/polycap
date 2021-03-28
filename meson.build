@@ -130,7 +130,7 @@ if host_system == 'windows'
   zlib_dep = dependency('zlib')
   polycap_build_dep += zlib_dep # this is to avoild linking trouble with Conda, which is currently having trouble with processing paths in pkg-config files
 endif
-polycap_pkg_config_requires_private = [xraylib_dep, gsl_dep,] # hdf5_dep, openmp_dep and m_dep should also go in here, but currently meson only supports pkg-config dependencies...
+polycap_pkg_config_requires_private = [xraylib_dep, gsl_dep,]
 
 easyRNG_dep = dependency('easyRNG', version: '>= 1.1', required: false)
 if easyRNG_dep.found()
@@ -162,11 +162,12 @@ endif
 pkgconfig = import('pkgconfig')
 
 pkgconfig.generate(
+  polycap_lib,
   filebase: 'libpolycap',
   name: 'polycap',
   description: 'A library to calculate X-ray transmission efficiency profiles for polycapillaries',
   version: meson.project_version(),
-  libraries: polycap_lib,
+  libraries_private: [hdf5_dep, openmp_dep, m_dep],
   requires: polycap_pkg_config_requires,
   requires_private: polycap_pkg_config_requires_private,
   subdirs: 'polycap'

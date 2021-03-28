@@ -132,7 +132,7 @@ jobs:
             rng: easyRNG
             compiler: clang
             cc: clang
-            extra: libeasyrng-dev
+            extra: libeasyrng-dev libomp-dev
             python: /usr/bin/python3
           - os: ubuntu-latest
             rng: easyRNG
@@ -145,6 +145,7 @@ jobs:
             compiler: clang
             cc: clang
             python: /usr/bin/python3
+            extra: libomp-dev
           - os: ubuntu-latest
             rng: gsl
             compiler: gcc
