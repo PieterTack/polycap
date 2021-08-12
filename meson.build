@@ -183,7 +183,7 @@ if build_python_opt
   endif
 
   python_dep = python.dependency()
-  cython = find_program(get_option('cython'), 'cython', 'cython3', 'cython-3', 'cython' + python.language_version(), 'cython-' + python.language_version(), required : false)
+  cython = find_program('cython', 'cython3', 'cython-3', 'cython' + python.language_version(), 'cython-' + python.language_version(), required : false)
   subdir('python')
 endif
 
