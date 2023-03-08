@@ -20,7 +20,6 @@ jobs:
           - clang
           - gcc
         buildsystem:
-          - autotools
           - meson
         rng:
           - easyRNG
@@ -30,9 +29,6 @@ jobs:
             cxx: clang++
           - cc: gcc
             cxx: g++
-        exclude:
-          - cc: clang
-            buildsystem: autotools
     runs-on: windows-latest
     defaults:
       run:
@@ -91,21 +87,6 @@ jobs:
         CC: gcc
         CXX: g++
         EASYRNG_VERSION: 1.2
-    - name: Build and test with Autotools
-      if: matrix.buildsystem == 'autotools'
-      run: |
-        set -ex
-        autoreconf -fi
-        ./configure || (cat config.log && exit 1)
-        make
-        make check
-        set +ex
-      env:
-        CC: ${{matrix.cc}}
-        CYTHON: cython
-        HDF5_CFLAGS: "-I/mingw64/include"
-        HDF5_LIBS: "-L/mingw64/lib -lhdf5"
-        PYTHON: python3
     - name: Build and test with Meson
       if: matrix.buildsystem == 'meson'
       run: |
@@ -125,7 +106,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         rng: [easyRNG, gsl]
         compiler: [clang, gcc]
-        buildsystem: [autotools, meson]
+        buildsystem: [meson]
         include:
           # Linux
           - os: ubuntu-latest
@@ -199,29 +180,12 @@ jobs:
         brew uninstall -f bazel bazelisk
         brew update
         brew upgrade || true
-        brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl numpy meson ninja
+        brew install hdf5 git libtool curl wget pkg-config gsl numpy meson ninja
         brew install ${{ matrix.extra }} tschoonj/tap/xraylib
         /usr/local/bin/pip3 install Cython
         set +ex
       env:
         HOMEBREW_CURL_RETRIES: 5
-    - name: Primary build and test with Autotools
-      if: matrix.buildsystem == 'autotools'
-      run: |
-        set -ex
-        autoreconf -fi
-        ./configure --disable-python || (cat config.log && exit 1)
-        make
-        make check || (cat tests/leaks.log && exit 1)
-        make distclean
-        ./configure --enable-python
-        make
-        make distcheck || (cat polycap-0.1/_build/sub/tests/*.log && exit 1)
-        set +ex
-      env:
-        CC: ${{matrix.cc}}
-        PYTHON: ${{matrix.python}}
-        LIBS: ${{matrix.libs}}
     - name: Secondary build with Meson
       if: matrix.buildsystem == 'autotools'
       run: |
@@ -259,20 +223,4 @@ jobs:
         CC: ${{matrix.cc}}
         LDFLAGS: ${{matrix.libs}}
         CPPFLAGS: -I/usr/local/opt/hdf5/include
-    - name: Secondary build with Autotools 
-      if: matrix.buildsystem == 'meson'
-      run: |
-        set -ex
-        cd build/meson-dist/
-        TARBALL=$(ls *.tar.xz)
-        tar xfJ $TARBALL
-        cd ${TARBALL%.tar.xz}
-        autoreconf -fi
-        ./configure --enable-python
-        make
-        set +ex
-      env:
-        CC: ${{matrix.cc}}
-        PYTHON: ${{matrix.python}}
-        LIBS: ${{matrix.libs}}
 
