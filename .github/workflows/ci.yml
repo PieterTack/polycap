@@ -40,8 +40,9 @@ jobs:
     - name: Build with meson
       run: |
         meson setup meson-build --buildtype=release -Dpython=python -Dpython-bindings=enabled -Dpython-numpy-bindings=enabled
-        meson compile -C meson-build
-        meson test -C meson-build
+        cd meson-build
+        meson compile
+        meson test
       env:
         CC: ${{matrix.compiler}}
         CXX: ${{matrix.compiler}}
@@ -194,7 +195,7 @@ jobs:
         sudo apt-get update
         # sudo apt-get upgrade -> takes very long!
         sudo apt-get install libgsl0-dev python3-pip python3-wheel python3-setuptools libhdf5-serial-dev hdf5-tools gcc python3-all-dev python3-numpy cython3
-        pip3 install meson
+        pip3 install meson ninja
         curl -OLs https://github.com/tschoonj/easyRNG/releases/download/easyRNG-${EASYRNG_VERSION}/easyRNG-${EASYRNG_VERSION}.tar.gz
         tar xvfz easyRNG-${EASYRNG_VERSION}.tar.gz
         cd easyRNG-${EASYRNG_VERSION}
