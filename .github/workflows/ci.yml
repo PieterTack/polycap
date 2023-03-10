@@ -39,7 +39,7 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1.12.1
     - name: Build with meson
       run: |
-        meson setup meson-build --buildtype=release -Dptyhon=python -Dpython-bindings=enabled -Dpython-numpy-bindings=enabled
+        meson setup meson-build --buildtype=release -Dpython=python -Dpython-bindings=enabled -Dpython-numpy-bindings=enabled
         meson compile -C meson-build
         meson test -C meson-build
       env:
@@ -204,10 +204,9 @@ jobs:
         curl -OLs https://xraylib.tomschoonjans.eu/xraylib-${XRAYLIB_VERSION}.tar.gz
         tar xvfz xraylib-${XRAYLIB_VERSION}.tar.gz
         cd xraylib-${XRAYLIB_VERSION}
-        meson setup builddir --buildtype=release --prefix=<path-to-installation-dir>
-        meson compile -C builddir
-        meson test -C builddir
-        sudo meson install -C builddir
+        ./configure
+        make
+        sudo make install
         set +ex
     - name: Install macOS dependencies
       if: matrix.os == 'macos-latest'
