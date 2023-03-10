@@ -39,7 +39,7 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1.12.1
     - name: Build with meson
       run: |
-        meson setup meson-build --buildtype=release -Dpython=python -Dpython-bindings=enabled -Dpython-numpy-bindings=enabled
+        meson setup meson-build --buildtype=release -Dpython=python 
         cd meson-build
         meson compile
         meson test
@@ -230,13 +230,13 @@ jobs:
         mkdir build
         cd build
         meson --buildtype=debugoptimized -Dbuild-python-bindings=false -Dbuild-documentation=false ..
-        meson compile
-        meson test || (cat meson-logs/testlog.txt && exit 1)
-        meson compile --clean
+        ninja
+        ninja test || (cat meson-logs/testlog.txt && exit 1)
+        ninja clean
         rm -rf *
         meson --buildtype=debugoptimized -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
-        meson compile
-        meson dist
+        ninja
+        ninja dist
         set +ex
       env:
         CC: ${{matrix.cc}}
