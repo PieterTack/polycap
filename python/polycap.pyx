@@ -54,8 +54,6 @@ def __valid_uuid(_uuid):
         return False
     return True
 
-threading.Thread(target=__send_google_analytics_launch_event).start()
-
 cdef extern from "Python.h":
     ctypedef void PyObject
     PyObject* PyErr_Occurred()
