@@ -36,7 +36,7 @@ jobs:
     - name: Install meson, numpy and cython
       run: |
         conda install -q -y meson numpy cython #TODO will have to optimise this, but just curious what will happen for now
-    - uses: ilammy/msvc-dev-cmd@1.12.0
+    - uses: ilammy/msvc-dev-cmd@v1.12.1
     - name: Build with meson
       run: |
         meson setup meson-build --buildtype=release -Dptyhon=python -Dpython-bindings=enabled -Dpython-numpy-bindings=enabled
@@ -198,10 +198,9 @@ jobs:
         curl -OLs https://github.com/tschoonj/easyRNG/releases/download/easyRNG-${EASYRNG_VERSION}/easyRNG-${EASYRNG_VERSION}.tar.gz
         tar xvfz easyRNG-${EASYRNG_VERSION}.tar.gz
         cd easyRNG-${EASYRNG_VERSION}
-        meson setup builddir --buildtype=release --prefix=<path-to-installation-dir>
-        meson compile -C builddir
-        meson test - C builddir
-        sudo meson install -C builddir
+        ./configure
+        make
+        sudo make install
         curl -OLs https://xraylib.tomschoonjans.eu/xraylib-${XRAYLIB_VERSION}.tar.gz
         tar xvfz xraylib-${XRAYLIB_VERSION}.tar.gz
         cd xraylib-${XRAYLIB_VERSION}
