@@ -33,25 +33,14 @@ jobs:
         auto-update-conda: true
         channels: conda-forge
         python-version: ${{matrix.python-version}}
-    - name: Install meson, numpy and cython
-      run: |
-        conda install -q -y meson numpy cython xraylib #TODO will have to optimise this, but just curious what will happen for now
     - uses: ilammy/msvc-dev-cmd@v1.12.1
     - name: Install XRayLib
       run: |
-        nuget install curl -y #Maybe will have to use chocolatey or somesuch?
-        curl -OLs https://github.com/tschoonj/easyRNG/releases/download/easyRNG-${EASYRNG_VERSION}/easyRNG-${EASYRNG_VERSION}.tar.gz
-        tar xvfz easyRNG-${EASYRNG_VERSION}.tar.gz
-        cd easyRNG-${EASYRNG_VERSION}
-        ./configure
-        make
-        make install
-        curl -OLs https://xraylib.tomschoonjans.eu/xraylib-${XRAYLIB_VERSION}.tar.gz
-        tar xvfz xraylib-${XRAYLIB_VERSION}.tar.gz
-        cd xraylib-${XRAYLIB_VERSION}
-        ./configure
-        make
-        make install
+        dotnet add package Brew
+        brew update
+        brew upgrade || true
+        brew install hdf5 git curl wget pkg-config gsl numpy meson
+        brew install tschoonj/tap/easyrng tschoonj/tap/xraylib
     - name: Build with meson
       run: |
         meson setup meson-build --buildtype=release -Dpython=python 
