@@ -38,7 +38,7 @@ jobs:
         conda install -q -y meson numpy cython #TODO will have to optimise this, but just curious what will happen for now
     - name: Build with meson
       run: |
-        meson setup meson-build
+        meson setup meson-build --buildtype=release -Dptyhon=python -Dpython-bindings=enabled -Dpython-numpy-bindings=enabled
         meson compile -C meson-build
         meson test -C meson-build
       env:
@@ -140,13 +140,11 @@ jobs:
             rng: easyRNG
             compiler: clang
             cc: clang
-            extra: libeasyrng-dev
             python: /usr/bin/python3
           - os: ubuntu-latest
             rng: easyRNG
             compiler: gcc
             cc: gcc
-            extra: libeasyrng-dev
             python: /usr/bin/python3
           - os: ubuntu-latest
             rng: gsl
@@ -194,7 +192,7 @@ jobs:
         set -ex
         sudo apt-get update
         # sudo apt-get upgrade -> takes very long!
-        sudo apt-get install libgsl0-dev python3-pip python3-wheel python3-setuptools libhdf5-serial-dev hdf5-tools gcc python3-all-dev python3-numpy cython3 ${{ matrix.extra }}
+        sudo apt-get install libgsl0-dev python3-pip python3-wheel python3-setuptools libhdf5-serial-dev hdf5-tools gcc python3-all-dev python3-numpy cython3
         pip3 install meson
         curl -OLs https://github.com/tschoonj/easyRNG/releases/download/easyRNG-${EASYRNG_VERSION}/easyRNG-${EASYRNG_VERSION}.tar.gz
         tar xvfz easyRNG-${EASYRNG_VERSION}.tar.gz
