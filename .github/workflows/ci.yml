@@ -39,8 +39,19 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1.12.1
     - name: Install XRayLib
       run: |
-        apt-get update
-        sudo apt-get install libxrl11 libxrl11-dev python3-libxrl11
+        nuget install curl -y #Maybe will have to use chocolatey or somesuch?
+        curl -OLs https://github.com/tschoonj/easyRNG/releases/download/easyRNG-${EASYRNG_VERSION}/easyRNG-${EASYRNG_VERSION}.tar.gz
+        tar xvfz easyRNG-${EASYRNG_VERSION}.tar.gz
+        cd easyRNG-${EASYRNG_VERSION}
+        ./configure
+        make
+        make install
+        curl -OLs https://xraylib.tomschoonjans.eu/xraylib-${XRAYLIB_VERSION}.tar.gz
+        tar xvfz xraylib-${XRAYLIB_VERSION}.tar.gz
+        cd xraylib-${XRAYLIB_VERSION}
+        ./configure
+        make
+        make install
     - name: Build with meson
       run: |
         meson setup meson-build --buildtype=release -Dpython=python 
