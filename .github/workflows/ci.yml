@@ -22,16 +22,36 @@ jobs:
     strategy:
       matrix:
         # python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.11']
         compiler:
           - cl
           - clang-cl
-    # name: Visual Studio with ${{matrix.compile}} and Python ${{matrix.python-version}}
-    name: Visual Studio with ${{matrix.compile}}
+    name: Visual Studio with ${{matrix.compiler}} and Python ${{matrix.python-version}}
     steps:
       - uses: actions/checkout@v3
       - uses: ilammy/msvc-dev-cmd@v1.12.1
       - name: Install vcpkg dependencies
-        run: vcpkg install hdf5 gsl
+        run: vcpkg install hdf5 gsl pkgconf
+        env:
+          VCPKG_BUILD_TYPE: release
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install meson with pip
+        run: |
+          python -m pip install meson
+      - name: Install xraylib from source
+        run: |
+          curl -OLs https://xraylib.tomschoonjans.eu/xraylib-${XRAYLIB_VERSION}.tar.gz
+          tar xvfz xraylib-${XRAYLIB_VERSION}.tar.gz
+          cd xraylib-${XRAYLIB_VERSION}
+          meson setup builddir --prefix=%GITHUB_WORKSPACE%\extra-deps --default-library=shared --buildtype=release --backend=ninja -Dpython-bindings=disabled -Dpython-numpy-bindings=disabled
+          ninja -v -C builddir
+          ninja -C builddir install
+        env:
+          CC: ${{matrix.compiler}}
+          CXX: ${{matrix.compiler}}
       - name: Build with meson
         run: |
           meson setup meson-build --buildtype=release
@@ -164,7 +184,7 @@ jobs:
           - os: macos-latest
             rng: easyRNG
             compiler: gcc
-            cc: /usr/local/bin/gcc-10
+            cc: /usr/local/bin/gcc-12
             extra: tschoonj/tap/easyrng
             python: /usr/local/bin/python3
           - os: macos-latest
@@ -176,7 +196,7 @@ jobs:
           - os: macos-latest
             rng: gsl
             compiler: gcc
-            cc: /usr/local/bin/gcc-10
+            cc: /usr/local/bin/gcc-12
             python: /usr/local/bin/python3
 
     runs-on: ${{ matrix.os }}
