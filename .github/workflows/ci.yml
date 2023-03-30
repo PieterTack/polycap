@@ -21,35 +21,26 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        # python-version: ['3.8', '3.9', '3.10']
         compiler:
           - cl
           - clang-cl
-    name: Visual Studio with ${{matrix.compile}} and Python ${{matrix.python-version}}
+    # name: Visual Studio with ${{matrix.compile}} and Python ${{matrix.python-version}}
+    name: Visual Studio with ${{matrix.compile}}
     steps:
-    - uses: actions/checkout@v3
-    - uses: conda-incubator/setup-miniconda@v2.1.1
-      with:
-        auto-update-conda: true
-        channels: conda-forge
-        python-version: ${{matrix.python-version}}
-    - uses: ilammy/msvc-dev-cmd@v1.12.1
-    - name: Install XRayLib
-      run: |
-        dotnet add package Brew
-        brew update
-        brew upgrade || true
-        brew install hdf5 git curl wget pkg-config gsl numpy meson
-        brew install tschoonj/tap/easyrng tschoonj/tap/xraylib
-    - name: Build with meson
-      run: |
-        meson setup meson-build --buildtype=release -Dpython=python 
-        cd meson-build
-        meson compile
-        meson test
-      env:
-        CC: ${{matrix.compiler}}
-        CXX: ${{matrix.compiler}}
+      - uses: actions/checkout@v3
+      - uses: ilammy/msvc-dev-cmd@v1.12.1
+      - name: Install vcpkg dependencies
+        run: vcpkg install hdf5 gsl
+      - name: Build with meson
+        run: |
+          meson setup meson-build --buildtype=release
+          cd meson-build
+          meson compile
+          meson test
+        env:
+          CC: ${{matrix.compiler}}
+          CXX: ${{matrix.compiler}}
 
   msys2:
     timeout-minutes: 60
@@ -93,7 +84,7 @@ jobs:
           mingw-w64-x86_64-python3-numpy
           make
           patch
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install xraylib
       run: |
         set -ex
@@ -191,14 +182,14 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install ubuntu dependencies
       if: matrix.os == 'ubuntu-latest'
       run: |
         set -ex
         sudo apt-get update
         # sudo apt-get upgrade -> takes very long!
-        sudo apt-get install libgsl0-dev python3-pip python3-wheel python3-setuptools libhdf5-serial-dev hdf5-tools gcc python3-all-dev python3-numpy cython3
+        sudo apt-get install libomp-dev libgsl0-dev python3-pip python3-wheel python3-setuptools libhdf5-serial-dev hdf5-tools gcc python3-all-dev python3-numpy cython3
         pip3 install meson ninja
         curl -OLs https://github.com/tschoonj/easyRNG/releases/download/easyRNG-${EASYRNG_VERSION}/easyRNG-${EASYRNG_VERSION}.tar.gz
         tar xvfz easyRNG-${EASYRNG_VERSION}.tar.gz
