@@ -42,7 +42,8 @@ jobs:
       - name: Install xraylib from source
         run: |
           Invoke-Webrequest -URI "https://xraylib.tomschoonjans.eu/xraylib-$Env:XRAYLIB_VERSION.tar.gz" -OutFile "xraylib-$Env:XRAYLIB_VERSION.tar.gz"
-          tar -xvfz "xraylib-$Env:XRAYLIB_VERSION.tar.gz"
+          dir
+          tar -xvzf  "xraylib-$Env:XRAYLIB_VERSION.tar.gz"
           cd xraylib-$Env:XRAYLIB_VERSION
           meson setup builddir "--prefix=$Env:GITHUB_WORKSPACE\extra-deps" --default-library=shared --buildtype=release --backend=ninja -Dpython-bindings=disabled -Dpython-numpy-bindings=disabled
           ninja -v -C builddir
@@ -240,6 +241,7 @@ jobs:
       run: |
         set -ex
         export PATH=${HOME}/.local/bin:${PATH}
+        unset PKG_CONFIG_LIBDIR
         mkdir build
         cd build
         meson setup --buildtype=debugoptimized -Dbuild-python-bindings=false -Dbuild-documentation=false ..
