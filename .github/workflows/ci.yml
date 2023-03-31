@@ -54,7 +54,7 @@ jobs:
           CXX: ${{matrix.compiler}}
       - name: Build with meson
         run: |
-          pkgconf --list-all
+          tree C:\vcpkg\packages\pkgconf_x86-windows
           meson setup meson-build --buildtype=release
           cd meson-build
           meson compile
@@ -235,7 +235,7 @@ jobs:
         brew upgrade || true
         brew install hdf5 git curl wget pkg-config gsl
         brew install ${{ matrix.extra }} tschoonj/tap/xraylib
-        pip3 install Cython numpy meson
+        pip3 install Cython numpy meson ninja
         set +ex
       env:
         HOMEBREW_CURL_RETRIES: 5
