@@ -54,7 +54,7 @@ jobs:
           CXX: ${{matrix.compiler}}
       - name: Build with meson
         run: |
-          tree C:\vcpkg\packages\pkgconf_x86-windows
+          $Env:PKG_CONFIG_PATH = "$Env:GITHUB_WORKSPACE\extra-deps\lib\pkgconfig;C:\vcpkg\packages\gsl_x86-windows\lib\pkgconfig;C:\vcpkg\packages\hdf5_x86-windows\lib\pkgconfig"
           meson setup meson-build --buildtype=release
           cd meson-build
           meson compile
@@ -62,6 +62,7 @@ jobs:
         env:
           CC: ${{matrix.compiler}}
           CXX: ${{matrix.compiler}}
+          PKG_CONFIG: C:\vcpkg\packages\pkgconf_x86-windows\tools\pkgconf
 
   msys2:
     timeout-minutes: 60
