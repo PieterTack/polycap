@@ -31,7 +31,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ilammy/msvc-dev-cmd@v1.12.1
       - name: Install vcpkg dependencies
-        run: vcpkg install hdf5 gsl pkgconf
+        run: |
+          vcpkg install hdf5 gsl pkgconf vcpkg-cmake
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
@@ -53,6 +54,7 @@ jobs:
           CXX: ${{matrix.compiler}}
       - name: Build with meson
         run: |
+          pkgconf --list-all
           meson setup meson-build --buildtype=release
           cd meson-build
           meson compile
@@ -231,9 +233,9 @@ jobs:
         brew uninstall -f bazel bazelisk
         brew update
         brew upgrade || true
-        brew install hdf5 git curl wget pkg-config gsl numpy meson
+        brew install hdf5 git curl wget pkg-config gsl
         brew install ${{ matrix.extra }} tschoonj/tap/xraylib
-        /usr/local/bin/pip3 install Cython
+        pip3 install Cython numpy meson
         set +ex
       env:
         HOMEBREW_CURL_RETRIES: 5
