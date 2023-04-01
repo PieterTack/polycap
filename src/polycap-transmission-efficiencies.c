@@ -113,7 +113,6 @@ static void tables_init() {
 		append_minor_table_entry(H5E_CANAPPLY,       POLYCAP_ERROR_IO);    // Error from filter 'can apply' callback
 		append_minor_table_entry(H5E_SETLOCAL,       POLYCAP_ERROR_IO);    // Error from filter 'set local' callback
 		append_minor_table_entry(H5E_NOENCODER,      POLYCAP_ERROR_IO);    // Filter present but encoding disabled
-		append_minor_table_entry(H5E_BADATOM,        POLYCAP_ERROR_INVALID_ARGUMENT);  // Unable to find atom information (already closed?)
 		append_minor_table_entry(H5E_BADGROUP,       POLYCAP_ERROR_INVALID_ARGUMENT);  // Unable to find ID group information
 		append_minor_table_entry(H5E_BADSELECT,      POLYCAP_ERROR_INVALID_ARGUMENT);  // Invalid selection (hyperslabs)
 		append_minor_table_entry(H5E_UNINITIALIZED,  POLYCAP_ERROR_INVALID_ARGUMENT);  // Information is uninitialized
@@ -144,7 +143,6 @@ static void tables_init() {
 		append_exact_table_entry(H5E_DATATYPE, H5E_CANTINIT,   POLYCAP_ERROR_TYPE);  // No conversion path
 		append_exact_table_entry(H5E_DATASET, H5E_CANTINIT,    POLYCAP_ERROR_INVALID_ARGUMENT);  // bad param for dataset setup
 		append_exact_table_entry(H5E_ARGS, H5E_CANTINIT,       POLYCAP_ERROR_TYPE);  // Illegal operation on object
-		append_exact_table_entry(H5E_SYM, H5E_CANTINIT,        POLYCAP_ERROR_INVALID_ARGUMENT); // Object already exists/1.8
 		append_exact_table_entry(H5E_ARGS, H5E_BADTYPE,        POLYCAP_ERROR_INVALID_ARGUMENT); // Invalid location in file
 		append_exact_table_entry(H5E_REFERENCE, H5E_CANTINIT,  POLYCAP_ERROR_INVALID_ARGUMENT); // Dereferencing invalid ref
 
