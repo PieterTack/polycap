@@ -147,6 +147,18 @@ static void tables_init() {
 		append_exact_table_entry(H5E_SYM, H5E_CANTINIT,        POLYCAP_ERROR_INVALID_ARGUMENT); // Object already exists/1.8
 		append_exact_table_entry(H5E_ARGS, H5E_BADTYPE,        POLYCAP_ERROR_INVALID_ARGUMENT); // Invalid location in file
 		append_exact_table_entry(H5E_REFERENCE, H5E_CANTINIT,  POLYCAP_ERROR_INVALID_ARGUMENT); // Dereferencing invalid ref
+
+#if H5_VERSION_GE(1, 12, 0)
+		append_exact_table_entry(H5E_DATASET, H5E_CANTCREATE,  POLYCAP_ERROR_INVALID_ARGUMENT);  // bad param for dataset setup
+#endif
+
+#if H5_VERSION_LE(1, 13, 0)
+		append_minor_table_entry(H5E_BADATOM,                  POLYCAP_ERROR_INVALID_ARGUMENT);  // Unable to find atom information (already closed?)
+		append_exact_table_entry(H5E_SYM, H5E_CANTINIT,        POLYCAP_ERROR_INVALID_ARGUMENT);  // # Object already exists/1.8
+#else
+		append_minor_table_entry(H5E_BADID,                    POLYCAP_ERROR_INVALID_ARGUMENT);  // Unable to find ID information
+		append_exact_table_entry(H5E_SYM, H5E_CANTCREATE,      POLYCAP_ERROR_INVALID_ARGUMENT);  // # Object already exists
+#endif
 	}
 
 #ifndef _WIN32
