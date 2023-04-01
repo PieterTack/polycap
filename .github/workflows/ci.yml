@@ -33,6 +33,7 @@ jobs:
       - name: Install vcpkg dependencies
         run: |
           vcpkg install --triplet x64-windows hdf5 gsl pkgconf
+          Copy-Item .ci_support\gsl.pc -Destination C:\vcpkg\installed\x64-windows\lib\pkgconfig\ -Force
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
