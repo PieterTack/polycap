@@ -37,14 +37,13 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install meson with pip
+      - name: Install deps with pip
         run: |
-          python -m pip install meson
+          python -m pip install meson Cython numpy
       - name: Install xraylib from source
         run: |
           Invoke-Webrequest -URI "https://xraylib.tomschoonjans.eu/xraylib-$Env:XRAYLIB_VERSION.tar.gz" -OutFile "xraylib-$Env:XRAYLIB_VERSION.tar.gz"
-          dir
-          tar -xvzf  "xraylib-$Env:XRAYLIB_VERSION.tar.gz"
+          tar -xzf  "xraylib-$Env:XRAYLIB_VERSION.tar.gz"
           cd xraylib-$Env:XRAYLIB_VERSION
           meson setup builddir "--prefix=$Env:GITHUB_WORKSPACE\extra-deps" --default-library=shared --buildtype=release --backend=ninja -Dpython-bindings=disabled -Dpython-numpy-bindings=disabled
           meson compile -C builddir
@@ -54,10 +53,7 @@ jobs:
           CXX: ${{matrix.compiler}}
       - name: Build with meson
         run: |
-          tree /F C:\vcpkg
           $Env:PKG_CONFIG_PATH = "$Env:GITHUB_WORKSPACE\extra-deps\lib\pkgconfig;C:\vcpkg\packages\gsl_x64-windows\lib\pkgconfig;C:\vcpkg\packages\hdf5_x64-windows\lib\pkgconfig;C:\vcpkg\packages\zlib_x64-windows\lib\pkgconfig;C:\vcpkg\packages\szip_x64-windows\lib\pkgconfig"
-
-          C:\vcpkg\packages\pkgconf_x64-windows\tools\pkgconf\pkgconf.exe --cflags 
 
           meson setup meson-build --buildtype=release
           meson compile -C meson-build
