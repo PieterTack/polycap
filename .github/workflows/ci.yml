@@ -55,7 +55,6 @@ jobs:
       - name: Build with meson
         run: |
           $Env:PKG_CONFIG_PATH = "$Env:GITHUB_WORKSPACE\extra-deps\lib\pkgconfig;C:\vcpkg\installed\x64-windows\lib\pkgconfig"
-          $Env:LIB = "C:\vcpkg\installed\x64-windows\lib"
 
           cat C:\vcpkg\installed\x64-windows\lib\pkgconfig\gsl.pc
           cat C:\vcpkg\installed\x64-windows\lib\pkgconfig\hdf5.pc
