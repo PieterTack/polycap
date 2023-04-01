@@ -32,7 +32,7 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1.12.1
       - name: Install vcpkg dependencies
         run: |
-          vcpkg install hdf5 gsl pkgconf vcpkg-cmake
+          vcpkg install --triplet x64-windows hdf5 gsl pkgconf
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
@@ -55,14 +55,17 @@ jobs:
       - name: Build with meson
         run: |
           tree /F C:\vcpkg
-          $Env:PKG_CONFIG_PATH = "$Env:GITHUB_WORKSPACE\extra-deps\lib\pkgconfig;C:\vcpkg\packages\gsl_x86-windows\lib\pkgconfig;C:\vcpkg\packages\hdf5_x86-windows\lib\pkgconfig"
+          $Env:PKG_CONFIG_PATH = "$Env:GITHUB_WORKSPACE\extra-deps\lib\pkgconfig;C:\vcpkg\packages\gsl_x64-windows\lib\pkgconfig;C:\vcpkg\packages\hdf5_x64-windows\lib\pkgconfig;C:\vcpkg\packages\zlib_x64-windows\lib\pkgconfig;C:\vcpkg\packages\szip_x64-windows\lib\pkgconfig"
+
+          C:\vcpkg\packages\pkgconf_x64-windows\tools\pkgconf\pkgconf.exe --cflags 
+
           meson setup meson-build --buildtype=release
           meson compile -C meson-build
           meson test -C meson-build
         env:
           CC: ${{matrix.compiler}}
           CXX: ${{matrix.compiler}}
-          PKG_CONFIG: C:\vcpkg\packages\pkgconf_x86-windows\tools\pkgconf\pkgconf.exe
+          PKG_CONFIG: C:\vcpkg\packages\pkgconf_x64-windows\tools\pkgconf\pkgconf.exe
 
   msys2:
     timeout-minutes: 60
