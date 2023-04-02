@@ -65,6 +65,7 @@ jobs:
           $Env:Path = "$Env:GITHUB_WORKSPACE\extra-deps\bin;C:\vcpkg\installed\x64-windows\bin;$Env:Path"
 
           meson test -C meson-build
+          cat meson-build\meson-logs\testlog.txt
         env:
           CC: ${{matrix.compiler}}
           CXX: ${{matrix.compiler}}
