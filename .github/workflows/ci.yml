@@ -56,9 +56,6 @@ jobs:
         run: |
           $Env:PKG_CONFIG_PATH = "$Env:GITHUB_WORKSPACE\extra-deps\lib\pkgconfig;C:\vcpkg\installed\x64-windows\lib\pkgconfig"
 
-          cat C:\vcpkg\installed\x64-windows\lib\pkgconfig\gsl.pc
-          cat C:\vcpkg\installed\x64-windows\lib\pkgconfig\hdf5.pc
-
           meson setup meson-build --buildtype=release
           meson compile -C meson-build
 
@@ -66,6 +63,7 @@ jobs:
 
           meson test -C meson-build
           cat meson-build\meson-logs\testlog.txt
+          tree /F meson-build
         env:
           CC: ${{matrix.compiler}}
           CXX: ${{matrix.compiler}}
