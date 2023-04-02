@@ -32,6 +32,9 @@ jobs:
     name: visual studio with ${{matrix.compiler}} and python ${{ matrix.python-version }}
     steps:
     - uses: actions/checkout@v3
+    - uses: crazy-max/ghaction-chocolatey@v2.0.0
+      with:
+        args: install dependencies --params "/NoStartMenu"
     - uses: conda-incubator/setup-miniconda@v2
       with:
         auto-update-conda: true
@@ -50,7 +53,9 @@ jobs:
         $Env:PKG_CONFIG_PATH = "$Env:CONDA_PREFIX\Library\lib\pkgconfig;$Env:CONDA_PREFIX\Library\share\pkgconfig"
         meson setup meson-build --buildtype=release -Dpython=python -Dbuild-python-bindings=true
         meson compile -C meson-build
+        $Env:Path = "$Env:GITHUB_WORKSPACE\meson-build\src;$Env:Path"
         meson test -C meson-build
+        dependencies -modules meson-build\python\polycap.cp311-win_amd64.pyd
         cat meson-build\meson-logs\testlog.txt
       env:
         cc: ${{ matrix.compiler }}
