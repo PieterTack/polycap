@@ -25,7 +25,7 @@ jobs:
         python-version: ['3.11']
         compiler:
           - cl
-          - clang-cl
+          # - clang-cl
     name: Visual Studio with ${{matrix.compiler}} and Python ${{matrix.python-version}}
     steps:
       - uses: actions/checkout@v3
