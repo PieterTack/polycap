@@ -45,6 +45,7 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
     - name: build and test with meson
       run: |
+        $Env:PKG_CONFIG_PATH = "$Env:CONDA_PREFIX\Library\lib\pkgconfig;$Env:CONDA_PREFIX\Library\share\pkgconfig"
         meson setup meson-build --buildtype=release -Dpython=python -Dbuild-python-bindings=true
         meson compile -C meson-build
         meson test -C meson-build
