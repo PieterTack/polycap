@@ -37,13 +37,15 @@ jobs:
         auto-update-conda: true
         channels: conda-forge
         python-version: ${{ matrix.python-version }}
+        miniforge-variant: Mambaforge
+        use-mamba: true
     - name: install conda dependencies
       run: |
-        conda install -q -y meson ninja numpy cython xraylib hdf5 gsl
+        mamba install -q -y meson ninja numpy cython xraylib hdf5 gsl
     - uses: ilammy/msvc-dev-cmd@v1
     - name: build with meson
       run: |
-        meson setup meson-build --buildtype=release -dpython=python -dbuild-python-bindings=enabled
+        meson setup meson-build --buildtype=release -Dpython=python -Dbuild-python-bindings=enabled
         meson compile -c meson-build
         meson test -c meson-build
       env:
