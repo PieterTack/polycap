@@ -51,6 +51,7 @@ jobs:
         meson setup meson-build --buildtype=release -Dpython=python -Dbuild-python-bindings=true
         meson compile -C meson-build
         meson test -C meson-build
+        cat meson-build\meson-logs\testlog.txt
       env:
         cc: ${{ matrix.compiler }}
         cxx: ${{ matrix.compiler }}
