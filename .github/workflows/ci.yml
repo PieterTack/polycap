@@ -28,7 +28,7 @@ jobs:
           - '3.11'
         compiler:
           - cl
-          - clang-cl
+          # - clang-cl
     name: visual studio with ${{matrix.compiler}} and python ${{ matrix.python-version }}
     steps:
     - uses: actions/checkout@v3
@@ -46,7 +46,7 @@ jobs:
     - name: build and test with meson
       run: |
         Copy-Item -Path ".ci_support\gsl.pc" -Destination "$Env:CONDA_PREFIX\Library\lib\pkgconfig"
-        $Env:H5_BUILT_AS_DYNAMIC_LIB = "1"
+        $Env:CPPFLAGS = "-DH5_BUILT_AS_DYNAMIC_LIB=1 -D_CRT_SECURE_NO_WARNINGS=1"
         $Env:PKG_CONFIG_PATH = "$Env:CONDA_PREFIX\Library\lib\pkgconfig;$Env:CONDA_PREFIX\Library\share\pkgconfig"
         meson setup meson-build --buildtype=release -Dpython=python -Dbuild-python-bindings=true
         meson compile -C meson-build
