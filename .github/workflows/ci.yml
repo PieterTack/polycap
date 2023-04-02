@@ -41,13 +41,13 @@ jobs:
         use-mamba: true
     - name: install conda dependencies
       run: |
-        mamba install -q -y meson ninja numpy cython xraylib hdf5 gsl
+        mamba install -q -y meson ninja numpy cython xraylib hdf5 gsl pkg-config
     - uses: ilammy/msvc-dev-cmd@v1
-    - name: build with meson
+    - name: build and test with meson
       run: |
         meson setup meson-build --buildtype=release -Dpython=python -Dbuild-python-bindings=true
-        meson compile -c meson-build
-        meson test -c meson-build
+        meson compile -C meson-build
+        meson test -C meson-build
       env:
         cc: ${{ matrix.compiler }}
         cxx: ${{ matrix.compiler }}
