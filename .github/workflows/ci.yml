@@ -45,7 +45,7 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
     - name: build with meson
       run: |
-        meson setup meson-build --buildtype=release -Dpython=python -Dbuild-python-bindings=enabled
+        meson setup meson-build --buildtype=release -Dpython=python -Dbuild-python-bindings=true
         meson compile -c meson-build
         meson test -c meson-build
       env:
