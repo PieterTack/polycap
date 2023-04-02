@@ -41,7 +41,7 @@ jobs:
         use-mamba: true
     - name: install conda dependencies
       run: |
-        mamba install -q -y meson ninja numpy cython xraylib hdf5 gsl pkg-config zlib
+        mamba install -q -y meson ninja numpy cython xraylib hdf5 gsl m2w64-pkg-config zlib
     - uses: ilammy/msvc-dev-cmd@v1
     - name: build and test with meson
       run: |
