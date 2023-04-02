@@ -29,6 +29,9 @@ jobs:
     name: Visual Studio with ${{matrix.compiler}} and Python ${{matrix.python-version}}
     steps:
       - uses: actions/checkout@v3
+      - uses: crazy-max/ghaction-chocolatey@v2
+        with:
+          args: install dependencies --params "/NoStartMenu"
       - uses: ilammy/msvc-dev-cmd@v1.12.1
       - name: Install vcpkg dependencies
         run: |
@@ -62,6 +65,7 @@ jobs:
           $Env:Path = "$Env:GITHUB_WORKSPACE\extra-deps\bin;C:\vcpkg\installed\x64-windows\bin;$Env:Path"
 
           meson test -C meson-build
+          dependencies meson-build\python\polycap.cp311-win_amd64.pyd
           cat meson-build\meson-logs\testlog.txt
           tree /F meson-build
         env:
