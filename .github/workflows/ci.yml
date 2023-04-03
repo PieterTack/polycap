@@ -24,7 +24,9 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.11']
         compiler:
           - cl
-          - clang-cl
+          # clang-cl + openmp results in a linker error due to a bug in meson
+          # see https://github.com/mesonbuild/meson/issues/5298
+          # - clang-cl
     name: Visual Studio with ${{matrix.compiler}}, gsl and Python ${{matrix.python-version}}
     steps:
       - uses: actions/checkout@v3
@@ -53,14 +55,17 @@ jobs:
           CXX: ${{matrix.compiler}}
       - name: Build with meson
         run: |
+          # set PKG_CONFIG_PATH to allow pkgconf to find the pkg-config files
           $Env:PKG_CONFIG_PATH = "$Env:GITHUB_WORKSPACE\extra-deps\lib\pkgconfig;C:\vcpkg\installed\x64-windows\lib\pkgconfig"
-          $Env:CPPFLAGS = "-D_CRT_SECURE_NO_WARNINGS"
 
           meson setup meson-build --buildtype=release
           meson compile -C meson-build
 
+          # update PATH with locations of dlls we link against to allow the non-python tests to run
           $Env:PATH = "$Env:GITHUB_WORKSPACE\meson-build\src;$Env:GITHUB_WORKSPACE\extra-deps\bin;C:\vcpkg\installed\x64-windows\bin;$Env:PATH"
+          # pass locations of dlls we link against to python tests, allowing python to find them at runtime
           $Env:EXTRA_DLL_SEARCH_PATHS = "$Env:GITHUB_WORKSPACE\meson-build\src;$Env:GITHUB_WORKSPACE\extra-deps\bin;C:\vcpkg\installed\x64-windows\bin"
+
           meson test -C meson-build
         env:
           CC: ${{matrix.compiler}}
@@ -74,8 +79,6 @@ jobs:
         cc:
           - clang
           - gcc
-        buildsystem:
-          - meson
         rng:
           - easyRNG
           - gsl
@@ -155,7 +158,6 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         rng: [easyRNG, gsl]
         compiler: [clang, gcc]
-        buildsystem: [meson]
         include:
           # Linux
           - os: ubuntu-latest
@@ -243,7 +245,7 @@ jobs:
         set +ex
       env:
         HOMEBREW_CURL_RETRIES: 5
-    - name: Primary build and test with meson
+    - name: build and test with meson
       run: |
         set -ex
         export PATH=${HOME}/.local/bin:${PATH}
