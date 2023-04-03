@@ -21,12 +21,11 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        # python-version: ['3.8', '3.9', '3.10']
-        python-version: ['3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
         compiler:
           - cl
-          # - clang-cl
-    name: Visual Studio with ${{matrix.compiler}} and Python ${{matrix.python-version}}
+          - clang-cl
+    name: Visual Studio with ${{matrix.compiler}}, gsl and Python ${{matrix.python-version}}
     steps:
       - uses: actions/checkout@v3
       - uses: ilammy/msvc-dev-cmd@v1
