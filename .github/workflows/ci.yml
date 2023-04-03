@@ -59,6 +59,7 @@ jobs:
           meson setup meson-build --buildtype=release
           meson compile -C meson-build
 
+          $Env:PATH = "$Env:GITHUB_WORKSPACE\meson-build\src;$Env:GITHUB_WORKSPACE\extra-deps\bin;C:\vcpkg\installed\x64-windows\bin;$Env:PATH"
           $Env:EXTRA_DLL_SEARCH_PATHS = "$Env:GITHUB_WORKSPACE\meson-build\src;$Env:GITHUB_WORKSPACE\extra-deps\bin;C:\vcpkg\installed\x64-windows\bin"
           meson test -C meson-build
         env:
