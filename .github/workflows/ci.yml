@@ -32,9 +32,9 @@ jobs:
     name: visual studio with ${{matrix.compiler}} and python ${{ matrix.python-version }}
     steps:
     - uses: actions/checkout@v3
-    - uses: crazy-max/ghaction-chocolatey@v2.0.0
+    - uses: crazy-max/ghaction-chocolatey@v2
       with:
-        args: install dependencies --params "/NoStartMenu"
+        args: install dependencies --params "/NoStartMenu" vcredist-all
     - uses: conda-incubator/setup-miniconda@v2
       with:
         auto-update-conda: true
