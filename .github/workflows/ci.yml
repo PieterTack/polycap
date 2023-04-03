@@ -21,46 +21,50 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version:
-          # - '3.8'
-          # - '3.9'
-          # - '3.10'
-          - '3.11'
+        # python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.11']
         compiler:
           - cl
           # - clang-cl
-    name: visual studio with ${{matrix.compiler}} and python ${{ matrix.python-version }}
+    name: Visual Studio with ${{matrix.compiler}} and Python ${{matrix.python-version}}
     steps:
-    - uses: actions/checkout@v3
-    - uses: crazy-max/ghaction-chocolatey@v2
-      with:
-        args: install dependencies --params "/NoStartMenu" vcredist-all
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        auto-update-conda: true
-        channels: conda-forge
-        python-version: ${{ matrix.python-version }}
-        miniforge-variant: Mambaforge
-        use-mamba: true
-    - name: install conda dependencies
-      run: |
-        mamba install -q -y meson ninja numpy cython xraylib hdf5 gsl m2w64-pkg-config zlib
-    - uses: ilammy/msvc-dev-cmd@v1
-    - name: build and test with meson
-      run: |
-        Copy-Item -Path ".ci_support\gsl.pc" -Destination "$Env:CONDA_PREFIX\Library\lib\pkgconfig"
-        $Env:CPPFLAGS = "-DH5_BUILT_AS_DYNAMIC_LIB=1 -D_CRT_SECURE_NO_WARNINGS=1"
-        $Env:PKG_CONFIG_PATH = "$Env:CONDA_PREFIX\Library\lib\pkgconfig;$Env:CONDA_PREFIX\Library\share\pkgconfig"
-        meson setup meson-build --buildtype=release -Dpython=python -Dbuild-python-bindings=true
-        meson compile -C meson-build
-        $Env:EXTRA_DLL_SEARCH_PATHS = "$Env:GITHUB_WORKSPACE\meson-build\src;$Env:CONDA_PREFIX;$Env:CONDA_PREFIX\Library\bin"
-        meson test -C meson-build
-        dependencies -modules meson-build\python\polycap.cp311-win_amd64.pyd
-        dumpbin /dependents meson-build\python\polycap.cp311-win_amd64.pyd
-        cat meson-build\meson-logs\testlog.txt
-      env:
-        cc: ${{ matrix.compiler }}
-        cxx: ${{ matrix.compiler }}
+      - uses: actions/checkout@v3
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install vcpkg dependencies
+        run: |
+          vcpkg install --triplet x64-windows hdf5 gsl pkgconf
+          Copy-Item .ci_support\gsl.pc -Destination C:\vcpkg\installed\x64-windows\lib\pkgconfig\ -Force
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install deps with pip
+        run: |
+          python -m pip install meson Cython numpy
+      - name: Install xraylib from source
+        run: |
+          Invoke-Webrequest -URI "https://xraylib.tomschoonjans.eu/xraylib-$Env:XRAYLIB_VERSION.tar.gz" -OutFile "xraylib-$Env:XRAYLIB_VERSION.tar.gz"
+          tar -xzf  "xraylib-$Env:XRAYLIB_VERSION.tar.gz"
+          cd xraylib-$Env:XRAYLIB_VERSION
+          meson setup builddir "--prefix=$Env:GITHUB_WORKSPACE\extra-deps" --default-library=shared --buildtype=release --backend=ninja -Dpython-bindings=disabled -Dpython-numpy-bindings=disabled
+          meson compile -C builddir
+          meson install -C builddir
+        env:
+          CC: ${{matrix.compiler}}
+          CXX: ${{matrix.compiler}}
+      - name: Build with meson
+        run: |
+          $Env:PKG_CONFIG_PATH = "$Env:GITHUB_WORKSPACE\extra-deps\lib\pkgconfig;C:\vcpkg\installed\x64-windows\lib\pkgconfig"
+
+          meson setup meson-build --buildtype=release
+          meson compile -C meson-build
+
+          $Env:EXTRA_DLL_SEARCH_PATHS = "$Env:GITHUB_WORKSPACE\meson-build\src;$Env:GITHUB_WORKSPACE\extra-deps\bin;C:\vcpkg\installed\x64-windows\bin"
+          meson test -C meson-build
+        env:
+          CC: ${{matrix.compiler}}
+          CXX: ${{matrix.compiler}}
+          PKG_CONFIG: C:\vcpkg\installed\x64-windows\tools\pkgconf\pkgconf.exe
 
   msys2:
     timeout-minutes: 60
