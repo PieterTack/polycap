@@ -56,6 +56,7 @@ jobs:
         $Env:Path = "$Env:GITHUB_WORKSPACE\meson-build\src;$Env:CONDA_PREFIX;$Env:CONDA_PREFIX\Library\bin;$Env:Path"
         meson test -C meson-build
         dependencies -modules meson-build\python\polycap.cp311-win_amd64.pyd
+        dumpbin /dependents meson-build\python\polycap.cp311-win_amd64.pyd
         cat meson-build\meson-logs\testlog.txt
       env:
         cc: ${{ matrix.compiler }}
