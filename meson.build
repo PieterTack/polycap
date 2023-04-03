@@ -93,7 +93,7 @@ foreach f : special_funcs
   endif
 endforeach
 
-if cc.get_id() != 'msvc'
+if cc.get_id() != 'msvc' and cc.get_id() != 'clang-cl'
   config_h_data.set('HAVE_PROPER_COMPLEX_H', true)
 endif
 
