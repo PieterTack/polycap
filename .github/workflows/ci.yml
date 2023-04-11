@@ -235,7 +235,7 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         set -ex
-        rm -f /usr/local/bin/2to3
+        rm -f /usr/local/bin/2to3*
         brew uninstall -f bazel bazelisk
         brew update
         brew upgrade || true
