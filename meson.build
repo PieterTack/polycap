@@ -1,7 +1,7 @@
 project('polycap', 'c',
   version: '1.1',
   license: 'GPL-3.0',
-  meson_version: '>= 0.54.0',
+  meson_version: '>= 0.60.0',
   default_options: ['b_asneeded=false', # circumvent GSL trouble with cblas
     'c_std=c99'],
 )
@@ -93,7 +93,7 @@ foreach f : special_funcs
   endif
 endforeach
 
-if cc.get_id() != 'msvc'
+if cc.get_id() != 'msvc' and cc.get_id() != 'clang-cl'
   config_h_data.set('HAVE_PROPER_COMPLEX_H', true)
 endif
 
@@ -183,7 +183,7 @@ if build_python_opt
   endif
 
   python_dep = python.dependency()
-  cython = find_program('cython', 'cython3', 'cython-3', 'cython' + python.language_version(), 'cython-' + python.language_version(), required : false)
+  add_languages('cython', 'c', native: false)
   subdir('python')
 endif
 

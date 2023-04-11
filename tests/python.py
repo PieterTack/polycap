@@ -10,10 +10,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
+if "EXTRA_DLL_SEARCH_PATHS" in os.environ:
+    for path in os.environ["EXTRA_DLL_SEARCH_PATHS"].split(os.pathsep):
+        os.add_dll_directory(path)
+
 import unittest
 import polycap
 import numpy as np
-import os
 import sys
 from collections import namedtuple
 import logging

@@ -10,7 +10,67 @@ on:
     branches:
       - master
 
+env:
+  EASYRNG_VERSION: 1.2
+  XRAYLIB_VERSION: 4.1.3
+
 jobs:
+
+  visual-studio:
+    timeout-minutes: 60
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+        compiler:
+          - cl
+          # clang-cl + openmp results in a linker error due to a bug in meson
+          # see https://github.com/mesonbuild/meson/issues/5298
+          # - clang-cl
+    name: Visual Studio with ${{matrix.compiler}}, gsl and Python ${{matrix.python-version}}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install vcpkg dependencies
+        run: |
+          vcpkg install --triplet x64-windows hdf5 gsl pkgconf
+          Copy-Item .ci_support\gsl.pc -Destination C:\vcpkg\installed\x64-windows\lib\pkgconfig\ -Force
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install deps with pip
+        run: |
+          python -m pip install meson Cython numpy
+      - name: Install xraylib from source
+        run: |
+          Invoke-Webrequest -URI "https://xraylib.tomschoonjans.eu/xraylib-$Env:XRAYLIB_VERSION.tar.gz" -OutFile "xraylib-$Env:XRAYLIB_VERSION.tar.gz"
+          tar -xzf  "xraylib-$Env:XRAYLIB_VERSION.tar.gz"
+          cd xraylib-$Env:XRAYLIB_VERSION
+          meson setup builddir "--prefix=$Env:GITHUB_WORKSPACE\extra-deps" --default-library=shared --buildtype=release --backend=ninja -Dpython-bindings=disabled -Dpython-numpy-bindings=disabled
+          meson compile -C builddir
+          meson install -C builddir
+        env:
+          CC: ${{matrix.compiler}}
+          CXX: ${{matrix.compiler}}
+      - name: Build with meson
+        run: |
+          # set PKG_CONFIG_PATH to allow pkgconf to find the pkg-config files
+          $Env:PKG_CONFIG_PATH = "$Env:GITHUB_WORKSPACE\extra-deps\lib\pkgconfig;C:\vcpkg\installed\x64-windows\lib\pkgconfig"
+
+          meson setup meson-build --buildtype=release
+          meson compile -C meson-build
+
+          # update PATH with locations of dlls we link against to allow the non-python tests to run
+          $Env:PATH = "$Env:GITHUB_WORKSPACE\meson-build\src;$Env:GITHUB_WORKSPACE\extra-deps\bin;C:\vcpkg\installed\x64-windows\bin;$Env:PATH"
+          # pass locations of dlls we link against to python tests, allowing python to find them at runtime
+          $Env:EXTRA_DLL_SEARCH_PATHS = "$Env:GITHUB_WORKSPACE\meson-build\src;$Env:GITHUB_WORKSPACE\extra-deps\bin;C:\vcpkg\installed\x64-windows\bin"
+
+          meson test -C meson-build
+        env:
+          CC: ${{matrix.compiler}}
+          CXX: ${{matrix.compiler}}
+          PKG_CONFIG: C:\vcpkg\installed\x64-windows\tools\pkgconf\pkgconf.exe
 
   msys2:
     timeout-minutes: 60
@@ -19,9 +79,6 @@ jobs:
         cc:
           - clang
           - gcc
-        buildsystem:
-          - autotools
-          - meson
         rng:
           - easyRNG
           - gsl
@@ -30,9 +87,6 @@ jobs:
             cxx: clang++
           - cc: gcc
             cxx: g++
-        exclude:
-          - cc: clang
-            buildsystem: autotools
     runs-on: windows-latest
     defaults:
       run:
@@ -46,7 +100,6 @@ jobs:
           git
           mingw-w64-x86_64-gcc
           mingw-w64-x86_64-gcc-fortran
-          mingw-w64-x86_64-libtool
           mingw-w64-x86_64-meson
           mingw-w64-x86_64-clang
           mingw-w64-x86_64-openmp
@@ -57,11 +110,9 @@ jobs:
           mingw-w64-x86_64-gsl
           mingw-w64-x86_64-cython
           mingw-w64-x86_64-python3-numpy
-          automake
-          autoconf
           make
           patch
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install xraylib
       run: |
         set -ex
@@ -75,7 +126,6 @@ jobs:
       env:
         CC: gcc
         CFLAGS: " -Wno-error=deprecated-declarations "
-        XRAYLIB_VERSION: 4.0.0
     - name: Install easyrng
       if: matrix.rng == 'easyRNG'
       run: |
@@ -90,31 +140,14 @@ jobs:
       env:
         CC: gcc
         CXX: g++
-        EASYRNG_VERSION: 1.2
-    - name: Build and test with Autotools
-      if: matrix.buildsystem == 'autotools'
-      run: |
-        set -ex
-        autoreconf -fi
-        ./configure || (cat config.log && exit 1)
-        make
-        make check
-        set +ex
-      env:
-        CC: ${{matrix.cc}}
-        CYTHON: cython
-        HDF5_CFLAGS: "-I/mingw64/include"
-        HDF5_LIBS: "-L/mingw64/lib -lhdf5"
-        PYTHON: python3
     - name: Build and test with Meson
-      if: matrix.buildsystem == 'meson'
       run: |
         set -ex
         mkdir build-tmp
         cd build-tmp
         meson --buildtype=debugoptimized -Dpython=python3 -Dbuild-documentation=false ..
-        ninja
-        ninja test
+        meson compile
+        meson test
         set +ex
       env:
         CC: ${{matrix.cc}}
@@ -125,20 +158,17 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         rng: [easyRNG, gsl]
         compiler: [clang, gcc]
-        buildsystem: [autotools, meson]
         include:
           # Linux
           - os: ubuntu-latest
             rng: easyRNG
             compiler: clang
             cc: clang
-            extra: libeasyrng-dev
             python: /usr/bin/python3
           - os: ubuntu-latest
             rng: easyRNG
             compiler: gcc
             cc: gcc
-            extra: libeasyrng-dev
             python: /usr/bin/python3
           - os: ubuntu-latest
             rng: gsl
@@ -161,7 +191,7 @@ jobs:
           - os: macos-latest
             rng: easyRNG
             compiler: gcc
-            cc: /usr/local/bin/gcc-10
+            cc: /usr/local/bin/gcc-12
             extra: tschoonj/tap/easyrng
             python: /usr/local/bin/python3
           - os: macos-latest
@@ -173,23 +203,33 @@ jobs:
           - os: macos-latest
             rng: gsl
             compiler: gcc
-            cc: /usr/local/bin/gcc-10
+            cc: /usr/local/bin/gcc-12
             python: /usr/local/bin/python3
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install ubuntu dependencies
       if: matrix.os == 'ubuntu-latest'
       run: |
         set -ex
-        curl -sSL "http://xmi-apt.tomschoonjans.eu/xmi.packages.key" | sudo -E apt-key add -
-        echo "deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu bionic stable" | sudo tee -a /etc/apt/sources.list >/dev/null
         sudo apt-get update
         # sudo apt-get upgrade -> takes very long!
-        sudo apt-get install libgsl0-dev libxrl11-dev python3-pip python3-wheel python3-setuptools libhdf5-serial-dev hdf5-tools gcc python3-all-dev python3-numpy cython3 ${{ matrix.extra }}
+        sudo apt-get install libomp-dev libgsl0-dev python3-pip python3-wheel python3-setuptools libhdf5-serial-dev hdf5-tools gcc python3-all-dev python3-numpy cython3
         pip3 install meson ninja
+        curl -OLs https://github.com/tschoonj/easyRNG/releases/download/easyRNG-${EASYRNG_VERSION}/easyRNG-${EASYRNG_VERSION}.tar.gz
+        tar xvfz easyRNG-${EASYRNG_VERSION}.tar.gz
+        cd easyRNG-${EASYRNG_VERSION}
+        ./configure
+        make
+        sudo make install
+        curl -OLs https://xraylib.tomschoonjans.eu/xraylib-${XRAYLIB_VERSION}.tar.gz
+        tar xvfz xraylib-${XRAYLIB_VERSION}.tar.gz
+        cd xraylib-${XRAYLIB_VERSION}
+        ./configure
+        make
+        sudo make install
         set +ex
     - name: Install macOS dependencies
       if: matrix.os == 'macos-latest'
@@ -199,80 +239,30 @@ jobs:
         brew uninstall -f bazel bazelisk
         brew update
         brew upgrade || true
-        brew install hdf5 git autoconf automake libtool curl wget pkg-config gsl numpy meson ninja
+        brew install hdf5 git curl wget pkg-config gsl
         brew install ${{ matrix.extra }} tschoonj/tap/xraylib
-        /usr/local/bin/pip3 install Cython
+        pip3 install Cython numpy meson ninja
         set +ex
       env:
         HOMEBREW_CURL_RETRIES: 5
-    - name: Primary build and test with Autotools
-      if: matrix.buildsystem == 'autotools'
-      run: |
-        set -ex
-        autoreconf -fi
-        ./configure --disable-python || (cat config.log && exit 1)
-        make
-        make check || (cat tests/leaks.log && exit 1)
-        make distclean
-        ./configure --enable-python
-        make
-        make distcheck || (cat polycap-0.1/_build/sub/tests/*.log && exit 1)
-        set +ex
-      env:
-        CC: ${{matrix.cc}}
-        PYTHON: ${{matrix.python}}
-        LIBS: ${{matrix.libs}}
-    - name: Secondary build with Meson
-      if: matrix.buildsystem == 'autotools'
+    - name: build and test with meson
       run: |
         set -ex
         export PATH=${HOME}/.local/bin:${PATH}
-        TARBALL=$(ls *.tar.gz)
-        tar xfz $TARBALL
-        cd ${TARBALL%.tar.gz}
-        mkdir build-meson
-        cd build-meson
-        meson --buildtype=debugoptimized -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
-        ninja
-        set +ex
-      env:
-        CC: ${{matrix.cc}}
-        LDFLAGS: ${{matrix.libs}}
-        CPPFLAGS: -I/usr/local/opt/hdf5/include
-    - name: Primary build and test with meson
-      if: matrix.buildsystem == 'meson'
-      run: |
-        set -ex
-        export PATH=${HOME}/.local/bin:${PATH}
+        unset PKG_CONFIG_LIBDIR
         mkdir build
         cd build
-        meson --buildtype=debugoptimized -Dbuild-python-bindings=false -Dbuild-documentation=false ..
-        ninja
-        ninja test || (cat meson-logs/testlog.txt && exit 1)
-        ninja clean
+        meson setup --buildtype=debugoptimized -Dbuild-python-bindings=false -Dbuild-documentation=false ..
+        meson compile
+        meson test || (cat meson-logs/testlog.txt && exit 1)
+        meson compile --clean
         rm -rf *
-        meson --buildtype=debugoptimized -Dpython=${{matrix.python}} -Dbuild-documentation=false ..
-        ninja
-        ninja dist
+        meson --buildtype=debugoptimized -Dpython=${{matrix.python}} -Dbuild-documentation=false .. || (cat meson-logs/meson-log.txt && exit 1)
+        meson compile
+        meson dist
         set +ex
       env:
         CC: ${{matrix.cc}}
         LDFLAGS: ${{matrix.libs}}
         CPPFLAGS: -I/usr/local/opt/hdf5/include
-    - name: Secondary build with Autotools 
-      if: matrix.buildsystem == 'meson'
-      run: |
-        set -ex
-        cd build/meson-dist/
-        TARBALL=$(ls *.tar.xz)
-        tar xfJ $TARBALL
-        cd ${TARBALL%.tar.xz}
-        autoreconf -fi
-        ./configure --enable-python
-        make
-        set +ex
-      env:
-        CC: ${{matrix.cc}}
-        PYTHON: ${{matrix.python}}
-        LIBS: ${{matrix.libs}}
 

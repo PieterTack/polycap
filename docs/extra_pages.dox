@@ -101,8 +101,6 @@
  *       ninja
  *       ninja install
  *
- *  Alternatively, use `./configure`, `make` and `make install`.
- *
  *  \subsection condaforge Conda-Forge
  *
  *  Users of the [Python Anaconda distribution](https://www.anaconda.com/products/individual) can install polycap, including its python bindings,  from the conda-forge channel:

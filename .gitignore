@@ -16,3 +16,4 @@ gh-pages
 build-meson
 meson-build
 .DS_Store
+.vscode
