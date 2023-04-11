@@ -239,7 +239,7 @@ jobs:
         brew uninstall -f bazel bazelisk
         brew update
         brew upgrade || true
-        brew install hdf5 git curl wget pkg-config gsl
+        brew install hdf5 git curl wget pkg-config gsl llvm
         brew install ${{ matrix.extra }} tschoonj/tap/xraylib
         pip3 install Cython numpy meson ninja
         set +ex
