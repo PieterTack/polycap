@@ -235,17 +235,12 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         set -ex
-        which python3
-        readlink $(which python3)
-        rm -f /usr/local/bin/2to3*
         brew uninstall -f bazel bazelisk
         brew update
         brew upgrade || true
+        brew link --overwrite python
         brew install hdf5 git curl wget pkg-config gsl llvm
         brew install ${{ matrix.extra }} tschoonj/tap/xraylib
-        which python3
-        readlink $(which python3)
-        readlink /usr/local/bin/python3
         pip3 install Cython numpy meson ninja
         set +ex
       env:
