@@ -185,25 +185,27 @@ jobs:
             rng: easyRNG
             compiler: clang
             cc: /usr/local/opt/llvm/bin/clang
-            extra: tschoonj/tap/easyrng
+            extra: tschoonj/tap/easyrng llvm
             python: /usr/local/bin/python3
             libs: -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib
           - os: macos-latest
             rng: easyRNG
             compiler: gcc
             cc: /usr/local/bin/gcc-12
-            extra: tschoonj/tap/easyrng
+            extra: tschoonj/tap/easyrng gcc
             python: /usr/local/bin/python3
           - os: macos-latest
             rng: gsl
             compiler: clang
             cc: /usr/local/opt/llvm/bin/clang
+            extra: llvm
             python: /usr/local/bin/python3
             libs: -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib
           - os: macos-latest
             rng: gsl
             compiler: gcc
             cc: /usr/local/bin/gcc-12
+            extra: gcc
             python: /usr/local/bin/python3
 
     runs-on: ${{ matrix.os }}
@@ -239,8 +241,7 @@ jobs:
         brew update
         brew upgrade || true
         brew link --overwrite python
-        brew install hdf5 git curl wget pkg-config gsl llvm
-        brew install ${{ matrix.extra }} tschoonj/tap/xraylib
+        brew install hdf5 git curl wget pkg-config gsl ${{ matrix.extra }} tschoonj/tap/xraylib
         pip3 install Cython numpy meson ninja
         set +ex
       env:
