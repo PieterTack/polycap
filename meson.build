@@ -40,26 +40,11 @@ cc = meson.get_compiler('c')
 build_documentation_opt = get_option('build-documentation')
 build_python_opt = get_option('build-python-bindings')
 
-# Installation directories are relative to {prefix}.
-install_prefix = get_option('prefix')
-install_includedir = get_option('includedir')
-install_libdir = get_option('libdir')
-install_datadir = get_option('datadir')
-install_pkgconfigdir = join_paths(install_libdir, 'pkgconfig')
-
 # Configuration data
 config_h_data = configuration_data()
 config_h_data.set_quoted('PACKAGE_TARNAME', meson.project_name())
 config_h_data.set_quoted('PACKAGE_VERSION', meson.project_version())
 config_h_data.set_quoted('VERSION', meson.project_version())
-
-pkg_conf_data = configuration_data()
-pkg_conf_data.set('prefix', install_prefix)
-pkg_conf_data.set('exec_prefix', '${prefix}')
-pkg_conf_data.set('libdir', join_paths('${prefix}', install_libdir))
-pkg_conf_data.set('datarootdir', join_paths('${prefix}', install_datadir))
-pkg_conf_data.set('datadir', '${datarootdir}')
-pkg_conf_data.set('includedir', join_paths('${prefix}', install_includedir))
 
 funcs = [
   'strdup',
@@ -143,15 +128,6 @@ configure_file(output : 'config.h', configuration : config_h_data)
 
 subdir('src')
 subdir('include')
-
-spec_conf_data = configuration_data()
-spec_conf_data.set('VERSION', meson.project_version())
-
-configure_file(
-    input: 'polycap.spec.in',
-    output: 'polycap.spec',
-    configuration: spec_conf_data,
-)
 
 if build_documentation_opt
     doxygen = find_program('doxygen')
