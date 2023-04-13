@@ -26,7 +26,7 @@
 #endif
 
 #define POLYCAP_VERSION_MAJOR 1
-#define POLYCAP_VERSION_MINOR 1
+#define POLYCAP_VERSION_MINOR 2
 
 #include "polycap-error.h"
 #include "polycap-profile.h"
