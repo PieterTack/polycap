@@ -24,35 +24,16 @@ from transmission_efficiencies cimport *
 from photon cimport *
 from source cimport *
 from libc.string cimport memcpy
-from libc.stdlib cimport free
-from cpython cimport Py_DECREF
 from collections import namedtuple
 cimport numpy as np
 import numpy as np
-import sys
-import os
-from pathlib import Path
-import threading
 
 __version__ = version.decode("utf-8")
 
 np.import_array()
 
-import urllib
-import http.client
-import uuid
-from uuid import UUID
-import platform
-
 import logging
 logger = logging.getLogger(__name__)
-
-def __valid_uuid(_uuid):
-    try:
-        a = UUID(_uuid)
-    except ValueError:
-        return False
-    return True
 
 cdef extern from "Python.h":
     ctypedef void PyObject
