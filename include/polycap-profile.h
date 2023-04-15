@@ -107,7 +107,7 @@ polycap_profile* polycap_profile_new_from_file(
 int polycap_profile_validate(polycap_profile *profile, int64_t n_cap, polycap_error **error);
 
 
-/* Allows the user to set a profile shape given the appropriate shape parameter arrays
+/** Allows the user to set a profile shape given the appropriate shape parameter arrays
  *
  * \param nid amount of elements in the provided array. It is suggested to have at least 1000 elements.
  * \param ext external polycapillary shape profile radii [cm].

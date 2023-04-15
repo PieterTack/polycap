@@ -25,7 +25,13 @@
 #define POLYCAP_EXTERN extern
 #endif
 
+/** \def POLYCAP_VERSION_MAJOR
+ * a pre-processor macro that sets the major version number of this polycap release
+*/
 #define POLYCAP_VERSION_MAJOR 1
+/** \def POLYCAP_VERSION_MINOR
+ * a pre-processor macro that sets the minor version number of this polycap release
+*/
 #define POLYCAP_VERSION_MINOR 2
 
 #include "polycap-error.h"

@@ -175,10 +175,10 @@
  *
  * \subsection profiletype Profile type
  * 
- * Various optic shapes are allowed, including user-defined shapes. Three general external shapes are supported for straightforward external shape definition. In each case, the single capillary shape is assumed conical around the central capillary axis
- * 	- **CONICAL:** the external profile shape is a straight line between the polycapillary entrance and exit radii.
- *	- **PARABOLOIDAL:** a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
- *	- **ELLIPSOIDAL:** an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
+ * Various optic shapes are allowed, including user-defined shapes. Three general external shapes are supported for straightforward external shape definition. In each case, the single capillary shape is assumed conical around the central capillary axis:
+ * - **CONICAL:** the external profile shape is a straight line between the polycapillary entrance and exit radii.
+ * - **PARABOLOIDAL:** a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
+ * - **ELLIPSOIDAL:** an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
  *
  * \subsection profilenewarrays new_from_arrays
  * Define a profile shape using user defined arrays.
@@ -279,8 +279,8 @@
  * \code{.py}
  * photon = source.get_photon(Rng rng)
  * \endcode
- *       - **rng:** a \ref rng instance, not None
- *   	 - **returns:** a new \ref Photon, or raises an exception if an error occurred.
+ * - **rng:** a \ref rng instance, not None
+ * - **returns:** a new \ref Photon, or raises an exception if an error occurred.
  * 
  * \subsection src_trans get_transmission_efficiencies
  *
