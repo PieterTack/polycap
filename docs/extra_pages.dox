@@ -12,24 +12,24 @@
  *
  * At each photon - capillary wall interaction the reflectivity is determined by the Fresnel equations for s and p polarized light:
  * \f[
-	R_{s}(\theta,E) = \left|
-		\frac{n_{1} \cos{\theta} - n_{2} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2} }}{n_{1} \cos{\theta} + n_{2} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2} }}
-		\right|^{2}
-	\\
-	R_{p}(\theta,E) = \left|
-		\frac{n_{1} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2} } - n_{2} \cos{\theta}}{n_{1} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2}  } + n_{2}  \cos{\theta}}
-		\right|^{2}
-   \f]
- * with \f$\theta\f$ the glancing angle of the incident radiation and  \f$nf$ defined as \f$n = \alpha - i\beta\f$ with
- *\f[
-	\alpha = \left(\frac{hc}{E}\right)^{2}
-		\frac{N_{A}r_{0}\rho}{2\pi}
-		\sum\limits_{j=1}^N \frac{w_{j}}{A_{j}} (Z_{j} + f_{j}^{'})
-	\\
-	\beta = \left(\frac{hc}{E}\right)^{2}
-		\frac{N_{A}r_{0}\rho}{2\pi}
-		\sum\limits_{j=1}^N \frac{w_{j}}{A_{j}} f_{j}^{"} = \frac{hc}{4\pi} \frac{\mu_{L}}{E}
-  \f]
+ *  R_{s}(\theta,E) = \left|
+ *	    \frac{n_{1} \cos{\theta} - n_{2} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2} }}{n_{1} \cos{\theta} + n_{2} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2} }}
+ *  	\right|^{2}
+ *  \\
+ *  R_{p}(\theta,E) = \left|
+ * 		\frac{n_{1} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2} } - n_{2} \cos{\theta}}{n_{1} \sqrt{1 - \left( \frac{n_{1}}{n_{2}} \sin{\theta} \right)^{2}  } + n_{2}  \cos{\theta}}
+ * 		\right|^{2}
+ * \f]
+ * with \f$\theta\f$ the glancing angle of the incident radiation and  \f$n\f$ defined as \f$n = \alpha - i\beta\f$ with
+ * \f[
+ *   \alpha = \left(\frac{hc}{E}\right)^{2}
+ * 		\frac{N_{A}r_{0}\rho}{2\pi}
+ * 		\sum\limits_{j=1}^N \frac{w_{j}}{A_{j}} (Z_{j} + f_{j}^{'})
+ *	\\
+ * 	\beta = \left(\frac{hc}{E}\right)^{2}
+ *		\frac{N_{A}r_{0}\rho}{2\pi}
+ *		\sum\limits_{j=1}^N \frac{w_{j}}{A_{j}} f_{j}^{"} = \frac{hc}{4\pi} \frac{\mu_{L}}{E}
+ * \f]
  * Here \f$h\f$ is Planck's constant, \f$c\f$ the light velocity, \f$E\f$ the photon energy, \f$N_{A}\f$ Avogadro's number, \f$r_{0}\f$ the classical electron radius, \f$\rho\f$ the material density, \f$N\f$ the number of elements with weight fraction \f$w_{j}\f$, \f$A_{j}\f$ the atomic weight, \f$Z_{j}\f$ the atomic number and \f$f_{j}\f$ the atomic scattering for element \f$j\f$ and \f$\mu_{L}\f$ the linear attenuation coefficient.
  * By propagating the photon through the capillary and determining the reflectivity at each point a final transmission efficiency, exit coordinate and direction is obtained.
  * This process can then be repeated for multiple photons as a means to simulate an X-ray source with known distance, size and divergence propagating through the capillary optic.
@@ -94,12 +94,11 @@
  *  The source code release tarballs are hosted on the Github repository, in the [releases section](https://github.com/PieterTack/polycap/releases).
  *  Just get the latest tarball and run the following commands:
  *
- *       tar xfvz polycap-x.y.tar.gz
+ *       tar xfJ polycap-x.y.tar.xz
  *       cd polycap-x.y
- *       mkdir build ; cd build
- *       meson
- *       ninja
- *       ninja install
+ *       meson setup build .
+ *       meson compile -C build
+ *       meson install -C build
  *
  *  \subsection condaforge Conda-Forge
  *
@@ -115,86 +114,15 @@
  *
  *  > `brew install tschoonj/tap/polycap`
  *
- *  \subsection linux Linux
- *
- *  \subsubsection rhel Fedora, Centos and Scientific Linux
- *
- *  To facilitate the installation on RPM based Linux distributions, the package includes a spec file which can be used to produce RPM packages for linux distributions that support them (Fedora, Red Hat etc). The developers have built 64-bit RPM packages of polycap for the officially supported Fedora and Redhat EL/CentOS/Scientific Linux 7 and 8 distributions. Access to their RPM repository can be obtained as follows for Fedora distros:
- *
- * > `sudo rpm -Uvh http://xmi-yum.tomschoonjans.eu/xmi-repo-key-fedora.noarch.rpm`
- *
- * for Red Hat EL 7 based distributions:
- *
- * > `sudo rpm -Uvh http://xmi-yum.tomschoonjans.eu/xmi-repo-key-7.0-1.el7.noarch.rpm`
- *
- * for Red Hat EL 8 based distributions:
- *
- * > `sudo rpm -Uvh http://xmi-yum.tomschoonjans.eu/xmi-repo-key-8.0-1.el8.noarch.rpm`
- *
- * The polycap themselves can then be downloaded using yum (or \c dnf which is increasingly being used nowadays):
- *
- * > `sudo yum install polycap polycap-devel polycap-python polycap-doc`
- *
- * Updates can be installed in a similar way:
- *
- * > `sudo yum update polycap polycap-devel polycap-python polycap-doc`
- *
- * \subsubsection debian Debian and Ubuntu
- *
- * Packages were created for Debian and Ubuntu. Currently the following flavors are supported: Debian Buster and several Ubuntu versions .
- * In order to access these packages using your favorite package manager, execute the following command to import my public key:
- *
- * > `curl http://xmi-apt.tomschoonjans.eu/xmi.packages.key | sudo apt-key add -`
- *
- * Next, add the package download location corresponding to your distribution to the /etc/apt/sources.list file (as root):
- *
- * Debian Buster:
- *
- *       deb http://xmi-apt.tomschoonjans.eu/debian buster stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/debian buster stable
- *
- * Ubuntu Bionic 18.04:
- *
- *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu bionic stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu bionic stable
- *
- * Ubuntu Eoan 19.10:
- *
- *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu eoan stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu eoan stable
- *
- * Ubuntu Focal 20.04:
- *
- *       deb [arch=amd64] http://xmi-apt.tomschoonjans.eu/ubuntu focal stable
- *       deb-src http://xmi-apt.tomschoonjans.eu/ubuntu focal stable
- *
- * When the sources.list file contains the correct download locations, update the apt cache by running:
- *
- * > `sudo apt-get update`
- *
- * After this, one can install polycap by executing the following command:
- *
- * > `sudo apt-get install libpolycap libpolycap-dev libpolycap-doc python3-polycap`
- *
  * \subsection head Github repository
  *                                                                                                                    
  * People interested in running the latest development version will have to clone the Github repository, and install meson and ninja:
  *
  *       git clone git@github.com:PieterTack/polycap.git
  *       cd polycap
- *       mkdir build ; cd build
- *       meson .. 
- *       ninja
- *       ninja install
- *
- * If building with GNU autotools is preferred, install autoconf, automake, libtool and mm-common.
- *
- *       git clone git@github.com:PieterTack/polycap.git
- *       cd polycap
- *       autoreconf -i
- *       ./configure
- *       make
- *       make install
+ *       meson setup build .
+ *       meson compile -C build
+ *       meson install -C build
  *
  * \page usage Usage
  * 
@@ -247,10 +175,10 @@
  *
  * \subsection profiletype Profile type
  * 
- * Various optic shapes are allowed, including user-defined shapes. Three general external shapes are supported for straightforward external shape definition. In each case, the single capillary shape is assumed conical around the central capillary axis
- * 	- **CONICAL:** the external profile shape is a straight line between the polycapillary entrance and exit radii.
- *	- **PARABOLOIDAL:** a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
- *	- **ELLIPSOIDAL:** an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
+ * Various optic shapes are allowed, including user-defined shapes. Three general external shapes are supported for straightforward external shape definition. In each case, the single capillary shape is assumed conical around the central capillary axis:
+ * - **CONICAL:** the external profile shape is a straight line between the polycapillary entrance and exit radii.
+ * - **PARABOLOIDAL:** a third degree polynomial is fit through the polycapillary entrance and exit radii, as well as the linear extrapolation on each side towards the focal distances.
+ * - **ELLIPSOIDAL:** an ellipse is described where the polycapillary side with largest radius has a horizontal tangent, whereas the tangent at the shortest radius side is directed towards the corresponding polycapillary focal distance.
  *
  * \subsection profilenewarrays new_from_arrays
  * Define a profile shape using user defined arrays.
@@ -351,8 +279,8 @@
  * \code{.py}
  * photon = source.get_photon(Rng rng)
  * \endcode
- *       - **rng:** a \ref rng instance, not None
- *   	 - **returns:** a new \ref Photon, or raises an exception if an error occurred.
+ * - **rng:** a \ref rng instance, not None
+ * - **returns:** a new \ref Photon, or raises an exception if an error occurred.
  * 
  * \subsection src_trans get_transmission_efficiencies
  *

@@ -146,7 +146,7 @@ polycap_vector3 polycap_photon_get_exit_direction(polycap_photon *photon);
 POLYCAP_EXTERN
 polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
 
-/* Retrieve d_travel [cm] from a polycap_photon
+/** Retrieve d_travel [cm] from a polycap_photon
  *
  * \param photon a polycap_photon
  * \returns photon distance traveled within the optic [cm]
@@ -155,7 +155,7 @@ polycap_vector3 polycap_photon_get_exit_electric_vector(polycap_photon *photon);
 POLYCAP_EXTERN
 double polycap_photon_get_dtravel(polycap_photon *photon);
 
-/* Retrieve i_refl from a polycap_photon
+/** Retrieve i_refl from a polycap_photon
  *
  * \param photon a polycap_photon
  * \returns amount of reflection events along photon path within the optic [int64_t]
@@ -197,7 +197,7 @@ void polycap_photon_free(polycap_photon *photon);
 
 /** Free a polycap_leak
  * 
- * \param photon a polycap_leak
+ * \param leak a polycap_leak
  */
 POLYCAP_EXTERN
 void polycap_leak_free(polycap_leak *leak);
